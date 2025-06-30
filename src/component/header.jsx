@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+// import React, { useState } from 'react';
 import { FaUser } from 'react-icons/fa';
+import Logo from '../../assets/logo-bmkg.svg';
 
 const Header = () => {
     const scrollToAbout = () => {
@@ -27,7 +28,7 @@ const Header = () => {
             <div className="flex justify-between items-center py-3 md:py-4">
                 <div className="flex items-center space-x-2 md:space-x-3">
                     <img 
-                        src="/logo.png" 
+                        src={Logo}
                         alt="BMKG Logo" 
                         className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
                     />

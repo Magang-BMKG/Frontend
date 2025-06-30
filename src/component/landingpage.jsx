@@ -9,6 +9,7 @@ import { CiCalendar } from "react-icons/ci";
 import { CiLock } from "react-icons/ci";
 import { FaEyeSlash, FaRegEye } from 'react-icons/fa';
 import { AiOutlineClose } from 'react-icons/ai';
+import Logo from '../../assets/logo-bmkg.svg';
 
 export default function BMKGLandingPage() {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
@@ -69,7 +70,7 @@ export default function BMKGLandingPage() {
           <div className="flex justify-between items-center py-3 md:py-4">
             <div className="flex items-center space-x-2 md:space-x-3">
               <img 
-                src="/logo.png" 
+                src={Logo} 
                 alt="BMKG Logo" 
                 className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
               />
