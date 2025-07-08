@@ -33,8 +33,8 @@ const Header = () => {
                         className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
                     />
                     <div>
-                        <h1 className="text-[8px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
-                        <h2 className="text-[8px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
+                        <h1 className="text-[6px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
+                        <h2 className="text-[6px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
                     </div>
                     </div>
                 <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
@@ -51,7 +51,7 @@ const Header = () => {
                         Tentang
                     </button>
                     <button className="p-2 rounded-full border border-gray-300 hover:bg-gray-50">
-                        <FaUser className="w-5 h-5 text-gray-600" />
+                        <FaUser className="w-3 h-3 sm:w-5 sm:h-5 text-gray-600" />
                     </button>
                 </div>
             </div>

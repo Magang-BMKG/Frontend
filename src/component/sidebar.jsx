@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Custom React Icons
 const UserIcon = ({ size = 24 }) => (
@@ -30,63 +30,6 @@ const CalendarIcon = ({ size = 24 }) => (
   </svg>
 );
 
-// Komponen halaman Desktop Teknisi
-const DesktopTeknisi = () => (
-  <div className="flex-1 p-6 bg-gray-50">
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Profil Teknisi</h1>
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Informasi Pribadi</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-600">Nama Lengkap</label>
-                <p className="text-gray-900">Ahmad Teknisi</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600">ID Teknisi</label>
-                <p className="text-gray-900">TEK001</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600">Email</label>
-                <p className="text-gray-900">ahmad.teknisi@company.com</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600">No. Telepon</label>
-                <p className="text-gray-900">+62 812-3456-7890</p>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Informasi Pekerjaan</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-600">Departemen</label>
-                <p className="text-gray-900">IT Support</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600">Posisi</label>
-                <p className="text-gray-900">Senior Technician</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600">Tanggal Bergabung</label>
-                <p className="text-gray-900">15 Januari 2020</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600">Status</label>
-                <span className="inline-flex px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
-                  Aktif
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 // Komponen halaman Tidak Ditemukan
 const NotFound = ({ pageName }) => (
   <div className="flex-1 flex items-center justify-center bg-gray-50">
@@ -107,20 +50,84 @@ const NotFound = ({ pageName }) => (
 
 const Sidebar = ({ 
   onNavigate, // Callback function untuk navigasi
+  currentPage = '', // Prop untuk menentukan halaman yang sedang aktif
   iconSize = { mobile: 20, tablet: 24, desktop: 28 }, 
   textSize = { mobile: 'text-[10px]', tablet: 'text-sm', desktop: 'text-sm' },
   sidebarWidth = { mobile: 'w-25', tablet: 'w-32', desktop: 'w-40' },
   spacing = { mobile: 'space-y-8', tablet: 'space-y-3', desktop: 'space-y-4' },
   padding = { mobile: 'p-6', tablet: 'p-3', desktop: 'p-4' }
 }) => {
-  const [activeItem, setActiveItem] = useState('profil');
+  const [activeItem, setActiveItem] = useState('');
 
   const menuItems = [
-    { id: 'profil', icon: UserIcon, label: 'Profil Teknisi', shortLabel: 'Profil Teknisi', route: '/destopteknisi' },
-    { id: 'meta', icon: SettingsIcon, label: 'Meta Data', shortLabel: 'Meta Data', route: '/not-found?page=metadata' },
-    { id: 'logbook', icon: BookIcon, label: 'Log Book', shortLabel: 'Log Book', route: '/not-found?page=logbook' },
-    { id: 'jadwal', icon: CalendarIcon, label: 'Jadwal', shortLabel: 'Jadwal', route: '/not-found?page=jadwal' }
+    { 
+      id: 'profil', 
+      icon: UserIcon, 
+      label: 'Profil Teknisi', 
+      shortLabel: 'Profil Teknisi', 
+      route: '/destopteknisi',
+      keywords: ['profil', 'teknisi', 'destopteknisi']
+    },
+    { 
+      id: 'meta', 
+      icon: SettingsIcon, 
+      label: 'Meta Data', 
+      shortLabel: 'Meta Data', 
+      route: '/instrumen',
+      keywords: ['meta', 'data', 'instrumen', 'daftar', 'peralatan']
+    },
+    { 
+      id: 'logbook', 
+      icon: BookIcon, 
+      label: 'Log Book', 
+      shortLabel: 'Log Book', 
+      route: '/not-found?page=logbook',
+      keywords: ['logbook', 'log', 'book']
+    },
+    { 
+      id: 'jadwal', 
+      icon: CalendarIcon, 
+      label: 'Jadwal', 
+      shortLabel: 'Jadwal', 
+      route: '/not-found?page=jadwal',
+      keywords: ['jadwal', 'schedule', 'calendar']
+    }
   ];
+
+  // Fungsi untuk mendeteksi halaman aktif berdasarkan URL atau currentPage prop
+  const detectActivePage = () => {
+    // Jika currentPage prop diberikan, gunakan itu
+    if (currentPage) {
+      const foundItem = menuItems.find(item => 
+        item.keywords.some(keyword => 
+          currentPage.toLowerCase().includes(keyword)
+        )
+      );
+      return foundItem ? foundItem.id : '';
+    }
+
+    // Jika tidak ada currentPage prop, deteksi dari URL
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname.toLowerCase();
+      const currentSearch = window.location.search.toLowerCase();
+      const fullUrl = currentPath + currentSearch;
+
+      const foundItem = menuItems.find(item => 
+        item.keywords.some(keyword => 
+          fullUrl.includes(keyword) || currentPath.includes(keyword)
+        )
+      );
+      return foundItem ? foundItem.id : '';
+    }
+
+    return '';
+  };
+
+  // Set active item saat komponen dimount atau currentPage berubah
+  useEffect(() => {
+    const detectedPage = detectActivePage();
+    setActiveItem(detectedPage);
+  }, [currentPage]);
 
   const handleItemClick = (item) => {
     setActiveItem(item.id);
@@ -132,6 +139,8 @@ const Sidebar = ({
       // Fallback: gunakan window.location untuk navigasi
       if (item.id === 'profil') {
         window.location.href = '/destopteknisi';
+      } else if (item.id === 'meta') {
+        window.location.href = '/instrumen';
       } else {
         window.location.href = `/not-found?page=${item.label}`;
       }
@@ -171,10 +180,10 @@ const Sidebar = ({
             ${responsivePadding.mobile} 
             sm:${responsivePadding.tablet} 
             md:${responsivePadding.desktop}
-            rounded-lg transition-colors w-full
+            rounded-lg transition-all duration-200 w-full transform hover:scale-105
             ${activeItem === item.id 
-              ? 'bg-blue-50 text-blue-600 border border-blue-200' 
-              : 'text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+              ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' 
+              : 'text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200 hover:text-gray-800'
             }
           `}
         >
@@ -198,6 +207,7 @@ const Sidebar = ({
             block sm:hidden 
             ${responsiveTextSize.mobile} 
             text-center font-medium leading-tight
+            ${activeItem === item.id ? 'text-blue-600' : ''}
           `}>
             {item.shortLabel}
           </span>
@@ -207,6 +217,7 @@ const Sidebar = ({
             hidden sm:block md:hidden 
             ${responsiveTextSize.tablet} 
             text-center font-medium leading-tight
+            ${activeItem === item.id ? 'text-blue-600' : ''}
           `}>
             {item.label}
           </span>
@@ -216,6 +227,7 @@ const Sidebar = ({
             hidden md:block 
             ${responsiveTextSize.desktop} 
             text-center font-medium leading-tight
+            ${activeItem === item.id ? 'text-blue-600' : ''}
           `}>
             {item.label}
           </span>

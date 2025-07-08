@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Header from "./header";
-import Sidebar from "./sidebar";
-import Footer from "./footer";
+import Header from "./Header";
+import Sidebar from "./Sidebar"; 
+import Footer from "./Footer";
 
 const DaftarTeknisiPage = () => {
   const [pegawaiData, setPegawaiData] = useState([]);
@@ -101,19 +101,19 @@ const DaftarTeknisiPage = () => {
         )}
 
         <main className="flex-1 p-4 sm:p-6 overflow-x-auto">
-          <h2 className="text-center text-xl sm:text-2xl font-semibold mb-6 sm:mb-8">
+          <h2 className="text-center text-[18px] sm:text-2xl font-semibold mb-6 sm:mb-8">
             Daftar Teknisi
           </h2>
           
           {/* Dropdown untuk memilih teknisi - Centered */}
           <div className="mb-6 sm:mb-8 flex justify-center">
             <div className="w-full max-w-md">
-              <div className="flex flex-col items-center gap-3 sm:gap-4 bg-white p-4 sm:p-6 shadow-m">
-                <label className="font-medium text-sm sm:text-lg text-gray-700 text-center">
+              <div className="flex flex-col items-center gap-3 sm:gap-4 bg-white  sm:p-6 shadow-md">
+                <label className="font-medium text-[12px] sm:text-lg text-gray-600 text-center">
                   Pilih Teknisi
                 </label>
                 <select 
-                  className="w-full rounded-lg border border-gray-300 p-3 text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full rounded-lg border border-gray-300 p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   onChange={handleSelectChange}
                   value={selectedPegawai ? selectedPegawai.NIP : ""}
                 >
@@ -173,7 +173,8 @@ const DaftarTeknisiPage = () => {
                       }}
                     />
                   ) : (
-                    <div className="flex items-center justify-center w-full h-64 bg-gray-300 rounded-lg">
+                    /* Bagian foto */
+                    <div className="flex items-center justify-center w-full h-60 bg-gray-300 rounded-lg">
                       <svg className="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                       </svg>
@@ -183,10 +184,10 @@ const DaftarTeknisiPage = () => {
                 
                 {/* Bagian Detail */}
                 <div className="flex-1">
-                  <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-black mb-4 text-center lg:text-left">
+                  <h3 className="text-[15px] sm:text-xl lg:text-2xl font-semibold text-black mb-4 text-center lg:text-left">
                     {selectedPegawai.NAMA}
                   </h3>
-                  <div className="grid grid-cols-1 gap-3 text-gray-700 text-sm sm:text-base">
+                  <div className="grid grid-cols-1 gap-3 text-gray-700 text-[11px] sm:text-base">
                     <div className="bg-white p-3 rounded border-l-4 border-blue-500">
                       <span className="font-medium text-black">NIP:</span> 
                       <span className="ml-2">{selectedPegawai.NIP}</span>
@@ -218,7 +219,7 @@ const DaftarTeknisiPage = () => {
                   </div>
                   <button
                     onClick={() => setSelectedPegawai(null)}
-                    className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm sm:text-base"
+                    className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base"
                   >
                     ← Kembali ke Daftar Teknisi
                   </button>
@@ -233,8 +234,8 @@ const DaftarTeknisiPage = () => {
                   <table className="w-full min-w-[300px]">
                     <thead>
                       <tr className="bg-[#0066CC] text-white">
-                        <th className="px-4 py-3 text-center text-sm sm:text-base font-semibold">Nama Teknisi</th>
-                        <th className="px-4 py-3 text-center text-sm sm:text-base font-semibold">NIP</th>
+                        <th className="px-4 py-3 text-center text-[10px] sm:text-base font-semibold">Nama Teknisi</th>
+                        <th className="px-4 py-3 text-center text-[10px] sm:text-base font-semibold">NIP</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -256,10 +257,10 @@ const DaftarTeknisiPage = () => {
                             className="hover:bg-blue-50 transition-colors cursor-pointer"
                             onClick={() => setSelectedPegawai(pegawai)}
                           >
-                            <td className="px-4 py-3 text-left text-sm sm:text-base text-gray-900">
+                            <td className="px-4 py-3 text-left text-[10px] sm:text-base text-gray-900">
                               {pegawai.NAMA}
                             </td>
-                            <td className="px-4 py-3 text-center text-sm sm:text-base text-gray-600">
+                            <td className="px-4 py-3 text-center text-[10px] sm:text-base text-gray-600">
                               {pegawai.NIP}
                             </td>
                           </tr>
