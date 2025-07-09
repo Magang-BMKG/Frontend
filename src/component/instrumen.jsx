@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import Header from './Header'; 
-import Sidebar from './sidebar'; 
-import Footer from './Footer'; 
-import { AiTwotoneFileAdd } from "react-icons/ai";
+  import React, { useState, useEffect, useMemo } from 'react';
+  import Header from './Header'; 
+  import Sidebar from './sidebar'; 
+  import Footer from './Footer'; 
+  import { AiTwotoneFileAdd } from "react-icons/ai";
   import { IoClose } from "react-icons/io5";
   import { FaCheck } from "react-icons/fa";
   import { FiEdit2 } from "react-icons/fi";
   import { FiTrash2 } from "react-icons/fi";
   import Swal from 'sweetalert2';
 
-const DaftarInstrumenPage = () => {
-  const [instrumenData, setInstrumenData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedInstrumen, setSelectedInstrumen] = useState(null);
-  const [selectedKodeCategory, setSelectedKodeCategory] = useState('');
-  const [kodeCategoryOptions, setKodeCategoryOptions] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const DaftarInstrumenPage = () => {
+    const [instrumenData, setInstrumenData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedInstrumen, setSelectedInstrumen] = useState(null);
+    const [selectedKodeCategory, setSelectedKodeCategory] = useState('');
+    const [kodeCategoryOptions, setKodeCategoryOptions] = useState([]);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Delete state
@@ -52,95 +52,95 @@ const DaftarInstrumenPage = () => {
       Keterangan: ''
     });
 
-  // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'INSTRUMEN' ANDA
-  const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbxNef3rBTV5D_i5XYgeYrh5WtMehkx0dxc_V-I1GVy_g2eoo0gjz9PxLT0aA5m8i2RSIg/exec";
+    // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'INSTRUMEN' ANDA
+    const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbxNef3rBTV5D_i5XYgeYrh5WtMehkx0dxc_V-I1GVy_g2eoo0gjz9PxLT0aA5m8i2RSIg/exec";
 
-  // Fungsi helper untuk mendapatkan kategori filter dari data instrumen
-  const getFilterCategory = (instrumen) => {
-    const kode = instrumen.Kode;
-    const noPeralatan = instrumen.NoPeralatan;
+    // Fungsi helper untuk mendapatkan kategori filter dari data instrumen
+    const getFilterCategory = (instrumen) => {
+      const kode = instrumen.Kode;
+      const noPeralatan = instrumen.NoPeralatan;
 
-    if (noPeralatan && noPeralatan.includes("AWOS")) return "AWOS";
-    if (noPeralatan && (noPeralatan.includes("PC Display") || noPeralatan.includes("PC OBS") || noPeralatan.includes("PC AFTN") || noPeralatan.includes("PC FCT") || noPeralatan.includes("PC National Digital Forcasting") || noPeralatan.includes("PC Maritim"))) return "PC";
-    
-    if (kode) {
-      const parts = kode.split('_');
-      return parts[0];
-    }
-    return 'Lain-lain';
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(INSTRUMEN_API_URL);
-
-        if (!response.ok) {
-          throw new Error(
-            `HTTP error! Status: ${response.status} - ${response.statusText}`
-          );
-        }
-
-        const data = await response.json();
-
-        if (Array.isArray(data)) {
-          setInstrumenData(data);
-          
-          const categories = new Set();
-          data.forEach(instrumen => {
-            const category = getFilterCategory(instrumen);
-            if (category) {
-              categories.add(category);
-            }
-          });
-          setKodeCategoryOptions(Array.from(categories).sort());
-        } else {
-          throw new Error(
-            "Invalid data format received from API. Expected an array."
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching instrumen data:", err);
-        setError(
-          err.message ||
-            "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
-        );
-      } finally {
-        setLoading(false);
+      if (noPeralatan && noPeralatan.includes("AWOS")) return "AWOS";
+      if (noPeralatan && (noPeralatan.includes("PC Display") || noPeralatan.includes("PC OBS") || noPeralatan.includes("PC AFTN") || noPeralatan.includes("PC FCT") || noPeralatan.includes("PC National Digital Forcasting") || noPeralatan.includes("PC Maritim"))) return "PC";
+      
+      if (kode) {
+        const parts = kode.split('_');
+        return parts[0];
       }
+      return 'Lain-lain';
     };
 
-    fetchData();
-  }, []);
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const response = await fetch(INSTRUMEN_API_URL);
 
-  const handleCategorySelectChange = (event) => {
-    setSelectedKodeCategory(event.target.value);
-    setSelectedInstrumen(null);
+          if (!response.ok) {
+            throw new Error(
+              `HTTP error! Status: ${response.status} - ${response.statusText}`
+            );
+          }
+
+          const data = await response.json();
+
+          if (Array.isArray(data)) {
+            setInstrumenData(data);
+            
+            const categories = new Set();
+            data.forEach(instrumen => {
+              const category = getFilterCategory(instrumen);
+              if (category) {
+                categories.add(category);
+              }
+            });
+            setKodeCategoryOptions(Array.from(categories).sort());
+          } else {
+            throw new Error(
+              "Invalid data format received from API. Expected an array."
+            );
+          }
+        } catch (err) {
+          console.error("Error fetching instrumen data:", err);
+          setError(
+            err.message ||
+              "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }, []);
+
+    const handleCategorySelectChange = (event) => {
+      setSelectedKodeCategory(event.target.value);
+      setSelectedInstrumen(null);
       // Reset delete mode when category changes
       setIsDeleteMode(false);
       setSelectedForDelete(new Set());
-  };
+    };
 
-  const filteredInstrumenData = useMemo(() => {
-    if (!selectedKodeCategory) {
-      return instrumenData;
-    }
-    return instrumenData.filter(instrumen => 
-      getFilterCategory(instrumen) === selectedKodeCategory
-    );
-  }, [instrumenData, selectedKodeCategory]);
+    const filteredInstrumenData = useMemo(() => {
+      if (!selectedKodeCategory) {
+        return instrumenData;
+      }
+      return instrumenData.filter(instrumen => 
+        getFilterCategory(instrumen) === selectedKodeCategory
+      );
+    }, [instrumenData, selectedKodeCategory]);
 
-  // Toggle sidebar untuk mobile
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+    // Toggle sidebar untuk mobile
+    const toggleSidebar = () => {
+      setIsSidebarOpen(!isSidebarOpen);
+    };
 
-  const handleOpenAddModal = () => {
-    setIsAddModalOpen(true);
-  };
+    const handleOpenAddModal = () => {
+      setIsAddModalOpen(true);
+    };
 
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
+    const handleCloseAddModal = () => {
+      setIsAddModalOpen(false);
       setFormData({
         Kode: '',
         NoPeralatan: '',
@@ -162,8 +162,8 @@ const DaftarInstrumenPage = () => {
         'Tanggal Inventarisasi': '',
         'Kalibrasi Terakhir': '',
         Keterangan: ''
-    });
-  };
+      });
+    };
 
     const handleInputChange = (e) => {
       const { name, value } = e.target;
@@ -426,80 +426,80 @@ const DaftarInstrumenPage = () => {
       );
     };
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2">
-        <button
-          onClick={toggleSidebar}
-          className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="flex flex-1 relative">
-        {/* Sidebar - Hidden on mobile, overlay when open */}
-        <div className={`
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          lg:translate-x-0 lg:static absolute inset-y-0 left-0 z-50 
-          transform transition-transform duration-300 ease-in-out
-        `}>
-          <Sidebar />
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        
+        {/* Mobile Menu Button */}
+        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2">
+          <button
+            onClick={toggleSidebar}
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
         </div>
 
-        {/* Overlay untuk mobile ketika sidebar terbuka */}
-        {isSidebarOpen && (
-          <div 
-            className="lg:hidden fixed inset-0 bg-black/50 bg-opacity-50 z-40"
-            onClick={toggleSidebar}
-          ></div>
-        )}
+        <div className="flex flex-1 relative">
+          {/* Sidebar - Hidden on mobile, overlay when open */}
+          <div className={`
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+            lg:translate-x-0 lg:static absolute inset-y-0 left-0 z-50 
+            transform transition-transform duration-300 ease-in-out
+          `}>
+            <Sidebar />
+          </div>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <h2 className="text-center text-[18px] sm:text-2xl font-semibold mb-6 sm:mb-8">
-            Daftar Peralatan Instrumen
-          </h2>
+          {/* Overlay untuk mobile ketika sidebar terbuka */}
+          {isSidebarOpen && (
+            <div 
+              className="lg:hidden fixed inset-0 bg-black/50 bg-opacity-50 z-40"
+              onClick={toggleSidebar}
+            ></div>
+          )}
 
-          {/* Dropdown untuk memilih kategori instrumen */}
+          {/* Main Content */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+            <h2 className="text-center text-[18px] sm:text-2xl font-semibold mb-6 sm:mb-8">
+              Daftar Peralatan Instrumen
+            </h2>
+
+            {/* Dropdown untuk memilih kategori instrumen */}
             <div className="mb-4 sm:mb-6 md:mb-2 mx-1 sm:mx-2 lg:mx-4 xl:mx-auto max-w-7xl">
-            <div className="w-full">
+              <div className="w-full">
                 <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4 bg-white p-3 sm:p-4 md:p-6 lg:p-8 rounded-lg  mx-1 sm:mx-2 lg:mx-4 xl:mx-auto max-w-7xl">
-                {/* Label */}
+                  {/* Label */}
                   <label className="font-medium text-[10px] sm:text-base md:text-[15px] text-gray-700 text-center lg:text-center whitespace-nowrap lg:min-w-max">
-                  Filter Berdasarkan Kategori Kode:
-                </label>
-                
-                {/* Filter dan Button Container */}
-                  <div className="flex flex-row items-center gap-3 sm:gap-4 w-full lg:flex-1">
-                  {/* Select Dropdown */}
-                  <select
-                      className="flex-1 min-w-0 rounded-lg  border border-gray-300 p-2 sm:p-2.5 text-[10px] sm:text-[14px] focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-                    onChange={handleCategorySelectChange}
-                    value={selectedKodeCategory}
-                  >
-                    <option value="">-- Tampilkan Semua Kategori --</option>
-                    {kodeCategoryOptions.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                    Filter Berdasarkan Kategori Kode:
+                  </label>
                   
+                  {/* Filter dan Button Container */}
+                  <div className="flex flex-row items-center gap-3 sm:gap-4 w-full lg:flex-1">
+                    {/* Select Dropdown */}
+                    <select
+                      className="flex-1 min-w-0 rounded-lg  border border-gray-300 p-2 sm:p-2.5 text-[10px] sm:text-[14px] focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                      onChange={handleCategorySelectChange}
+                      value={selectedKodeCategory}
+                    >
+                      <option value="">-- Tampilkan Semua Kategori --</option>
+                      {kodeCategoryOptions.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                    
                     {/* Button Group */}
                     <div className="flex items-center gap-0 sm:gap-0 flex-shrink-0">
-                  {/* Add Button - Hanya tampil di halaman utama */}
+                      {/* Add Button - Hanya tampil di halaman utama */}
                       {!selectedInstrumen && (
-                    <button 
+                        <button 
                           className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 rounded-lg transition-colors group"
-                      onClick={handleOpenAddModal}
+                          onClick={handleOpenAddModal}
                           title="Tambah Instrumen"
-                    >
+                        >
                           <AiTwotoneFileAdd className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600 group-hover:text-blue-600" />
                         </button>
                       )}
@@ -512,13 +512,13 @@ const DaftarInstrumenPage = () => {
                           title="Hapus Instrumen"
                         >
                           <FiTrash2 className="w-4 h-4 sm:w-6 sm:h-6 text-red-500 group-hover:text-red-700" />
-                    </button>
-                  )}
+                        </button>
+                      )}
                     </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
             {/* Delete Mode Controls */}
             {isDeleteMode && (
@@ -556,14 +556,14 @@ const DaftarInstrumenPage = () => {
               </div>
             )}
 
-          {selectedInstrumen ? (
-            // Detail instrumen yang dipilih
+            {selectedInstrumen ? (
+              // Detail instrumen yang dipilih
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3  sm:p-4 md:p-6 shadow-md mb-4 sm:mb-6 md:mb-8 w-full max-w-6xl mx-auto">
                 <div className="flex flex-col gap-4 sm:gap-6">
-                <div className="flex-1">
+                  <div className="flex-1">
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <h3 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-semibold text-black text-center break-words flex-1">
-                    {selectedInstrumen.NoPeralatan} ({selectedInstrumen.Kode})
+                        {selectedInstrumen.NoPeralatan} ({selectedInstrumen.Kode})
                       </h3>
                       {/* Edit Button */}
                       <div className="flex items-center gap-2 -ml-9">
@@ -593,7 +593,7 @@ const DaftarInstrumenPage = () => {
                             <FiEdit2 className="w-4 h-4" />
                           </button>
                         )}
-                    </div>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-2 sm:gap-3 text-gray-700 text-xs sm:text-sm md:text-base">
@@ -621,31 +621,31 @@ const DaftarInstrumenPage = () => {
                     
                     {/* Tombol Kembali hanya ditampilkan ketika TIDAK sedang editing */}
                     {!isEditing && (
-                  <button
+                      <button
                         onClick={() => {
                           setSelectedInstrumen(null);
                           setIsEditing(false);
                           setEditData({});
                         }}
-                    className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 
-                    transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base"
-                  >
-                    ← Kembali ke Daftar Instrumen
-                  </button>
+                        className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 
+                        transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base"
+                      >
+                        ← Kembali ke Daftar Instrumen
+                      </button>
                     )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
+            ) : (
               
-            // Tabel/Card daftar semua instrumen (atau yang difilter)
+              // Tabel/Card daftar semua instrumen (atau yang difilter)
               <div className="flex justify-center px-2 sm:px-4 lg:px-6 xl:px-8">
                 {/* Desktop Table View (lg and above) */}
                 <div className="hidden lg:block bg-white rounded-lg shadow-md overflow-hidden w-full max-w-7xl">
-                <div className="overflow-x-auto">
+                  <div className="overflow-x-auto">
                     <table className="w-full min-w-[800px]">
-                    <thead>
-                      <tr className="bg-[#0066CC] text-white">
+                      <thead>
+                        <tr className="bg-[#0066CC] text-white">
                           {isDeleteMode && (
                             <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-white uppercase tracking-wider w-12">
                               <input
@@ -660,8 +660,8 @@ const DaftarInstrumenPage = () => {
                           <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-1/3">Peralatan</th>
                           <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-1/4">Posisi</th>
                           <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-1/3">Keterangan</th>
-                      </tr>
-                    </thead>
+                        </tr>
+                      </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                           <tr>
@@ -673,7 +673,7 @@ const DaftarInstrumenPage = () => {
                             </td>
                           </tr>
                         ) : error ? (
-                        <tr>
+                          <tr>
                             <td colSpan={isDeleteMode ? 5 : 4} className="px-6 py-8 text-center text-sm text-red-500">
                               <div className="flex flex-col items-center">
                                 <svg className="w-8 h-8 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -686,17 +686,17 @@ const DaftarInstrumenPage = () => {
                         ) : filteredInstrumenData.length === 0 ? (
                           <tr>
                             <td colSpan={isDeleteMode ? 5 : 4} className="px-6 py-8 text-center text-sm text-gray-500">
-                            <div className="flex flex-col items-center">
-                              <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                              </svg>
-                              Data instrumen tidak tersedia
-                            </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredInstrumenData.map((instrumen, index) => (
-                          <tr
+                              <div className="flex flex-col items-center">
+                                <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                Data instrumen tidak tersedia
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredInstrumenData.map((instrumen, index) => (
+                            <tr 
                               key={instrumen.Kode} 
                               className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${
                                 isDeleteMode && selectedForDelete.has(instrumen.Kode) 
@@ -710,7 +710,7 @@ const DaftarInstrumenPage = () => {
                                   setSelectedInstrumen(instrumen);
                                 }
                               }}
-                          >
+                            >
                               {isDeleteMode && (
                                 <td className="px-3 py-4 text-center">
                                   <input
@@ -728,13 +728,13 @@ const DaftarInstrumenPage = () => {
                               <td className="px-4 py-4 text-left text-sm text-gray-600 break-words max-w-xs" title={instrumen.Keterangan}>
                                 <div className="truncate">{instrumen.Keterangan}</div>
                               </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
 
                 {/* Tablet Table View (md to lg) */}
                 <div className="hidden md:block lg:hidden bg-white rounded-lg shadow-md overflow-hidden w-full">
@@ -854,16 +854,16 @@ const DaftarInstrumenPage = () => {
                       </div>
                     </div>
                   ) : filteredInstrumenData.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                    <svg className="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                    </svg>
-                    <p className="text-gray-500 text-sm">Data instrumen tidak tersedia</p>
-                  </div>
-                ) : (
+                    <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                      <svg className="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                      <p className="text-gray-500 text-sm">Data instrumen tidak tersedia</p>
+                    </div>
+                  ) : (
                     <div className="space-y-2">
-                    {filteredInstrumenData.map((instrumen, index) => (
-                      <div
+                      {filteredInstrumenData.map((instrumen, index) => (
+                        <div 
                           key={instrumen.Kode} 
                           className={`bg-white rounded-lg shadow-sm p-3 cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-100 ${
                             isDeleteMode && selectedForDelete.has(instrumen.Kode) 
@@ -893,63 +893,63 @@ const DaftarInstrumenPage = () => {
                             </div>
                           )}
                           
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between">
-                            <h3 className="font-semibold text-gray-900 text-sm leading-tight break-words flex-1 mr-2">
-                              {instrumen.Peralatan}
-                            </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h3 className="font-semibold text-gray-900 text-sm leading-tight break-words flex-1 mr-2">
+                                {instrumen.Peralatan}
+                              </h3>
                               {!isDeleteMode && (
-                            <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
+                                <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                               )}
-                          </div>
+                            </div>
                             <div className="text-xs text-gray-600 space-y-1">
                               <div className="flex items-start">
                                 <span className="font-medium min-w-[45px] text-gray-800">Kode:</span>
                                 <span className="break-all text-gray-600">{instrumen.Kode}</span>
-                            </div>
+                              </div>
                               <div className="flex items-start">
                                 <span className="font-medium min-w-[45px] text-gray-800">Posisi:</span>
                                 <span className="break-words text-gray-600">{instrumen.Posisi}</span>
-                            </div>
-                            {instrumen.Keterangan && (
+                              </div>
+                              {instrumen.Keterangan && (
                                 <div className="flex items-start">
                                   <span className="font-medium min-w-[45px] text-gray-800">Ket:</span>
                                   <span className="break-words text-gray-600 line-clamp-2">{instrumen.Keterangan}</span>
-                              </div>
-                            )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div> 
           )}
 
         </main>
       </div>
-
+      
       {/* Add Instrument Modal */}
-            {isAddModalOpen && (
+      {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[55vh] sm:max-h-[90vh] overflow-y-auto">
-                  {/* Modal Header */}
+            {/* Modal Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
               <h3 className="text-sm sm:text-lg md:text-xl font-semibold text-black w-full text-center">
                 Masukkan Data Instrumen
-                    </h3>
-                    <button
-                      onClick={handleCloseAddModal}
+              </h3>
+              <button
+                onClick={handleCloseAddModal}
                 className="text-gray-400 hover:text-gray-600 transition-colors ml-4 flex-shrink-0"
-                    >
+              >
                 <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
-                  </div>
-                  
-                  {/* Modal Body */}
+              </button>
+            </div>
+
+            {/* Modal Body */}
             <div className="p-4 sm:p-6">
               <form onSubmit={handleSubmit}>
                 {/* Desktop: Two-column layout with proper alignment */}
@@ -961,109 +961,109 @@ const DaftarInstrumenPage = () => {
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-blue-50 py-3 px-4 rounded-md">
                           Kode <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
+                        </label>
+                        <input
+                          type="text"
                           name="Kode"
                           value={formData.Kode}
-                        onChange={handleInputChange}
+                          onChange={handleInputChange}
                           placeholder="Masukkan kode instrumen"
                           className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
+                          required
+                        />
+                      </div>
+                      
                       {/* Row 2 - Peralatan */}
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
                           Peralatan <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
+                        </label>
+                        <input
+                          type="text"
                           name="Peralatan"
                           value={formData.Peralatan}
-                        onChange={handleInputChange}
+                          onChange={handleInputChange}
                           placeholder="Masukkan nama peralatan"
                           className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
+                          required
+                        />
+                      </div>
+                      
                       {/* Row 3 - Tahun Pengadaan */}
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
                           Tahun Pengadaan
-                      </label>
-                      <input
-                        type="text"
+                        </label>
+                        <input
+                          type="text"
                           name="Tahun Pengadaan"
                           value={formData["Tahun Pengadaan"]}
-                        onChange={handleInputChange}
+                          onChange={handleInputChange}
                           placeholder="Masukkan tahun pengadaan"
                           className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
+                        />
+                      </div>
+                      
                       {/* Row 4 - Nama Pemilik Alat */}
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
                           Nama Pemilik Alat
-                      </label>
-                      <input
+                        </label>
+                        <input
                           type="text"
                           name="Nama Pemilik Alat"
                           value={formData["Nama Pemilik Alat"]}
-                        onChange={handleInputChange}
+                          onChange={handleInputChange}
                           placeholder="Masukkan nama pemilik alat"
                           className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+                        />
+                      </div>
                       
                       {/* Row 5 - Lokasi */}
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
                           Lokasi
-                      </label>
-                      <input
-                        type="text"
+                        </label>
+                        <input
+                          type="text"
                           name="Lokasi"
                           value={formData.Lokasi}
-                        onChange={handleInputChange}
+                          onChange={handleInputChange}
                           placeholder="Masukkan lokasi"
                           className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
+                        />
+                      </div>
+                      
                       {/* Row 6 - Jenis Alat */}
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
                           Jenis Alat
-                      </label>
-                      <input
-                        type="text"
+                        </label>
+                        <input
+                          type="text"
                           name="Jenis Alat"
                           value={formData["Jenis Alat"]}
-                        onChange={handleInputChange}
+                          onChange={handleInputChange}
                           placeholder="Masukkan jenis alat"
                           className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
+                        />
+                      </div>
+                      
                       {/* Row 7 - Merk */}
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
                           Merk
-                      </label>
-                      <input
+                        </label>
+                        <input
                           type="text"
                           name="Merk"
                           value={formData.Merk}
-                        onChange={handleInputChange}
+                          onChange={handleInputChange}
                           placeholder="Masukkan merk"
                           className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
+                        />
+                      </div>
+                      
                       {/* Row 8 - Type */}
                       <div className="grid grid-cols-5 gap-4 items-center">
                         <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
@@ -1488,29 +1488,30 @@ const DaftarInstrumenPage = () => {
                         className="w-full py-2 px-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                       />
                     </div>
-                      </div>
-                    </div>
-                    
-                    {/* Modal Footer */}
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                      <button
-                        type="button"
-                        onClick={handleCloseAddModal}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
-                      >
-                        Batal
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
-                      >
-                        Tambah
-                      </button>
-                    </div>
-                  </form>
+                  </div>
                 </div>
+
+                {/* Modal Footer */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCloseAddModal}
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Tambah
+                </button>
               </div>
-            )}
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Footer */}
       <Footer />
