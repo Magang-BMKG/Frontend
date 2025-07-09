@@ -27,46 +27,80 @@ const DaftarTeknisiPage = () => {
     diklatWorkshop: '',
     tugas: '',
     keterangan: '',
-    foto: null
+    foto: null // File object for upload
   });
 
   // URL GOOGLE APPS SCRIPT
+  // PASTIKAN INI ADALAH URL DEPLOYMENT APLIKASI WEB ANDA YANG BENAR DAN TERBARU
   const GOOGLE_SHEETS_API_URL =
-    "https://script.google.com/macros/s/AKfycbyh_29hV_oZowU-BgPIcsQ8bEn3l1YZALYwnPWMsSKjpVFEjcUcQCRRGwPN_A4y2PAAwg/exec";
+    "https://script.google.com/macros/s/AKfycbxQyvGtri0z1XUNFaSlgJbOfaQncCDa-x3gWaapBIys5bW050m155F8ECVjvSyvDQ3NLQ/exec"; // Ganti dengan URL Anda
+
+  // Fungsi untuk mengambil data dari API (GET)
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(GOOGLE_SHEETS_API_URL);
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error! Status: ${response.status} - ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (Array.isArray(data)) {
+        setPegawaiData(data);
+      } else {
+        throw new Error(
+          "Invalid data format received from API. Expected an array."
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(
+        err.message ||
+          "Gagal mengambil data. Silakan periksa koneksi atau URL API."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(GOOGLE_SHEETS_API_URL);
-
-        if (!response.ok) {
-          throw new Error(
-            `HTTP error! Status: ${response.status} - ${response.statusText}`
-          );
-        }
-
-        const data = await response.json();
-
-        if (Array.isArray(data)) {
-          setPegawaiData(data);
-        } else {
-          throw new Error(
-            "Invalid data format received from API. Expected an array."
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(
-          err.message ||
-            "Gagal mengambil data. Silakan periksa koneksi atau API."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  // Fungsi untuk mengirim permintaan POST ke Apps Script
+  const sendTeknisiApiRequest = async (action, payload) => {
+    try {
+      const response = await fetch(GOOGLE_SHEETS_API_URL, {
+        redirect: "follow",
+        method: "POST",
+        // Penting: Kirim body sebagai stringified JSON
+        body: JSON.stringify({ action, ...payload }),
+        headers: {
+          // Content-Type ini penting agar Apps Script dapat mengurai JSON
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+      });
+
+      if (!response.ok) {
+        // Coba baca respons error dari server jika ada
+        const errorText = await response.text();
+        throw new Error(`API request failed with status: ${response.status} - ${errorText}`);
+      }
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || "Operation failed on server.");
+      }
+      return result;
+    } catch (err) {
+      console.error("API request error:", err);
+      throw err;
+    }
+  };
 
   // Fungsi untuk menangani perubahan pada dropdown
   const handleSelectChange = (event) => {
@@ -118,6 +152,8 @@ const DaftarTeknisiPage = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    // Untuk saat ini, kita hanya akan menyimpan nama file atau URL placeholder
+    // Upload file sebenarnya membutuhkan integrasi Google Drive API di Apps Script
     setNewTechnician(prev => ({
       ...prev,
       foto: file
@@ -126,8 +162,7 @@ const DaftarTeknisiPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Show confirmation dialog before adding
+
     const result = await Swal.fire({
       title: 'Konfirmasi Tambah Teknisi',
       text: 'Apakah data teknisi yang akan ditambahkan sudah sesuai?',
@@ -141,27 +176,37 @@ const DaftarTeknisiPage = () => {
 
     if (result.isConfirmed) {
       try {
-        // Here you would typically send the data to your API
-        console.log('New technician data:', newTechnician);
-        
-        // Show success message
+        // Map newTechnician state to Google Sheet headers
+        const payload = {
+          "NAMA": newTechnician.nama,
+          "NIP": newTechnician.nip,
+          "PANGKAT / GOL": newTechnician.pangkat,
+          "FUNGSIONAL": newTechnician.fungsional,
+          "PENDIDIKAN TERAKHIR": newTechnician.pendidikanTerakhir,
+          "DIKLAT/WORKSHOP/TEMU TEKNISI": newTechnician.diklatWorkshop,
+          "TUGAS": newTechnician.tugas,
+          "KETERANGAN": newTechnician.keterangan,
+          // Untuk foto, kirim URL placeholder atau string kosong untuk saat ini
+          // Implementasi upload foto ke Google Drive akan lebih kompleks
+          "FotoURL": newTechnician.foto ? `placeholder_url_${newTechnician.foto.name}` : ''
+        };
+
+        await sendTeknisiApiRequest("add", payload);
+
         await Swal.fire({
           title: 'Berhasil!',
           text: 'Data teknisi berhasil ditambahkan.',
           icon: 'success',
           confirmButtonText: 'OK'
         });
-        
-        // Close modal and reset form
+
         handleCloseAddModal();
-        
-        // You can add your API call here to save the new technician
-        // await saveNewTechnician(newTechnician);
+        fetchData(); // Muat ulang data setelah penambahan
       } catch (error) {
         console.error('Error adding technician:', error);
         await Swal.fire({
           title: 'Error!',
-          text: 'Gagal menambahkan data teknisi.',
+          text: `Gagal menambahkan data teknisi: ${error.message}`,
           icon: 'error',
           confirmButtonText: 'OK'
         });
@@ -202,7 +247,6 @@ const DaftarTeknisiPage = () => {
   };
 
   const handleSaveEdit = async () => {
-    // Show confirmation dialog before saving
     const result = await Swal.fire({
       title: 'Konfirmasi Perubahan',
       text: 'Apakah data yang telah diubah sudah sesuai?',
@@ -216,60 +260,38 @@ const DaftarTeknisiPage = () => {
 
     if (result.isConfirmed) {
       try {
-        // Here you would typically send the updated data to your API
-        console.log('Updated technician data:', editData);
-        
-        // Update the local state
-        setPegawaiData(prev => 
-          prev.map(pegawai => 
-            pegawai.NIP === editData.nip 
-              ? {
-                  ...pegawai,
-                  NAMA: editData.nama,
-                  NIP: editData.nip,
-                  "PANGKAT / GOL": editData.pangkat,
-                  FUNGSIONAL: editData.fungsional,
-                  "PENDIDIKAN TERAKHIR": editData.pendidikanTerakhir,
-                  "DIKLAT/WORKSHOP/TEMU TEKNISI": editData.diklatWorkshop,
-                  TUGAS: editData.tugas,
-                  KETERANGAN: editData.keterangan,
-                  FotoURL: editData.fotoURL
-                }
-              : pegawai
-          )
-        );
-
-        // Update selected pegawai
-        setSelectedPegawai(prev => ({
-          ...prev,
-          NAMA: editData.nama,
-          NIP: editData.nip,
+        // Map editData state to Google Sheet headers
+        const payload = {
+          // NIP digunakan sebagai identifier untuk menemukan baris yang akan diedit
+          "NIP_IDENTIFIER": editData.nip, // Kirim NIP asli sebagai identifier
+          "NAMA": editData.nama,
+          "NIP": editData.nip, // NIP baru jika diubah
           "PANGKAT / GOL": editData.pangkat,
-          FUNGSIONAL: editData.fungsional,
+          "FUNGSIONAL": editData.fungsional,
           "PENDIDIKAN TERAKHIR": editData.pendidikanTerakhir,
           "DIKLAT/WORKSHOP/TEMU TEKNISI": editData.diklatWorkshop,
-          TUGAS: editData.tugas,
-          KETERANGAN: editData.keterangan,
-          FotoURL: editData.fotoURL
-        }));
+          "TUGAS": editData.tugas,
+          "KETERANGAN": editData.keterangan,
+          "FotoURL": editData.foto ? `placeholder_url_${editData.foto.name}` : editData.fotoURL || '' // Update or keep existing
+        };
+
+        await sendTeknisiApiRequest("edit", payload);
 
         setIsEditMode(false);
-        
-        // Show success message
+
         await Swal.fire({
           title: 'Berhasil!',
           text: 'Data teknisi berhasil diperbarui.',
           icon: 'success',
           confirmButtonText: 'OK'
         });
-        
-        // You can add your API call here to save the updated technician
-        // await updateTechnician(editData);
+
+        fetchData(); // Muat ulang data setelah perubahan
       } catch (error) {
         console.error('Error updating technician:', error);
         await Swal.fire({
           title: 'Error!',
-          text: 'Gagal memperbarui data teknisi.',
+          text: `Gagal memperbarui data teknisi: ${error.message}`,
           icon: 'error',
           confirmButtonText: 'OK'
         });
@@ -283,11 +305,9 @@ const DaftarTeknisiPage = () => {
   };
 
   const handleDelete = async (nip) => {
-    // Find the technician to get their name for the confirmation dialog
     const technicianToDelete = pegawaiData.find(pegawai => pegawai.NIP === nip);
     const technicianName = technicianToDelete ? technicianToDelete.NAMA : 'teknisi ini';
-    
-    // Show confirmation dialog before deleting
+
     const result = await Swal.fire({
       title: 'Konfirmasi Hapus',
       text: `Apakah Anda yakin ingin menghapus teknisi ${technicianName}?`,
@@ -301,32 +321,22 @@ const DaftarTeknisiPage = () => {
 
     if (result.isConfirmed) {
       try {
-        // Here you would typically send the delete request to your API
-        console.log('Delete pegawai with NIP:', nip);
-        
-        // Update local state by removing the deleted technician
-        setPegawaiData(prev => prev.filter(pegawai => pegawai.NIP !== nip));
-        
-        // If the deleted technician was selected, clear the selection
-        if (selectedPegawai && selectedPegawai.NIP === nip) {
-          setSelectedPegawai(null);
-        }
-        
-        // Show success message
+        await sendTeknisiApiRequest("delete", { "NIP_IDENTIFIER": nip }); // Kirim NIP sebagai identifier
+
         await Swal.fire({
           title: 'Berhasil!',
           text: `Data teknisi ${technicianName} berhasil dihapus.`,
           icon: 'success',
           confirmButtonText: 'OK'
         });
-        
-        // You can add your API call here to delete the technician
-        // await deleteTechnician(nip);
+
+        fetchData(); // Muat ulang data setelah penghapusan
+        setSelectedPegawai(null); // Clear selection if the deleted one was selected
       } catch (error) {
         console.error('Error deleting technician:', error);
         await Swal.fire({
           title: 'Error!',
-          text: 'Gagal menghapus data teknisi.',
+          text: `Gagal menghapus data teknisi: ${error.message}`,
           icon: 'error',
           confirmButtonText: 'OK'
         });
@@ -337,7 +347,7 @@ const DaftarTeknisiPage = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      
+
       {/* Mobile Menu Button */}
       <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2">
         <button
@@ -353,8 +363,8 @@ const DaftarTeknisiPage = () => {
       <div className="flex flex-1 relative">
         {/* Sidebar - Hidden on mobile, overlay when open */}
         <div className={`
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          lg:translate-x-0 lg:static absolute inset-y-0 left-0 z-50 
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 lg:static absolute inset-y-0 left-0 z-50
           transform transition-transform duration-300 ease-in-out
         `}>
           <Sidebar />
@@ -362,7 +372,7 @@ const DaftarTeknisiPage = () => {
 
         {/* Overlay untuk mobile ketika sidebar terbuka */}
         {isSidebarOpen && (
-          <div 
+          <div
             className="lg:hidden fixed inset-0 bg-black/50 bg-opacity-50 z-40"
             onClick={toggleSidebar}
           ></div>
@@ -372,7 +382,7 @@ const DaftarTeknisiPage = () => {
           <h2 className="text-center text-[18px] sm:text-2xl font-semibold mb-6 sm:mb-8">
             Daftar Teknisi
           </h2>
-          
+
           {/* Dropdown untuk memilih teknisi - Centered */}
           <div className="mb-6 sm:mb-8 flex justify-start">
             <div className="w-full max-w-md">
@@ -381,7 +391,7 @@ const DaftarTeknisiPage = () => {
                   <label className="font-medium text-[10px] sm:text-lg text-gray-600 whitespace-nowrap">
                     Pilih Teknisi
                   </label>
-                  <select 
+                  <select
                     className="rounded-lg border border-gray-300 p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-w-[4px]"
                     onChange={handleSelectChange}
                     value={selectedPegawai ? selectedPegawai.NIP : ""}
@@ -394,7 +404,7 @@ const DaftarTeknisiPage = () => {
                     ))}
                   </select>
                 </div>
-                <button 
+                <button
                   className="flex-shrink-0 ml-2 sm:ml-128 hover:bg-gray-100 p-2 rounded-lg transition-colors"
                   onClick={handleOpenAddModal}
                 >
@@ -403,7 +413,7 @@ const DaftarTeknisiPage = () => {
               </div>
             </div>
           </div>
-                    
+
           {/* Kondisional rendering berdasarkan state */}
           {loading ? (
             // Loading state
@@ -456,7 +466,7 @@ const DaftarTeknisiPage = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Bagian Detail */}
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-3 lg:mb-4">
@@ -466,14 +476,14 @@ const DaftarTeknisiPage = () => {
                     <div className="flex items-center gap-0 sm:gap-1">
                       {isEditMode ? (
                         <>
-                          <button 
+                          <button
                             onClick={handleSaveEdit}
                             className="p-1.5 sm:p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors"
                             title="Simpan"
                           >
                             <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={handleCancelEdit}
                             className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-full transition-colors"
                             title="Batal"
@@ -483,14 +493,14 @@ const DaftarTeknisiPage = () => {
                         </>
                       ) : (
                         <>
-                          <button 
+                          <button
                             onClick={() => handleEdit(selectedPegawai)}
                             className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
                             title="Edit"
                           >
                             <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDelete(selectedPegawai.NIP)}
                             className="p-1.5 sm:p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors"
                             title="Hapus"
@@ -501,11 +511,11 @@ const DaftarTeknisiPage = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Form fields - editable when in edit mode */}
                   <div className="grid grid-cols-1 gap-2 lg:gap-3 text-gray-700 text-[11px] sm:text-base lg:text-sm">
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">NIP:</span> 
+                      <span className="font-medium text-black">NIP:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -518,9 +528,9 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai.NIP}</span>
                       )}
                     </div>
-                    
+
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Nama:</span> 
+                      <span className="font-medium text-black">Nama:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -533,9 +543,9 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai.NAMA}</span>
                       )}
                     </div>
-                    
+
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Pangkat / Gol.:</span> 
+                      <span className="font-medium text-black">Pangkat / Gol.:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -548,9 +558,9 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai["PANGKAT / GOL"]}</span>
                       )}
                     </div>
-                    
+
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Fungsional:</span> 
+                      <span className="font-medium text-black">Fungsional:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -563,9 +573,9 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai.FUNGSIONAL}</span>
                       )}
                     </div>
-                    
+
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Pendidikan Terakhir:</span> 
+                      <span className="font-medium text-black">Pendidikan Terakhir:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -578,9 +588,9 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai["PENDIDIKAN TERAKHIR"]}</span>
                       )}
                     </div>
-                    
+
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Diklat/Workshop/Temu Teknisi:</span> 
+                      <span className="font-medium text-black">Diklat/Workshop/Temu Teknisi:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -593,9 +603,9 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai["DIKLAT/WORKSHOP/TEMU TEKNISI"]}</span>
                       )}
                     </div>
-                    
+
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Tugas:</span> 
+                      <span className="font-medium text-black">Tugas:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -608,9 +618,9 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai.TUGAS}</span>
                       )}
                     </div>
-                    
+
                     <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Keterangan:</span> 
+                      <span className="font-medium text-black">Keterangan:</span>
                       {isEditMode ? (
                         <input
                           type="text"
@@ -623,11 +633,11 @@ const DaftarTeknisiPage = () => {
                         <span className="ml-2">{selectedPegawai.KETERANGAN}</span>
                       )}
                     </div>
-                    
+
                     {/* Photo upload field - only show in edit mode */}
                     {isEditMode && (
                       <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
-                        <span className="font-medium text-black">Foto:</span> 
+                        <span className="font-medium text-black">Foto:</span>
                         <div className="ml-2 flex items-center space-x-2">
                           <input
                             type="file"
@@ -643,13 +653,13 @@ const DaftarTeknisiPage = () => {
                             Pilih File
                           </label>
                           <span className="text-[10px] sm:text-sm text-black">
-                            {editData.foto ? editData.foto.name : 'No file chosen'}
+                            {editData.foto ? editData.foto.name : (editData.fotoURL ? 'Existing Photo' : 'No file chosen')}
                           </span>
                         </div>
                       </div>
                     )}
                   </div>
-                  
+
                   {!isEditMode && (
                     <button
                       onClick={() => setSelectedPegawai(null)}
@@ -687,8 +697,8 @@ const DaftarTeknisiPage = () => {
                         </tr>
                       ) : (
                         pegawaiData.map((pegawai, index) => (
-                          <tr 
-                            key={index} 
+                          <tr
+                            key={index}
                             className="hover:bg-blue-50 transition-colors cursor-pointer"
                             onClick={() => setSelectedPegawai(pegawai)}
                           >
@@ -726,7 +736,7 @@ const DaftarTeknisiPage = () => {
                 <IoClose className="w-6 h-6" />
               </button>
             </div>
-            
+
             {/* Modal Body */}
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="flex items-center space-x-4">
@@ -742,7 +752,7 @@ const DaftarTeknisiPage = () => {
                   required
                 />
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
                   NIP :
@@ -756,7 +766,7 @@ const DaftarTeknisiPage = () => {
                   required
                 />
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
                   Pangkat :
@@ -769,7 +779,7 @@ const DaftarTeknisiPage = () => {
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
                   Fungsional :
@@ -782,7 +792,7 @@ const DaftarTeknisiPage = () => {
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
                   Pendidikan Terakhir :
@@ -795,7 +805,7 @@ const DaftarTeknisiPage = () => {
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[12px] sm:text-sm font-medium text-black text-left">
                   Diklat/Workshop
@@ -809,7 +819,7 @@ const DaftarTeknisiPage = () => {
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
                   Tugas :
@@ -822,7 +832,20 @@ const DaftarTeknisiPage = () => {
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
-              
+
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  Keterangan :
+                </label>
+                <input
+                  type="text"
+                  name="keterangan"
+                  value={newTechnician.keterangan}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                />
+              </div>
+
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
                   Profil
@@ -846,7 +869,7 @@ const DaftarTeknisiPage = () => {
                   </span>
                 </div>
               </div>
-              
+
               {/* Modal Footer */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                 <button
