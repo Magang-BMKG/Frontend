@@ -55,7 +55,7 @@ const Sidebar = ({
   textSize = { mobile: 'text-[10px]', tablet: 'text-sm', desktop: 'text-sm' },
   sidebarWidth = { mobile: 'w-25', tablet: 'w-32', desktop: 'w-40' },
   spacing = { mobile: 'space-y-8', tablet: 'space-y-3', desktop: 'space-y-4' },
-  padding = { mobile: 'p-6', tablet: 'p-3', desktop: 'p-4' }
+  padding = { mobile: 'p-8', tablet: 'p-4', desktop: 'p-6' }
 }) => {
   const [activeItem, setActiveItem] = useState('');
 
@@ -81,7 +81,7 @@ const Sidebar = ({
       icon: BookIcon, 
       label: 'Log Book', 
       shortLabel: 'Log Book', 
-      route: '/not-found?page=logbook',
+      route: '/logbook',
       keywords: ['logbook', 'log', 'book']
     },
     { 
@@ -89,7 +89,7 @@ const Sidebar = ({
       icon: CalendarIcon, 
       label: 'Jadwal', 
       shortLabel: 'Jadwal', 
-      route: '/not-found?page=jadwal',
+      route: '/jadwal',
       keywords: ['jadwal', 'schedule', 'calendar']
     }
   ];
@@ -141,6 +141,10 @@ const Sidebar = ({
         window.location.href = '/destopteknisi';
       } else if (item.id === 'meta') {
         window.location.href = '/instrumen';
+      } else if (item.id === 'logbook') {
+        window.location.href = '/logbook';
+      } else if (item.id === 'jadwal') {
+        window.location.href = '/jadwal';
       } else {
         window.location.href = `/not-found?page=${item.label}`;
       }

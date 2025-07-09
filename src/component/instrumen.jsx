@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Header from './Header'; // Sesuaikan path dengan struktur folder Anda
-import Sidebar from './Sidebar'; // Sesuaikan path dengan struktur folder Anda
-import Footer from './Footer'; // Sesuaikan path dengan struktur folder Anda
+import Header from './Header'; 
+import Sidebar from './sidebar'; 
+import Footer from './Footer'; 
+import { AiTwotoneFileAdd } from "react-icons/ai";
 
 const DaftarInstrumenPage = () => {
   const [instrumenData, setInstrumenData] = useState([]);
@@ -11,6 +12,7 @@ const DaftarInstrumenPage = () => {
   const [selectedKodeCategory, setSelectedKodeCategory] = useState('');
   const [kodeCategoryOptions, setKodeCategoryOptions] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'INSTRUMEN' ANDA
   const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbxNef3rBTV5D_i5XYgeYrh5WtMehkx0dxc_V-I1GVy_g2eoo0gjz9PxLT0aA5m8i2RSIg/exec";
@@ -92,6 +94,28 @@ const DaftarInstrumenPage = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // Handle add technician modal
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setNewTechnician({
+      nama: '',
+      nip: '',
+      pangkat: '',
+      fungsional: '',
+      pendidikanTerakhir: '',
+      diklatWorkshop: '',
+      tugas: '',
+      keterangan: '',
+      foto: null
+    });
+  };
+
+  
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -132,35 +156,51 @@ const DaftarInstrumenPage = () => {
             Daftar Peralatan Instrumen
           </h2>
 
-           {/* Dropdown untuk memilih kategori instrumen */}
-          <div className="mb-4 sm:mb-6 md:mb-8 flex justify-center px-2 sm:px-0">
-            <div className="w-full max-w-sm sm:max-w-md">
-              <div className="flex flex-col items-center gap-3 sm:gap-4  p-3 sm:p-4 md:p-6 shadow-md rounded-lg">
-                <label className="font-medium text-[12px] sm:text-base md:text-lg text-gray-700 text-center leading-relaxed">
+          {/* Dropdown untuk memilih kategori instrumen */}
+          <div className="mb-4 sm:mb-6 md:mb-8">
+            <div className="w-full">
+              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 bg-white p-4 sm:p-6 flex-1 -ml-2 sm:ml-36">
+                {/* Label */}
+                <label className="font-medium text-xs sm:text-base md:text-lg text-gray-700 text-center sm:text-left leading-relaxed whitespace-nowrap">
                   Filter Berdasarkan Kategori Kode:
                 </label>
-                <select
-                  className="w-full rounded-lg border border-gray-300 p-2.5 sm:p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  onChange={handleCategorySelectChange}
-                  value={selectedKodeCategory}
-                >
-                  <option value="">-- Tampilkan Semua Kategori --</option>
-                  {kodeCategoryOptions.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                
+                {/* Filter dan Button Container */}
+                <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  {/* Select Dropdown */}
+                  <select
+                    className="flex-1 sm:min-w-[250px] rounded-lg border border-gray-300 p-2.5 sm:p-3 text-xs sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    onChange={handleCategorySelectChange}
+                    value={selectedKodeCategory}
+                  >
+                    <option value="">-- Tampilkan Semua Kategori --</option>
+                    {kodeCategoryOptions.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* Add Button - Hanya tampil di halaman utama */}
+                  {!selectedInstrumen && (
+                    <button 
+                      className="flex-shrink-0 ml-2 sm:ml-104 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                      onClick={handleOpenAddModal}
+                    >
+                      <AiTwotoneFileAdd className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
           {selectedInstrumen ? (
             // Detail instrumen yang dipilih
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 shadow-md mb-8">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 shadow-md mb-8 w-250 ml-45 ">
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1">
-                  <h3 className="text-[10px] sm:text-xl lg:text-2xl font-semibold text-black mb-4 text-center lg:text-left">
+                  <h3 className="text-[10px] sm:text-xl lg:text-2xl font-semibold text-black mb-4 text-center lg:text-center">
                     {selectedInstrumen.NoPeralatan} ({selectedInstrumen.Kode})
                   </h3>
                   <div className="grid grid-cols-1 gap-3 text-gray-700 text-[10px] sm:text-base">
@@ -217,11 +257,11 @@ const DaftarInstrumenPage = () => {
             </div>
           ) : (
             // Tabel/Card daftar semua instrumen (atau yang difilter)
-            <div className="flex justify-center px-2 sm:px-0">
+            <div className="flex justify-center px-2 sm:px-0 ">
               {/* Desktop Table View */}
-              <div className="hidden md:block w-full max-w-6xl bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-260 ">
                     <thead>
                       <tr className="bg-[#0066CC] text-white">
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Kode</th>
@@ -313,6 +353,164 @@ const DaftarInstrumenPage = () => {
           )}
         </main>
       </div>
+
+      {/* Add Technician Modal */}
+            {isAddModalOpen && (
+              <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-200 max-h-[80vh] overflow-y-auto">
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                    <h3 className="text-[15px] sm:text-xl font-semibold text-black w-full text-center">
+                      Tambah Teknisi
+                    </h3>
+                    <button
+                      onClick={handleCloseAddModal}
+                      className="text-black hover:text-black transition-colors"
+                    >
+                      <IoClose className="w-6 h-6" />
+                    </button>
+                  </div>
+                  
+                  {/* Modal Body */}
+                  <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                        Nama :
+                      </label>
+                      <input
+                        type="text"
+                        name="nama"
+                        value={newTechnician.nama}
+                        onChange={handleInputChange}
+                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                        NIP :
+                      </label>
+                      <input
+                        type="text"
+                        name="nip"
+                        value={newTechnician.nip}
+                        onChange={handleInputChange}
+                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                        Pangkat :
+                      </label>
+                      <input
+                        type="text"
+                        name="pangkat"
+                        value={newTechnician.pangkat}
+                        onChange={handleInputChange}
+                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                        Fungsional :
+                      </label>
+                      <input
+                        type="text"
+                        name="fungsional"
+                        value={newTechnician.fungsional}
+                        onChange={handleInputChange}
+                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                        Pendidikan Terakhir :
+                      </label>
+                      <input
+                        type="text"
+                        name="pendidikanTerakhir"
+                        value={newTechnician.pendidikanTerakhir}
+                        onChange={handleInputChange}
+                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[12px] sm:text-sm font-medium text-black text-left">
+                        Diklat/Workshop
+                        /Temu Teknisi :
+                      </label>
+                      <input
+                        type="text"
+                        name="diklatWorkshop"
+                        value={newTechnician.diklatWorkshop}
+                        onChange={handleInputChange}
+                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                        Tugas :
+                      </label>
+                      <input
+                        type="text"
+                        name="tugas"
+                        value={newTechnician.tugas}
+                        onChange={handleInputChange}
+                        className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                        Profil
+                      </label>
+                      <div className="flex-1 flex items-center space-x-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          id="foto-upload"
+                        />
+                        <label
+                          htmlFor="foto-upload"
+                          className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-100 text-black rounded-md border border-gray-300 hover:bg-gray-200 cursor-pointer transition-colors text-xs sm:text-sm"
+                        >
+                          Pilih File
+                        </label>
+                        <span className="text-[10px] sm:text-sm text-black">
+                          {newTechnician.foto ? newTechnician.foto.name : 'No file chosen'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Modal Footer */}
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                      <button
+                        type="button"
+                        onClick={handleCloseAddModal}
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                      >
+                        Tambah
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
       
       {/* Footer */}
       <Footer />

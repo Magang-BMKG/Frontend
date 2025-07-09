@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Header from "./Header";
-import Sidebar from "./Sidebar"; 
+import Sidebar from "./sidebar"; 
 import Footer from "./Footer";
+import { BsFillPersonPlusFill } from "react-icons/bs";
+import { FiEdit2 } from "react-icons/fi";
+import { FiTrash2 } from "react-icons/fi";
+import { IoClose } from "react-icons/io5";
+import { FiCheck } from "react-icons/fi";
+import Swal from 'sweetalert2';
 
 const DaftarTeknisiPage = () => {
   const [pegawaiData, setPegawaiData] = useState([]);
@@ -9,6 +15,20 @@ const DaftarTeknisiPage = () => {
   const [error, setError] = useState(null);
   const [selectedPegawai, setSelectedPegawai] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [newTechnician, setNewTechnician] = useState({
+    nama: '',
+    nip: '',
+    pangkat: '',
+    fungsional: '',
+    pendidikanTerakhir: '',
+    diklatWorkshop: '',
+    tugas: '',
+    keterangan: '',
+    foto: null
+  });
 
   // URL GOOGLE APPS SCRIPT
   const GOOGLE_SHEETS_API_URL =
@@ -53,17 +73,265 @@ const DaftarTeknisiPage = () => {
     const selectedNIP = event.target.value;
     if (selectedNIP === "") {
       setSelectedPegawai(null);
+      setIsEditMode(false);
     } else {
       const foundPegawai = pegawaiData.find(
         (pegawai) => pegawai.NIP === selectedNIP
       );
       setSelectedPegawai(foundPegawai);
+      setIsEditMode(false);
     }
   };
 
   // Toggle sidebar untuk mobile
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  // Handle add technician modal
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setNewTechnician({
+      nama: '',
+      nip: '',
+      pangkat: '',
+      fungsional: '',
+      pendidikanTerakhir: '',
+      diklatWorkshop: '',
+      tugas: '',
+      keterangan: '',
+      foto: null
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewTechnician(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setNewTechnician(prev => ({
+      ...prev,
+      foto: file
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Show confirmation dialog before adding
+    const result = await Swal.fire({
+      title: 'Konfirmasi Tambah Teknisi',
+      text: 'Apakah data teknisi yang akan ditambahkan sudah sesuai?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, Tambahkan',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        // Here you would typically send the data to your API
+        console.log('New technician data:', newTechnician);
+        
+        // Show success message
+        await Swal.fire({
+          title: 'Berhasil!',
+          text: 'Data teknisi berhasil ditambahkan.',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+        
+        // Close modal and reset form
+        handleCloseAddModal();
+        
+        // You can add your API call here to save the new technician
+        // await saveNewTechnician(newTechnician);
+      } catch (error) {
+        console.error('Error adding technician:', error);
+        await Swal.fire({
+          title: 'Error!',
+          text: 'Gagal menambahkan data teknisi.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
+    }
+  };
+
+  // Handle edit mode
+  const handleEdit = (pegawai) => {
+    setIsEditMode(true);
+    setEditData({
+      nama: pegawai.NAMA,
+      nip: pegawai.NIP,
+      pangkat: pegawai["PANGKAT / GOL"],
+      fungsional: pegawai.FUNGSIONAL,
+      pendidikanTerakhir: pegawai["PENDIDIKAN TERAKHIR"],
+      diklatWorkshop: pegawai["DIKLAT/WORKSHOP/TEMU TEKNISI"],
+      tugas: pegawai.TUGAS,
+      keterangan: pegawai.KETERANGAN,
+      fotoURL: pegawai.FotoURL
+    });
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditFileChange = (e) => {
+    const file = e.target.files[0];
+    setEditData(prev => ({
+      ...prev,
+      foto: file
+    }));
+  };
+
+  const handleSaveEdit = async () => {
+    // Show confirmation dialog before saving
+    const result = await Swal.fire({
+      title: 'Konfirmasi Perubahan',
+      text: 'Apakah data yang telah diubah sudah sesuai?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, Simpan',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        // Here you would typically send the updated data to your API
+        console.log('Updated technician data:', editData);
+        
+        // Update the local state
+        setPegawaiData(prev => 
+          prev.map(pegawai => 
+            pegawai.NIP === editData.nip 
+              ? {
+                  ...pegawai,
+                  NAMA: editData.nama,
+                  NIP: editData.nip,
+                  "PANGKAT / GOL": editData.pangkat,
+                  FUNGSIONAL: editData.fungsional,
+                  "PENDIDIKAN TERAKHIR": editData.pendidikanTerakhir,
+                  "DIKLAT/WORKSHOP/TEMU TEKNISI": editData.diklatWorkshop,
+                  TUGAS: editData.tugas,
+                  KETERANGAN: editData.keterangan,
+                  FotoURL: editData.fotoURL
+                }
+              : pegawai
+          )
+        );
+
+        // Update selected pegawai
+        setSelectedPegawai(prev => ({
+          ...prev,
+          NAMA: editData.nama,
+          NIP: editData.nip,
+          "PANGKAT / GOL": editData.pangkat,
+          FUNGSIONAL: editData.fungsional,
+          "PENDIDIKAN TERAKHIR": editData.pendidikanTerakhir,
+          "DIKLAT/WORKSHOP/TEMU TEKNISI": editData.diklatWorkshop,
+          TUGAS: editData.tugas,
+          KETERANGAN: editData.keterangan,
+          FotoURL: editData.fotoURL
+        }));
+
+        setIsEditMode(false);
+        
+        // Show success message
+        await Swal.fire({
+          title: 'Berhasil!',
+          text: 'Data teknisi berhasil diperbarui.',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+        
+        // You can add your API call here to save the updated technician
+        // await updateTechnician(editData);
+      } catch (error) {
+        console.error('Error updating technician:', error);
+        await Swal.fire({
+          title: 'Error!',
+          text: 'Gagal memperbarui data teknisi.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditData({});
+  };
+
+  const handleDelete = async (nip) => {
+    // Find the technician to get their name for the confirmation dialog
+    const technicianToDelete = pegawaiData.find(pegawai => pegawai.NIP === nip);
+    const technicianName = technicianToDelete ? technicianToDelete.NAMA : 'teknisi ini';
+    
+    // Show confirmation dialog before deleting
+    const result = await Swal.fire({
+      title: 'Konfirmasi Hapus',
+      text: `Apakah Anda yakin ingin menghapus teknisi ${technicianName}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        // Here you would typically send the delete request to your API
+        console.log('Delete pegawai with NIP:', nip);
+        
+        // Update local state by removing the deleted technician
+        setPegawaiData(prev => prev.filter(pegawai => pegawai.NIP !== nip));
+        
+        // If the deleted technician was selected, clear the selection
+        if (selectedPegawai && selectedPegawai.NIP === nip) {
+          setSelectedPegawai(null);
+        }
+        
+        // Show success message
+        await Swal.fire({
+          title: 'Berhasil!',
+          text: `Data teknisi ${technicianName} berhasil dihapus.`,
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+        
+        // You can add your API call here to delete the technician
+        // await deleteTechnician(nip);
+      } catch (error) {
+        console.error('Error deleting technician:', error);
+        await Swal.fire({
+          title: 'Error!',
+          text: 'Gagal menghapus data teknisi.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
+    }
   };
 
   return (
@@ -106,28 +374,36 @@ const DaftarTeknisiPage = () => {
           </h2>
           
           {/* Dropdown untuk memilih teknisi - Centered */}
-          <div className="mb-6 sm:mb-8 flex justify-center">
+          <div className="mb-6 sm:mb-8 flex justify-start">
             <div className="w-full max-w-md">
-              <div className="flex flex-col items-center gap-3 sm:gap-4 bg-white  sm:p-6 shadow-md">
-                <label className="font-medium text-[12px] sm:text-lg text-gray-600 text-center">
-                  Pilih Teknisi
-                </label>
-                <select 
-                  className="w-full rounded-lg border border-gray-300 p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  onChange={handleSelectChange}
-                  value={selectedPegawai ? selectedPegawai.NIP : ""}
+              <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 bg-white sm:p-6">
+                <div className="flex flex-row items-center gap-3 sm:gap-4 flex-1 -ml-2 sm:ml-38">
+                  <label className="font-medium text-[10px] sm:text-lg text-gray-600 whitespace-nowrap">
+                    Pilih Teknisi
+                  </label>
+                  <select 
+                    className="rounded-lg border border-gray-300 p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-w-[4px]"
+                    onChange={handleSelectChange}
+                    value={selectedPegawai ? selectedPegawai.NIP : ""}
+                  >
+                    <option value="">-- Pilih teknisi yang ingin dilihat --</option>
+                    {pegawaiData.map((pegawai) => (
+                      <option key={pegawai.NIP} value={pegawai.NIP}>
+                        {pegawai.NAMA}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button 
+                  className="flex-shrink-0 ml-2 sm:ml-128 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                  onClick={handleOpenAddModal}
                 >
-                  <option value="">-- Pilih teknisi yang ingin dilihat --</option>
-                  {pegawaiData.map((pegawai) => (
-                    <option key={pegawai.NIP} value={pegawai.NIP}>
-                      {pegawai.NAMA}
-                    </option>
-                  ))}
-                </select>
+                  <BsFillPersonPlusFill className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                </button>
               </div>
             </div>
           </div>
-
+                    
           {/* Kondisional rendering berdasarkan state */}
           {loading ? (
             // Loading state
@@ -158,24 +434,23 @@ const DaftarTeknisiPage = () => {
             </div>
           ) : selectedPegawai ? (
             // Detail pegawai yang dipilih
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 shadow-md mb-8">
-              <div className="flex flex-col lg:flex-row gap-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 shadow-md mb-8 max-w-2xl lg:max-w-5xl mx-auto">
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                 {/* Bagian Foto */}
-                <div className="flex-1 flex items-center justify-center bg-gray-200 rounded-lg p-4">
+                <div className="flex-1 lg:flex-none lg:w-88 xl:w-88 flex items-center justify-center rounded-lg p-3 lg:p-4">
                   {selectedPegawai.FotoURL ? (
                     <img
                       src={selectedPegawai.FotoURL}
                       alt={selectedPegawai.NAMA}
-                      className="max-w-full h-auto rounded-lg max-h-80"
+                      className="max-w-full h-auto rounded-lg max-h-50 lg:max-h-50"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
                       }}
                     />
                   ) : (
-                    /* Bagian foto */
-                    <div className="flex items-center justify-center w-full h-60 bg-gray-300 rounded-lg">
-                      <svg className="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center justify-center w-full h-48 lg:h-66 bg-gray-300 rounded-lg">
+                      <svg className="w-12 h-12 lg:w-16 lg:h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                       </svg>
                     </div>
@@ -184,45 +459,205 @@ const DaftarTeknisiPage = () => {
                 
                 {/* Bagian Detail */}
                 <div className="flex-1">
-                  <h3 className="text-[15px] sm:text-xl lg:text-2xl font-semibold text-black mb-4 text-center lg:text-left">
-                    {selectedPegawai.NAMA}
-                  </h3>
-                  <div className="grid grid-cols-1 gap-3 text-gray-700 text-[11px] sm:text-base">
-                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">NIP:</span> 
-                      <span className="ml-2">{selectedPegawai.NIP}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Pangkat / Gol.:</span> 
-                      <span className="ml-2">{selectedPegawai["PANGKAT / GOL"]}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Fungsional:</span> 
-                      <span className="ml-2">{selectedPegawai.FUNGSIONAL}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Pendidikan Terakhir:</span> 
-                      <span className="ml-2">{selectedPegawai["PENDIDIKAN TERAKHIR"]}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Diklat/Workshop/Temu Teknisi:</span> 
-                      <span className="ml-2">{selectedPegawai["DIKLAT/WORKSHOP/TEMU TEKNISI"]}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Tugas:</span> 
-                      <span className="ml-2">{selectedPegawai.TUGAS}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                      <span className="font-medium text-black">Keterangan:</span> 
-                      <span className="ml-2">{selectedPegawai.KETERANGAN}</span>
+                  <div className="flex items-center justify-between mb-3 lg:mb-4">
+                    <h3 className="text-[14px] sm:text-xl lg:text-lg xl:text-xl font-semibold text-black text-center lg:text-left">
+                      {selectedPegawai.NAMA}
+                    </h3>
+                    <div className="flex items-center gap-0 sm:gap-1">
+                      {isEditMode ? (
+                        <>
+                          <button 
+                            onClick={handleSaveEdit}
+                            className="p-1.5 sm:p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors"
+                            title="Simpan"
+                          >
+                            <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                          </button>
+                          <button 
+                            onClick={handleCancelEdit}
+                            className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-full transition-colors"
+                            title="Batal"
+                          >
+                            <IoClose className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => handleEdit(selectedPegawai)}
+                            className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                            title="Edit"
+                          >
+                            <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(selectedPegawai.NIP)}
+                            className="p-1.5 sm:p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors"
+                            title="Hapus"
+                          >
+                            <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => setSelectedPegawai(null)}
-                    className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base"
-                  >
-                    ← Kembali ke Daftar Teknisi
-                  </button>
+                  
+                  {/* Form fields - editable when in edit mode */}
+                  <div className="grid grid-cols-1 gap-2 lg:gap-3 text-gray-700 text-[11px] sm:text-base lg:text-sm">
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">NIP:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="nip"
+                          value={editData.nip || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai.NIP}</span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">Nama:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="nama"
+                          value={editData.nama || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai.NAMA}</span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">Pangkat / Gol.:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="pangkat"
+                          value={editData.pangkat || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai["PANGKAT / GOL"]}</span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">Fungsional:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="fungsional"
+                          value={editData.fungsional || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai.FUNGSIONAL}</span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">Pendidikan Terakhir:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="pendidikanTerakhir"
+                          value={editData.pendidikanTerakhir || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai["PENDIDIKAN TERAKHIR"]}</span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">Diklat/Workshop/Temu Teknisi:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="diklatWorkshop"
+                          value={editData.diklatWorkshop || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai["DIKLAT/WORKSHOP/TEMU TEKNISI"]}</span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">Tugas:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="tugas"
+                          value={editData.tugas || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai.TUGAS}</span>
+                      )}
+                    </div>
+                    
+                    <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                      <span className="font-medium text-black">Keterangan:</span> 
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          name="keterangan"
+                          value={editData.keterangan || ''}
+                          onChange={handleEditInputChange}
+                          className="ml-2 px-2 py-1 border border-gray-300 rounded text-[11px] sm:text-base lg:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <span className="ml-2">{selectedPegawai.KETERANGAN}</span>
+                      )}
+                    </div>
+                    
+                    {/* Photo upload field - only show in edit mode */}
+                    {isEditMode && (
+                      <div className="bg-white p-2 lg:p-3 rounded border-l-4 border-blue-500">
+                        <span className="font-medium text-black">Foto:</span> 
+                        <div className="ml-2 flex items-center space-x-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleEditFileChange}
+                            className="hidden"
+                            id="edit-foto-upload"
+                          />
+                          <label
+                            htmlFor="edit-foto-upload"
+                            className="px-2 py-1 bg-gray-100 text-black rounded border border-gray-300 hover:bg-gray-200 cursor-pointer transition-colors text-[11px] sm:text-base lg:text-sm"
+                          >
+                            Pilih File
+                          </label>
+                          <span className="text-[10px] sm:text-sm text-black">
+                            {editData.foto ? editData.foto.name : 'No file chosen'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {!isEditMode && (
+                    <button
+                      onClick={() => setSelectedPegawai(null)}
+                      className="mt-4 lg:mt-6 w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base lg:text-sm"
+                    >
+                      ← Kembali ke Daftar Teknisi
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -274,6 +709,165 @@ const DaftarTeknisiPage = () => {
           )}
         </main>
       </div>
+
+      {/* Add Technician Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-200 max-h-[80vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-800">
+              <h3 className="text-[15px] sm:text-xl font-semibold text-black w-full text-center">
+                Tambah Teknisi
+              </h3>
+              <button
+                onClick={handleCloseAddModal}
+                className="text-black hover:text-black transition-colors"
+              >
+                <IoClose className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  Nama :
+                </label>
+                <input
+                  type="text"
+                  name="nama"
+                  value={newTechnician.nama}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  NIP :
+                </label>
+                <input
+                  type="text"
+                  name="nip"
+                  value={newTechnician.nip}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  Pangkat :
+                </label>
+                <input
+                  type="text"
+                  name="pangkat"
+                  value={newTechnician.pangkat}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  Fungsional :
+                </label>
+                <input
+                  type="text"
+                  name="fungsional"
+                  value={newTechnician.fungsional}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  Pendidikan Terakhir :
+                </label>
+                <input
+                  type="text"
+                  name="pendidikanTerakhir"
+                  value={newTechnician.pendidikanTerakhir}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[12px] sm:text-sm font-medium text-black text-left">
+                  Diklat/Workshop
+                  /Temu Teknisi :
+                </label>
+                <input
+                  type="text"
+                  name="diklatWorkshop"
+                  value={newTechnician.diklatWorkshop}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  Tugas :
+                </label>
+                <input
+                  type="text"
+                  name="tugas"
+                  value={newTechnician.tugas}
+                  onChange={handleInputChange}
+                  className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
+                  Profil
+                </label>
+                <div className="flex-1 flex items-center space-x-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="foto-upload"
+                  />
+                  <label
+                    htmlFor="foto-upload"
+                    className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-100 text-black rounded-md border border-gray-300 hover:bg-gray-200 cursor-pointer transition-colors text-xs sm:text-sm"
+                  >
+                    Pilih File
+                  </label>
+                  <span className="text-[10px] sm:text-sm text-black">
+                    {newTechnician.foto ? newTechnician.foto.name : 'No file chosen'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Modal Footer */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCloseAddModal}
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Tambah
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
