@@ -384,31 +384,34 @@ const DaftarTeknisiPage = () => {
           </h2>
 
           {/* Dropdown untuk memilih teknisi - Centered */}
-          <div className="mb-6 sm:mb-8 flex justify-start">
-            <div className="w-full max-w-md">
-              <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 bg-white sm:p-6">
-                <div className="flex flex-row items-center gap-3 sm:gap-4 flex-1 -ml-2 sm:ml-38">
-                  <label className="font-medium text-[10px] sm:text-lg text-gray-600 whitespace-nowrap">
-                    Pilih Teknisi
-                  </label>
-                  <select
-                    className="rounded-lg border border-gray-300 p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-w-[4px]"
-                    onChange={handleSelectChange}
-                    value={selectedPegawai ? selectedPegawai.NIP : ""}
-                  >
-                    <option value="">-- Pilih teknisi yang ingin dilihat --</option>
-                    {pegawaiData.map((pegawai) => (
-                      <option key={pegawai.NIP} value={pegawai.NIP}>
-                        {pegawai.NAMA}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <div className="mb-4 sm:mb-8 flex justify-center">
+            <div className="w-full max-w-full sm:max-w-2x1 lg:max-w-4xl">
+              <div className="flex flex-row items-center gap-2 sm:gap-8 md:gap-6 bg-white p-4 sm:p-6 rounded-lg">
+                {/* Label */}
+                <label className="font-medium text-[10px] sm:text-base lg:text-lg text-gray-600 whitespace-nowrap flex-shrink-0">
+                  Pilih Teknisi
+                </label>
+                
+                {/* Select */}
+                <select
+                  className="flex-1 min-w-0 rounded-lg border border-gray-300 p-2 sm:p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  onChange={handleSelectChange}
+                  value={selectedPegawai ? selectedPegawai.NIP : ""}
+                >
+                  <option value="">-- Pilih teknisi yang ingin dilihat --</option>
+                  {pegawaiData.map((pegawai) => (
+                    <option key={pegawai.NIP} value={pegawai.NIP}>
+                      {pegawai.NAMA}
+                    </option>
+                  ))}
+                </select>
+                
+                {/* Add Button */}
                 <button
-                  className="flex-shrink-0 ml-2 sm:ml-128 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                  className="flex-shrink-0 hover:bg-gray-100 p-2 md:p-0 rounded-lg transition-colors md:ml-2"
                   onClick={handleOpenAddModal}
                 >
-                  <BsFillPersonPlusFill className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                  <BsFillPersonPlusFill className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-600" />
                 </button>
               </div>
             </div>
