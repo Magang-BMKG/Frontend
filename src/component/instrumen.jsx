@@ -53,7 +53,7 @@
     });
 
     // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'INSTRUMEN' ANDA
-    const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbxNef3rBTV5D_i5XYgeYrh5WtMehkx0dxc_V-I1GVy_g2eoo0gjz9PxLT0aA5m8i2RSIg/exec";
+    const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbw3XaGa3vR9N9Av43tCEFxgV0d2Ca4WiRTY4Zoi5AVB7C0xz7a3UK16VjzxNoDx9u_8AA/exec";
 
     // Fungsi helper untuk mendapatkan kategori filter dari data instrumen
     const getFilterCategory = (instrumen) => {
@@ -70,48 +70,78 @@
       return 'Lain-lain';
     };
 
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await fetch(INSTRUMEN_API_URL);
+    // Fungsi untuk mengambil data dari API (GET)
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(INSTRUMEN_API_URL);
 
-          if (!response.ok) {
-            throw new Error(
-              `HTTP error! Status: ${response.status} - ${response.statusText}`
-            );
-          }
-
-          const data = await response.json();
-
-          if (Array.isArray(data)) {
-            setInstrumenData(data);
-            
-            const categories = new Set();
-            data.forEach(instrumen => {
-              const category = getFilterCategory(instrumen);
-              if (category) {
-                categories.add(category);
-              }
-            });
-            setKodeCategoryOptions(Array.from(categories).sort());
-          } else {
-            throw new Error(
-              "Invalid data format received from API. Expected an array."
-            );
-          }
-        } catch (err) {
-          console.error("Error fetching instrumen data:", err);
-          setError(
-            err.message ||
-              "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
+        if (!response.ok) {
+          throw new Error(
+            `HTTP error! Status: ${response.status} - ${response.statusText}`
           );
-        } finally {
-          setLoading(false);
         }
-      };
 
+        const data = await response.json();
+
+        if (Array.isArray(data)) {
+          setInstrumenData(data);
+
+          const categories = new Set();
+          data.forEach(instrumen => {
+            const category = getFilterCategory(instrumen);
+            if (category) {
+              categories.add(category);
+            }
+          });
+          setKodeCategoryOptions(Array.from(categories).sort());
+        } else {
+          throw new Error(
+            "Invalid data format received from API. Expected an array."
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching instrumen data:", err);
+        setError(
+          err.message ||
+            "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    useEffect(() => {
       fetchData();
     }, []);
+
+    // Fungsi untuk mengirim permintaan POST ke Apps Script
+    const sendApiRequest = async (action, payload) => {
+      try {
+        const response = await fetch(INSTRUMEN_API_URL, {
+          redirect: "follow",
+          method: "POST",
+          body: JSON.stringify({ action, ...payload }),
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8", // Penting agar Apps Script dapat mengurai JSON
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API request failed with status: ${response.status} - ${errorText}`);
+        }
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.message || "Operation failed on server.");
+        }
+        return result;
+      } catch (err) {
+        console.error("API request error:", err);
+        throw err;
+      }
+    };
 
     const handleCategorySelectChange = (event) => {
       setSelectedKodeCategory(event.target.value);
@@ -233,34 +263,29 @@
         try {
           setIsSubmitting(true);
           
-          // Simulasi API call untuk delete - ganti dengan actual API call
-          console.log('Deleting instruments with codes:', Array.from(selectedForDelete));
-          
-          // Simulasi delay untuk API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Update data di state - hapus instrumen yang dipilih
-          setInstrumenData(prev => 
-            prev.filter(instrumen => !selectedForDelete.has(instrumen.Kode))
+          // Kirim permintaan DELETE untuk setiap instrumen yang dipilih
+          const deletePromises = Array.from(selectedForDelete).map(kode =>
+            sendApiRequest("delete", { Kode: kode })
           );
-          
-          // Reset delete mode
-          setIsDeleteMode(false);
-          setSelectedForDelete(new Set());
-          
-          // Show success message
+          await Promise.all(deletePromises);
+
           await Swal.fire({
             title: 'Berhasil!',
             text: `${selectedForDelete.size} instrumen berhasil dihapus.`,
             icon: 'success',
             confirmButtonText: 'OK'
           });
+
+          // Reset delete mode dan muat ulang data
+          setIsDeleteMode(false);
+          setSelectedForDelete(new Set());
+          fetchData();
           
         } catch (error) {
           console.error('Error deleting instruments:', error);
           await Swal.fire({
             title: 'Error!',
-            text: 'Gagal menghapus instrumen. Silakan coba lagi.',
+            text: `Gagal menghapus instrumen: ${error.message}. Silakan coba lagi.`,
             icon: 'error',
             confirmButtonText: 'OK'
           });
@@ -285,56 +310,58 @@
     };
 
     const handleSaveEdit = async () => {
-      try {
-        // Show confirmation dialog
-        const result = await Swal.fire({
-          title: 'Konfirmasi Edit',
-          text: 'Apakah Anda yakin ingin menyimpan perubahan?',
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Ya, Simpan',
-          cancelButtonText: 'Batal'
-        });
+      // Validasi dasar
+      if (!editData.Kode || !editData.Peralatan) {
+        await Swal.fire('Peringatan!', 'Kode dan Peralatan tidak boleh kosong.', 'warning');
+        return;
+      }
 
-        if (result.isConfirmed) {
+      const result = await Swal.fire({
+        title: 'Konfirmasi Edit',
+        text: 'Apakah Anda yakin ingin menyimpan perubahan?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, Simpan',
+        cancelButtonText: 'Batal'
+      });
+
+      if (result.isConfirmed) {
+        try {
           setIsSubmitting(true);
-          
-          // Simulasi API call untuk update - ganti dengan actual API call
-          console.log('Updated instrument data:', editData);
-          
-          // Simulasi delay untuk API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Update data di state
-          setInstrumenData(prev => 
-            prev.map(item => 
-              item.Kode === editData.Kode ? editData : item
-            )
-          );
-          
-          setSelectedInstrumen(editData);
-          setIsEditing(false);
-          
-          // Show success message
+
+          // Payload untuk edit: kirim semua field yang relevan
+          // Gunakan Kode asli sebagai identifier
+          const payload = {
+            action: "edit",
+            originalKode: selectedInstrumen.Kode, // Kode asli untuk identifikasi baris
+            ...editData // Semua data yang diedit
+          };
+
+          await sendApiRequest("edit", payload);
+
           await Swal.fire({
             title: 'Berhasil!',
             text: 'Data instrumen berhasil diperbarui.',
             icon: 'success',
             confirmButtonText: 'OK'
           });
+
+          setIsEditing(false);
+          fetchData(); // Muat ulang data setelah perubahan
+          setSelectedInstrumen(editData); // Update selectedInstrumen dengan data yang baru
+        } catch (error) {
+          console.error('Error updating instrument:', error);
+          await Swal.fire({
+            title: 'Error!',
+            text: `Gagal memperbarui data instrumen: ${error.message}. Silakan coba lagi.`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+        } finally {
+          setIsSubmitting(false);
         }
-      } catch (error) {
-        console.error('Error updating instrument:', error);
-        await Swal.fire({
-          title: 'Error!',
-          text: 'Gagal memperbarui data instrumen. Silakan coba lagi.',
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
-      } finally {
-        setIsSubmitting(false);
       }
     };
 
@@ -345,6 +372,12 @@
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+
+      // Validasi dasar
+      if (!formData.Kode || !formData.Peralatan) {
+        await Swal.fire('Peringatan!', 'Kode dan Peralatan harus diisi.', 'warning');
+        return;
+      }
       
       // Show confirmation dialog before adding
       const result = await Swal.fire({
@@ -362,29 +395,29 @@
         setIsSubmitting(true);
         
         try {
-          // Simulasi API call - ganti dengan actual API call
-          console.log('New instrument data:', formData);
-          
-          // Simulasi delay untuk API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Show success message
+          // Payload untuk add: kirim semua formData
+          const payload = {
+            action: "add",
+            ...formData
+          };
+
+          await sendApiRequest("add", payload);
+
           await Swal.fire({
             title: 'Berhasil!',
             text: 'Data instrumen berhasil ditambahkan.',
             icon: 'success',
             confirmButtonText: 'OK'
           });
-          
-          // Close modal and reset form
-          setIsAddModalOpen(false);
+
           handleCloseAddModal();
+          fetchData(); // Muat ulang data setelah penambahan
           
         } catch (error) {
           console.error('Error adding instrument:', error);
           await Swal.fire({
             title: 'Error!',
-            text: 'Gagal menambahkan data instrumen. Silakan coba lagi.',
+            text: `Gagal menambahkan data instrumen: ${error.message}. Silakan coba lagi.`,
             icon: 'error',
             confirmButtonText: 'OK'
           });
@@ -563,7 +596,7 @@
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <h3 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-semibold text-black text-center break-words flex-1">
-                        {selectedInstrumen.NoPeralatan} ({selectedInstrumen.Kode})
+                        {selectedInstrumen.Peralatan}
                       </h3>
                       {/* Edit Button */}
                       <div className="flex items-center gap-2 -ml-9">
@@ -695,7 +728,7 @@
                             </td>
                           </tr>
                         ) : (
-                          filteredInstrumenData.map((instrumen, index) => (
+                          filteredInstrumenData.map((instrumen) => (
                             <tr 
                               key={instrumen.Kode} 
                               className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${
@@ -790,7 +823,7 @@
                             </td>
                           </tr>
                         ) : (
-                          filteredInstrumenData.map((instrumen, index) => (
+                          filteredInstrumenData.map((instrumen) => (
                             <tr 
                               key={instrumen.Kode} 
                               className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${
@@ -862,7 +895,7 @@
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {filteredInstrumenData.map((instrumen, index) => (
+                      {filteredInstrumenData.map((instrumen) => (
                         <div 
                           key={instrumen.Kode} 
                           className={`bg-white rounded-lg shadow-sm p-3 cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-100 ${
