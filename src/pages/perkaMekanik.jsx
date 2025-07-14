@@ -586,7 +586,7 @@ const PerkaMekanik = () => {
                 {namaAlatList.length === 0 ? (
                   <p className="col-span-full text-center text-gray-600 mt-4">Tidak ada data 'Nama Alat' yang ditemukan.</p>
                 ) : (
-                  namaAlatList.map((namaAlat, index) => (
+                  namaAlatList.map((namaAlat) => (
                     <div
                       key={namaAlat} // Gunakan namaAlat sebagai key karena unik
                       className="bg-white rounded-lg shadow-md p-4 border border-gray-200 min-w-[200px] cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col items-center justify-center text-center relative" // Added relative
