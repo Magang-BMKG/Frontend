@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
+import Header from "../component/Header";
+import Sidebar from "../component/sidebar"; 
+import Footer from "../component/Footer";
+import Swal from 'sweetalert2';
 
 const LogbookPagiPage = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
   const [logbookData, setLogbookData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,16 +22,13 @@ const LogbookPagiPage = () => {
 
   // States untuk modal Edit
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null); // Item yang sedang diedit
-  const [editedKeterangan, setEditedKeterangan] = useState(""); // Keterangan yang akan diubah
-
-  // States untuk konfirmasi Hapus
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingItem, setDeletingItem] = useState(null); // Item yang akan dihapus
+  const [editingItem, setEditingItem] = useState(null);
+  const [editedPeralatan, setEditedPeralatan] = useState("");
+  const [editedKeterangan, setEditedKeterangan] = useState("");
 
   // GANTI DENGAN URL GOOGLE APPS SCRIPT API UNTUK SHEET 'LOGBOOK_PAGI_NORMALISASI' ANDA
   const LOGBOOK_API_URL =
-    "https://script.google.com/macros/s/AKfycbzo6opiz-VjtkBGlfKPWkSP4KjjIx5duvNprzc7z6F2H5kM781F4Y-M62n0aOW7eJjMOQ/exec";
+    "https://script.google.com/macros/s/AKfycbz8cWrZ2JrXXS9amA9KCehWMWP3Hc8m5fn67qYhSJVD_OcGydPQNR0Fl3dL3PDiZVTBvg/exec";
 
   // Fungsi untuk mengambil data dari API
   const fetchData = async () => {
@@ -77,7 +82,8 @@ const LogbookPagiPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`API request failed with status: ${response.status} - ${errorText}`);
       }
       const result = await response.json();
       if (!result.success) {
@@ -90,85 +96,97 @@ const LogbookPagiPage = () => {
     }
   };
 
-  // --- Handler untuk Tambah Data ---
+  // Handler untuk Tambah Data
   const handleAddEntry = async () => {
     if (!newPeralatan || !newKeterangan || !selectedPersonDateEntry) {
-      alert("Nama Peralatan dan Keterangan harus diisi."); // Menggunakan alert sementara
+      Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
       return;
     }
     try {
       await sendApiRequest("add", {
         Peralatan: newPeralatan,
         Keterangan: newKeterangan,
-        PenanggungJawab: selectedPersonDateEntry.person,
+        "Penanggung Jawab": selectedPersonDateEntry.person,
         Tanggal: selectedPersonDateEntry.date,
       });
-      alert("Data berhasil ditambahkan/diperbarui!");
+      Swal.fire('Berhasil!', 'Data berhasil ditambahkan/diperbarui!', 'success');
       setShowAddModal(false);
       setNewPeralatan("");
       setNewKeterangan("");
-      fetchData(); // Muat ulang data setelah perubahan
+      fetchData();
     } catch (err) {
-      alert(`Gagal menambahkan data: ${err.message}`);
+      Swal.fire('Gagal!', `Gagal menambahkan data: ${err.message}`, 'error');
     }
   };
 
-  // --- Handler untuk Edit Data ---
+  // Handler untuk Edit Data
   const handleEditClick = (item) => {
     setEditingItem(item);
-    setEditedKeterangan(item.Keterangan); // Set nilai awal keterangan
+    setEditedPeralatan(item.Peralatan);
+    setEditedKeterangan(item.Keterangan);
     setShowEditModal(true);
   };
 
   const handleEditEntry = async () => {
-    if (!editingItem || !editedKeterangan) {
-      alert("Keterangan harus diisi.");
+    if (!editingItem || !editedPeralatan || !editedKeterangan) {
+      Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
       return;
     }
     try {
       await sendApiRequest("edit", {
-        Peralatan: editingItem.Peralatan,
-        PenanggungJawab: editingItem["Penanggung Jawab"],
-        Tanggal: editingItem.Tanggal,
-        newKeterangan: editedKeterangan,
+        originalPeralatan: editingItem.Peralatan,
+        originalPenanggungJawab: editingItem["Penanggung Jawab"],
+        originalTanggal: editingItem.Tanggal,
+        Peralatan: editedPeralatan,
+        Keterangan: editedKeterangan,
       });
-      alert("Data berhasil diubah!");
+      Swal.fire('Berhasil!', 'Data berhasil diubah!', 'success');
       setShowEditModal(false);
       setEditingItem(null);
+      setEditedPeralatan("");
       setEditedKeterangan("");
-      fetchData(); // Muat ulang data setelah perubahan
+      fetchData();
     } catch (err) {
-      alert(`Gagal mengubah data: ${err.message}`);
+      Swal.fire('Gagal!', `Gagal mengubah data: ${err.message}`, 'error');
     }
   };
 
-  // --- Handler untuk Hapus Data ---
+  // Handler untuk Hapus Data
   const handleDeleteClick = (item) => {
-    setDeletingItem(item);
-    setShowDeleteConfirm(true);
-  };
+  deleteEntry(item); // Tambahkan baris ini!
+};
 
-  const handleDeleteEntry = async () => {
-    if (!deletingItem) return;
-    try {
-      await sendApiRequest("delete", {
-        Peralatan: deletingItem.Peralatan,
-        PenanggungJawab: deletingItem["Penanggung Jawab"],
-        Tanggal: deletingItem.Tanggal,
-      });
-      alert("Data berhasil dihapus!");
-      setShowDeleteConfirm(false);
-      setDeletingItem(null);
-      fetchData(); // Muat ulang data setelah perubahan
-    } catch (err) {
-      alert(`Gagal menghapus data: ${err.message}`);
+const deleteEntry = async (item) => {
+  Swal.fire({
+    title: 'Konfirmasi Hapus',
+    text: `Anda yakin ingin menghapus entri untuk Peralatan: ${item.Peralatan} pada Tanggal: ${item.Tanggal}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Ya, Hapus',
+    cancelButtonText: 'Batal'
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await sendApiRequest("delete", {
+          Peralatan: item.Peralatan,
+          "Penanggung Jawab": item["Penanggung Jawab"],
+          Tanggal: item.Tanggal,
+        });
+        Swal.fire('Berhasil!', 'Data berhasil dihapus!', 'success');
+        fetchData();
+      } catch (err) {
+        Swal.fire('Gagal!', `Gagal menghapus data: ${err.message}`, 'error');
+      }
     }
-  };
+  });
+};
 
-  // Opsi status yang tersedia untuk dropdown (untuk detail tabel)
+  // Opsi status yang tersedia untuk dropdown
   const statusOptions = ["OK", "Rusak", "Perbaikan", "Tidak Beroperasi"];
 
-  // Fungsi helper untuk mengurai tanggal D/M/YYYY menjadi format yang bisa dibandingkan (YYYYMMDD)
+  // Fungsi helper untuk mengurai tanggal D/M/YYYY menjadi format yang bisa dibandingkan
   const parseDateForSort = (dateStr) => {
     if (!dateStr) return 0;
     const parts = dateStr.split("/");
@@ -181,7 +199,7 @@ const LogbookPagiPage = () => {
     return 0;
   };
 
-  // Mengambil daftar kombinasi unik (Penanggung Jawab, Tanggal) untuk tampilan ringkasan
+  // Mengambil daftar kombinasi unik (Penanggung Jawab, Tanggal)
   const uniquePersonDateCombinations = useMemo(() => {
     const combinations = new Set();
     logbookData.forEach((item) => {
@@ -206,7 +224,7 @@ const LogbookPagiPage = () => {
       });
   }, [logbookData]);
 
-  // Data yang akan ditampilkan di tabel detail (sekarang dengan filter pencarian)
+  // Data yang akan ditampilkan di tabel detail
   const detailTableData = useMemo(() => {
     if (!selectedPersonDateEntry) return [];
 
@@ -231,8 +249,8 @@ const LogbookPagiPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] bg-gray-50 rounded-lg">
-        <div className="text-center">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center p-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-lg text-gray-700">Memuat logbook...</p>
         </div>
@@ -242,8 +260,8 @@ const LogbookPagiPage = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] bg-red-50 p-4 rounded-lg shadow-lg border border-red-200">
-        <div className="text-center max-w-md">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-red-50 p-4">
+        <div className="text-center max-w-lg mx-auto">
           <div className="mb-4">
             <svg
               className="mx-auto h-12 w-12 text-red-500"
@@ -259,11 +277,11 @@ const LogbookPagiPage = () => {
               />
             </svg>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-red-700 mb-2">
+          <h2 className="text-xl md:text-2xl font-bold text-red-700 mb-2">
             Terjadi Kesalahan!
           </h2>
-          <p className="text-red-600 mb-4 text-sm sm:text-base">{error}</p>
-          <p className="text-red-500 text-xs sm:text-sm">
+          <p className="text-red-600 mb-4 text-sm md:text-base">{error}</p>
+          <p className="text-red-500 text-xs md:text-sm">
             Pastikan URL Google Apps Script untuk logbook benar, sudah
             di-deploy, dan sheet 'LOGBOOK_PAGI_NORMALISASI' ada serta berisi
             data.
@@ -274,206 +292,241 @@ const LogbookPagiPage = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <h2 className="text-center text-xl sm:text-2xl font-semibold mb-6 sm:mb-8">
-        Log Book Pagi
-      </h2>
+    <div className="flex flex-col min-h-screen">
+      <Header />
 
-      {uniquePersonDateCombinations.length === 0 ? (
-        <p className="text-center text-gray-600 mt-4">
-          Tidak ada data logbook yang ditemukan.
-        </p>
-      ) : selectedPersonDateEntry ? (
-        // Tampilan Tabel Detail
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            Detail Log Book untuk {selectedPersonDateEntry.person} pada{" "}
-            {selectedPersonDateEntry.date}
-          </h3>
-
-          {/* Input pencarian peralatan */}
-          <div className="mb-4 flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Cari peralatan..."
-              className="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              value={filterPeralatanDetail}
-              onChange={(e) => setFilterPeralatanDetail(e.target.value)}
-            />
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 transition-colors"
-            >
-              Tambah
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Peralatan
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Keterangan
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
-                  >
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {detailTableData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="3"
-                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
-                    >
-                      Tidak ada Peralatan yang cocok dengan pencarian.
-                    </td>
-                  </tr>
-                ) : (
-                  detailTableData.map((item, index) => {
-                    return (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {item.Peralatan}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.Keterangan}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                          <div className="flex justify-center items-center space-x-2">
-                            {/* Ikon Edit */}
-                            <button
-                              onClick={() => handleEditClick(item)}
-                              className="text-blue-600 hover:text-blue-900"
-                              title="Edit Keterangan"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.38-2.828-2.828z" />
-                              </svg>
-                            </button>
-                            {/* Ikon Hapus */}
-                            <button
-                              onClick={() => handleDeleteClick(item)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Hapus Entri"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm-1 3a1 1 0 011-1h4a1 1 0 110 2H7a1 1 0 01-1-1zm-1 3a1 1 0 011-1h4a1 1 0 110 2H7a1 1 0 01-1-1z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          <button
-            onClick={() => {
-              setSelectedPersonDateEntry(null);
-              setFilterPeralatanDetail(""); // Reset filter saat kembali
-            }}
-            className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm sm:text-base"
+      {/* Mobile Menu Button */}
+      <div className="xl:hidden bg-white border-b border-gray-200 px-4 py-3">
+        <button
+          onClick={toggleSidebar}
+          className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            ← Kembali ke Ringkasan Log Book
-          </button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex flex-1 relative">
+        {/* Sidebar */}
+        <div
+          className={`
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          xl:translate-x-0 xl:static absolute inset-y-0 left-0 z-50
+          transform transition-transform duration-300 ease-in-out
+          w-64 flex-shrink-0
+        `}
+        >
+          <Sidebar />
         </div>
-      ) : (
-        // Tampilan Grid Kotak Ringkasan
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {uniquePersonDateCombinations.map((combo, index) => (
-            <div
-              key={`${combo.person}-${combo.date}-${index}`} // Menambahkan index untuk memastikan key unik
-              className="bg-white rounded-lg shadow-md p-4 border border-gray-200 min-w-[250px] cursor-pointer hover:shadow-lg transition-shadow duration-200"
-              onClick={() => setSelectedPersonDateEntry(combo)}
-            >
-              <div className="flex justify-between items-center">
-                <p className="text-base font-semibold text-gray-800">
-                  {combo.person}
+
+        {/* Overlay untuk mobile/tablet ketika sidebar terbuka */}
+        {isSidebarOpen && (
+          <div
+            className="xl:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={toggleSidebar}
+          ></div>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-full">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-semibold mb-6 md:mb-8">
+              Log Book Pagi
+            </h2>
+
+            {uniquePersonDateCombinations.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600 text-sm md:text-base">
+                  Tidak ada data logbook yang ditemukan.
                 </p>
-                <svg
-                  className="w-5 h-5 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 5l7 7-7 7"
-                  ></path>
-                </svg>
               </div>
-              <p className="text-sm text-gray-600 mt-1">{combo.date}</p>
-            </div>
-          ))}
-        </div>
-      )}
+            ) : selectedPersonDateEntry ? (
+              // Tampilan Tabel Detail
+              <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                <div className="p-4 md:p-6">
+                  <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 mb-4">
+                    Detail Log Book untuk {selectedPersonDateEntry.person} pada{" "}
+                    {selectedPersonDateEntry.date}
+                  </h3>
+
+                  {/* Input pencarian dan tombol tambah */}
+                  <div className="mb-4 flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      placeholder="Cari peralatan..."
+                      className="flex-1 p-2 md:p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                      value={filterPeralatanDetail}
+                      onChange={(e) => setFilterPeralatanDetail(e.target.value)}
+                    />
+                    <button
+                      onClick={() => setShowAddModal(true)}
+                      className="px-4 py-2 md:px-6 md:py-3 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 transition-colors text-sm md:text-base whitespace-nowrap"
+                    >
+                      Tambah
+                    </button>
+                  </div>
+
+                  {/* Tabel dengan scroll horizontal */}
+                  <div className="overflow-x-auto -mx-4 md:-mx-6">
+                    <div className="inline-block min-w-full px-4 md:px-6">
+                      <div className="overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-3 md:px-6 py-3 text-left text-[10px] sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                Peralatan
+                              </th>
+                              <th className="px-3 md:px-6 py-3 text-left text-[10px] sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                Keterangan
+                              </th>
+                              <th className="px-3 md:px-6 py-3 text-center text-[10px] sm:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                Aksi
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {detailTableData.length === 0 ? (
+                              <tr>
+                                <td colSpan="3" className="px-3 md:px-6 py-4 text-center text-sm text-gray-500">
+                                  Tidak ada Peralatan yang cocok dengan pencarian.
+                                </td>
+                              </tr>
+                            ) : (
+                              detailTableData.map((item, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="px-3 md:px-6 py-4 text-[10px] sm:text-sm font-medium text-gray-900">
+                                    <div className="break-words max-w-xs md:max-w-sm">
+                                      {item.Peralatan}
+                                    </div>
+                                  </td>
+                                  <td className="px-3 md:px-6 py-4 text-[10px] sm:text-sm text-gray-500">
+                                    <div className="break-words max-w-xs md:max-w-sm">
+                                      {item.Keterangan}
+                                    </div>
+                                  </td>
+                                  <td className="px-3 md:px-6 py-4 text-center">
+                                    <div className="flex justify-center items-center space-x-2">
+                                      <button
+                                        onClick={() => handleEditClick(item)}
+                                        className="text-blue-600 hover:text-blue-900 p-1"
+                                        title="Edit Keterangan"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 md:w-5 md:h-5">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14.25v4.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75v-10.5A2.25 2.25 0 015.25 6H10.5" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteClick(item)}
+                                        className="text-red-600 hover:text-red-900 p-1"
+                                        title="Hapus Entri"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 md:w-5 md:h-5">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.925a2.25 2.25 0 01-2.244-2.077L4.74 5.79m14.46-3.21a1.125 1.125 0 00-1.231-1.231h-2.182a1.125 1.125 0 00-1.231 1.231m-1.588 0H14.74M12 2.25h.007v.008H12V2.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedPersonDateEntry(null);
+                      setFilterPeralatanDetail("");
+                    }}
+                    className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 
+                        transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base"
+                      >
+                    ← Kembali ke Ringkasan Log Book
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Tampilan Grid Kotak Ringkasan
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
+                {uniquePersonDateCombinations.map((combo, index) => (
+                  <div
+                    key={`${combo.person}-${combo.date}-${index}`}
+                    className="bg-white rounded-lg shadow-md p-4 md:p-6 border border-gray-200 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-200 transform hover:-translate-y-1"
+                    onClick={() => setSelectedPersonDateEntry(combo)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-sm md:text-base font-semibold text-gray-800 break-words flex-1 mr-2">
+                        {combo.person}
+                      </p>
+                      <svg
+                        className="w-4 h-4 md:w-5 md:h-5 text-gray-400 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Modal Tambah Peralatan */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">
               Tambah Peralatan Baru
             </h3>
             <div className="mb-4">
               <label
                 htmlFor="newPeralatan"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Nama Peralatan
               </label>
               <input
                 type="text"
                 id="newPeralatan"
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base"
                 value={newPeralatan}
                 onChange={(e) => setNewPeralatan(e.target.value)}
                 placeholder="Misal: AWOS Bandara"
               />
             </div>
-            <div className="mb-4">
+            <div className="mb-6">
               <label
                 htmlFor="newKeterangan"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Keterangan/Status Awal
               </label>
               <select
                 id="newKeterangan"
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base"
                 value={newKeterangan}
                 onChange={(e) => setNewKeterangan(e.target.value)}
               >
@@ -485,16 +538,16 @@ const LogbookPagiPage = () => {
                 ))}
               </select>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-md hover:bg-gray-400 transition-colors"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={handleAddEntry}
-                className="px-4 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 transition-colors"
+                className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
               >
                 Simpan
               </button>
@@ -505,33 +558,49 @@ const LogbookPagiPage = () => {
 
       {/* Modal Edit Keterangan */}
       {showEditModal && editingItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Edit Keterangan Peralatan
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 mb-4">
+              Edit Entri Log Book
             </h3>
-            <p className="text-sm text-gray-600 mb-2">
-              Peralatan:{" "}
-              <span className="font-medium">{editingItem.Peralatan}</span>
-            </p>
-            <p className="text-sm text-gray-600 mb-4">
-              Penanggung Jawab:{" "}
-              <span className="font-medium">
-                {editingItem["Penanggung Jawab"]}
-              </span>
-              , Tanggal:{" "}
-              <span className="font-medium">{editingItem.Tanggal}</span>
-            </p>
+            <div className="mb-4 p-3 bg-gray-50 rounded-md">
+              <p className="text-[13px] md:text-xl text-gray-600 mb-1">
+                Penanggung Jawab:{" "}
+                <span className="font-medium text-gray-800">
+                  {editingItem["Penanggung Jawab"]}
+                </span>
+              </p>
+              <p className="text-[13px] md:text-xl text-gray-600">
+                Tanggal:{" "}
+                <span className="font-medium text-gray-800">{editingItem.Tanggal}</span>
+              </p>
+            </div>
             <div className="mb-4">
               <label
+                htmlFor="editedPeralatan"
+                className="block text-[13px] md:text-xl font-medium text-gray-700 mb-2"
+              >
+                Nama Peralatan
+              </label>
+              <input
+                type="text"
+                id="editedPeralatan"
+                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-[13px] md:text-xl"
+                value={editedPeralatan}
+                onChange={(e) => setEditedPeralatan(e.target.value)}
+                placeholder="Misal: AWOS Bandara"
+              />
+            </div>
+            <div className="mb-6">
+              <label
                 htmlFor="editedKeterangan"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-[13px] md:text-xl font-medium text-gray-700 mb-2"
               >
                 Keterangan Baru
               </label>
               <select
                 id="editedKeterangan"
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-[13px] md:text-xl"
                 value={editedKeterangan}
                 onChange={(e) => setEditedKeterangan(e.target.value)}
               >
@@ -542,16 +611,16 @@ const LogbookPagiPage = () => {
                 ))}
               </select>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-md hover:bg-gray-400 transition-colors"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={handleEditEntry}
-                className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition-colors"
+                className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
               >
                 Simpan Perubahan
               </button>
@@ -560,45 +629,7 @@ const LogbookPagiPage = () => {
         </div>
       )}
 
-      {/* Modal Konfirmasi Hapus */}
-      {showDeleteConfirm && deletingItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold text-red-700 mb-4">
-              Konfirmasi Hapus
-            </h3>
-            <p className="text-gray-700 mb-4">
-              Anda yakin ingin menghapus entri ini?
-            </p>
-            <p className="text-sm text-gray-600 mb-4">
-              Peralatan:{" "}
-              <span className="font-medium">{deletingItem.Peralatan}</span>
-              <br />
-              Penanggung Jawab:{" "}
-              <span className="font-medium">
-                {deletingItem["Penanggung Jawab"]}
-              </span>
-              <br />
-              Tanggal:{" "}
-              <span className="font-medium">{deletingItem.Tanggal}</span>
-            </p>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-md hover:bg-gray-400 transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDeleteEntry}
-                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition-colors"
-              >
-                Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Footer />
     </div>
   );
 };
