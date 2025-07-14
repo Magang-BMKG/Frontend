@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Header from "./Header";
-import Sidebar from "./sidebar"; 
-import Footer from "./Footer";
+import Header from "../component/Header";
+import Sidebar from "../component/sidebar"; 
+import Footer from "../component/Footer";
 import { BsFillPersonPlusFill } from "react-icons/bs";
 import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";

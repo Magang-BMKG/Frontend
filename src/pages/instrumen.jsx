@@ -1,7 +1,7 @@
   import React, { useState, useEffect, useMemo } from 'react';
-  import Header from './Header'; 
-  import Sidebar from './sidebar'; 
-  import Footer from './Footer'; 
+  import Header from "../component/Header";
+import Sidebar from "../component/sidebar"; 
+import Footer from "../component/Footer";
   import { AiTwotoneFileAdd } from "react-icons/ai";
   import { IoClose } from "react-icons/io5";
   import { FaCheck } from "react-icons/fa";

@@ -8,11 +8,11 @@ const UserIcon = ({ size = 24 }) => (
   </svg>
 );
 
-const SettingsIcon = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-    <circle cx="12" cy="12" r="3"/>
+const DatabaseIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M42 10C42 13.3137 33.9411 16 24 16C14.0589 16 6 13.3137 6 10M42 10C42 6.68629 33.9411 4 24 4C14.0589 4 6 6.68629 6 10M42 10V38C42 41.32 34 44 24 44C14 44 6 41.32 6 38V10M42 24C42 27.32 34 30 24 30C14 30 6 27.32 6 24" />
   </svg>
+
 );
 
 const BookIcon = ({ size = 24 }) => (
@@ -21,12 +21,10 @@ const BookIcon = ({ size = 24 }) => (
   </svg>
 );
 
-const CalendarIcon = ({ size = 24 }) => (
+const SettingsIcon = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-    <line x1="16" x2="16" y1="2" y2="6"/>
-    <line x1="8" x2="8" y1="2" y2="6"/>
-    <line x1="3" x2="21" y1="10" y2="10"/>
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+    <circle cx="12" cy="12" r="3"/>
   </svg>
 );
 
@@ -70,7 +68,7 @@ const Sidebar = ({
     },
     { 
       id: 'meta', 
-      icon: SettingsIcon, 
+      icon: DatabaseIcon, 
       label: 'Meta Data', 
       shortLabel: 'Meta Data', 
       route: '/instrumen',
@@ -85,12 +83,12 @@ const Sidebar = ({
       keywords: ['logbook', 'log', 'book']
     },
     { 
-      id: 'jadwal', 
-      icon: CalendarIcon, 
-      label: 'Jadwal', 
-      shortLabel: 'Jadwal', 
-      route: '/jadwal',
-      keywords: ['jadwal', 'schedule', 'calendar']
+      id: 'perka', 
+      icon: SettingsIcon, 
+      label: 'Perka', 
+      shortLabel: 'Perka', 
+      route: '/perka',
+      keywords: ['perka', 'schedule', 'calendar']
     }
   ];
 
@@ -143,8 +141,8 @@ const Sidebar = ({
         window.location.href = '/instrumen';
       } else if (item.id === 'logbook') {
         window.location.href = '/logbook';
-      } else if (item.id === 'jadwal') {
-        window.location.href = '/jadwal';
+      } else if (item.id === 'perka') {
+        window.location.href = '/perka';
       } else {
         window.location.href = `/not-found?page=${item.label}`;
       }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import Header from "./Header";
-import Sidebar from "./sidebar";
-import Footer from "./Footer";
+import Header from "../component/Header";
+import Sidebar from "../component/sidebar";
+import Footer from "../component/Footer";
 import Swal from 'sweetalert2'; // Swal akan diakses secara global setelah CDN dimuat
 
 const LogbookPage = () => {
