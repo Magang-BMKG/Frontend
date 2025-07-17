@@ -16,36 +16,78 @@ export default function BMKGLandingPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLoginClick = () => {
     setShowLoginPopup(true);
+    setLoginError('');
   };
 
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    // Navigasi ke halaman DaftarTeknisiPage
-    navigate('/destopteknisi');
+  const handleLogin = async () => {
+    setLoginError('');
+    setIsLoading(true);
+
+    const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbzKwGynlTg52pAFh8FkaLfo09cZILM4rY-8s-qdJwGvJe_H7TfqJrUnd6IQFA9UbLQF_w/exec';
+
+    try {
+      const response = await fetch(appsScriptUrl, {
+        redirect: 'follow',
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        // Kirim email DAN password
+        body: JSON.stringify({ email: email, password: password }),
+      });
+
+      const data = await response.json();
+      setIsLoading(false);
+
+      if (data.success) {
+        const userRole = data.role;
+        console.log('Login berhasil! Role:', userRole);
+
+        if (userRole === "admin") {
+          navigate('/destopteknisi');
+        } else if (userRole === "user") {
+          navigate('/destopteknisi');
+        } else {
+          // Jika role tidak teridentifikasi atau guest (opsional)
+          setLoginError('Role pengguna tidak valid atau tidak diizinkan.');
+        }
+      } else {
+        // Tampilkan pesan error dari Apps Script
+        setLoginError(data.message || 'Login gagal. Cek kembali email dan kata sandi Anda.');
+      }
+
+    } catch (error) {
+      console.error('Error during login:', error);
+      setLoginError('Terjadi kesalahan jaringan atau server. Silakan coba lagi.');
+      setIsLoading(false);
+    }
   };
 
   const handleClosePopup = () => {
     setShowLoginPopup(false);
+    setEmail('');
+    setPassword('');
+    setLoginError('');
   };
 
-  // const handleLogin = () => {
-  //   // Handle login logic here
-  //   console.log('Login attempt:', { email, password });
+  
+  //   const handleGoogleLogin = () => {
+  //   // Handle Google login logic here
+  //   console.log('Google login attempt');
   // };
 
-  const handleGoogleLogin = () => {
-    // Handle Google login logic here
-    console.log('Google login attempt');
-  };
-
-   const scrollToAbout = () => {
+  const scrollToAbout = () => {
     const aboutSection = document.getElementById('tentang-section');
     if (aboutSection) {
-      aboutSection.scrollIntoView({ 
+      aboutSection.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -55,7 +97,7 @@ export default function BMKGLandingPage() {
   const scrollToContact = () => {
     const contactSection = document.getElementById('kontak-section');
     if (contactSection) {
-      contactSection.scrollIntoView({ 
+      contactSection.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -64,14 +106,14 @@ export default function BMKGLandingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+            {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3 md:py-4">
             <div className="flex items-center space-x-2 md:space-x-3">
-              <img 
-                src={Logo} 
-                alt="BMKG Logo" 
+              <img
+                src={Logo}
+                alt="BMKG Logo"
                 className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
               />
               <div>
@@ -80,21 +122,21 @@ export default function BMKGLandingPage() {
               </div>
             </div>
             <nav className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
-              <button 
+              <button
                 onClick={scrollToContact}
                 className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
               >
                 Kontak
               </button>
-              <button 
+              <button
                 onClick={scrollToAbout}
                 className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
               >
                 Tentang
               </button>
-              <button 
-              onClick={handleLoginClick} 
-              className="bg-[#0066CC] text-white px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-lg hover:bg-blue-700 text-[10px] sm:text-[12px] md:text-base">
+              <button
+                onClick={handleLoginClick}
+                className="bg-[#0066CC] text-white px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-lg hover:bg-blue-700 text-[10px] sm:text-[12px] md:text-base">
                 Login
               </button>
             </nav>
@@ -104,7 +146,7 @@ export default function BMKGLandingPage() {
 
       {/* Hero Section */}
       <section className="relative h-64 sm:h-80 md:h-96 lg:h-150">
-        <div 
+        <div
             className="absolute inset-0 bg-cover bg-center opacity-100"
             style={{
                 backgroundImage: `url('/latar.png')`
@@ -115,7 +157,7 @@ export default function BMKGLandingPage() {
           <div className="text-center text-black">
             <h1 className="text-[20px] sm:text-3xl md:text-4xl font-bold mb-2 md:mb-4">Selamat Datang</h1>
             <p className="text-[10px] sm:text-base md:text-lg max-w-2xl mx-auto px-4">
-              Jelajahi data meteorologi, klimatologi, dan geofisika 
+              Jelajahi data meteorologi, klimatologi, dan geofisika
             </p>
             <p className="text-[10px] sm:text-base md:text-lg max-w-2xl mx-auto px-4">
               terkini dari sumber terpercaya
@@ -137,11 +179,11 @@ export default function BMKGLandingPage() {
                 <div>
                   <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Profil Teknisi</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                    Teknisi BMKG merupakan profil sumber daya manusia dengan keahlian spesifik 
-                    di bidang teknologi instrumentasi, elektronika, dan jaringan. Tugas utama 
-                    mereka mencakup pemeliharaan preventif, analisis kerusakan, hingga kalibrasi 
-                    instrumen canggih. Melalui tangan terampil merekalah, data mentah dari alam 
-                    dapat terekam secara konsisten dan berkualitas, menjadi fondasi bagi setiap 
+                    Teknisi BMKG merupakan profil sumber daya manusia dengan keahlian spesifik
+                    di bidang teknologi instrumentasi, elektronika, dan jaringan. Tugas utama
+                    mereka mencakup pemeliharaan preventif, analisis kerusakan, hingga kalibrasi
+                    instrumen canggih. Melalui tangan terampil merekalah, data mentah dari alam
+                    dapat terekam secara konsisten dan berkualitas, menjadi fondasi bagi setiap
                     informasi yang disajikan BMKG
                   </p>
                 </div>
@@ -157,13 +199,13 @@ export default function BMKGLandingPage() {
                 <div>
                   <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Log Book</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                   Log Book adalah cerminan digital dari komitmen setiap karyawan. 
-                   Setiap kehadiran dicatat dan disandingkan langsung dengan jadwal 
-                   yang telah ditetapkan. Dari sinilah lahir kalkulasi Sasaran 
-                   Mutu—sebuah persentase yang merefleksikan tingkat kedisiplinan 
-                   dan kepatuhan terhadap jadwal. Ini adalah cara kami menjaga 
-                   akuntabilitas secara transparan dan menjadi tolok ukur 
-                   bersama dalam upaya memberikan pelayanan publik yang selalu 
+                   Log Book adalah cerminan digital dari komitmen setiap karyawan.
+                   Setiap kehadiran dicatat dan disandingkan langsung dengan jadwal
+                   yang telah ditetapkan. Dari sinilah lahir kalkulasi Sasaran
+                   Mutu—sebuah persentase yang merefleksikan tingkat kedisiplinan
+                   dan kepatuhan terhadap jadwal. Ini adalah cara kami menjaga
+                   akuntabilitas secara transparan dan menjadi tolok ukur
+                   bersama dalam upaya memberikan pelayanan publik yang selalu
                    tepat waktu.
                   </p>
                 </div>
@@ -179,11 +221,11 @@ export default function BMKGLandingPage() {
                 <div>
                   <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Meta Data</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                    Setiap data BMKG berawal dari instrumen yang terjamin kualitasnya. 
-                    Kami mendokumentasikan metadata instrumen secara detail, mencakup 
-                    riwayat kalibrasi, posisi penempatan, keterangan kondisi, hingga 
-                    spesifikasi teknis seperti merk dan type. Ini adalah bentuk 
-                    transparansi dan komitmen kami untuk memastikan setiap informasi 
+                    Setiap data BMKG berawal dari instrumen yang terjamin kualitasnya.
+                    Kami mendokumentasikan metadata instrumen secara detail, mencakup
+                    riwayat kalibrasi, posisi penempatan, keterangan kondisi, hingga
+                    spesifikasi teknis seperti merk dan type. Ini adalah bentuk
+                    transparansi dan komitmen kami untuk memastikan setiap informasi
                     yang Anda terima berasal dari sumber yang valid dan terawat baik.
                   </p>
                 </div>
@@ -199,11 +241,11 @@ export default function BMKGLandingPage() {
                 <div>
                   <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Jadwal</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                    Kesiapsiagaan kami berawal dari jadwal yang terorganisir. 
-                    Jadwal Karyawan kami adalah Peta Jalan Operasional yang 
-                    mengatur ritme kerja tim untuk memberikan layanan tanpa jeda. 
-                    Ini memastikan setiap posisi penting selalu terisi oleh tenaga ahli, 
-                    baik di hiruk pikuk Shift Pagi maupun di keheningan Shift Malam, 
+                    Kesiapsiagaan kami berawal dari jadwal yang terorganisir.
+                    Jadwal Karyawan kami adalah Peta Jalan Operasional yang
+                    mengatur ritme kerja tim untuk memberikan layanan tanpa jeda.
+                    Ini memastikan setiap posisi penting selalu terisi oleh tenaga ahli,
+                    baik di hiruk pikuk Shift Pagi maupun di keheningan Shift Malam,
                     sebagai wujud komitmen kami pada layanan publik.
                   </p>
                 </div>
@@ -225,7 +267,7 @@ export default function BMKGLandingPage() {
                   <IoLocationOutline className="w-4 h-4 md:w-5 md:h-5 mt-1 flex-shrink-0" />
                   <div>
                     <p className="text-[7px] md:text-sm">
-                      Jl. Marsma R. Iswahyudi No.3, Sepinggan, Kecamatan Balikpapan Selatan, 
+                      Jl. Marsma R. Iswahyudi No.3, Sepinggan, Kecamatan Balikpapan Selatan,
                       Kota Balikpapan, Kalimantan Timur 76115
                     </p>
                   </div>
@@ -241,9 +283,9 @@ export default function BMKGLandingPage() {
             <div id="tentang-section" className="text-end">
               <h3 className="text-[10px] md:text-xl font-bold mb-4 md:mb-6">TENTANG</h3>
               <p className="text-[8px] md:text-sm leading-relaxed">
-                Website resmi BMKG ini adalah sumber utama informasi akurat mengenai cuaca, 
-                iklim dan gempabumi. Selain melayani publik, situs ini juga mendukung 
-                transparansi dengan menampilkan profil tim kami serta menyajikan sistem 
+                Website resmi BMKG ini adalah sumber utama informasi akurat mengenai cuaca,
+                iklim dan gempabumi. Selain melayani publik, situs ini juga mendukung
+                transparansi dengan menampilkan profil tim kami serta menyajikan sistem
                 manajemen operasional internal.
               </p>
             </div>
@@ -251,7 +293,7 @@ export default function BMKGLandingPage() {
         </div>
       </footer>
 
-       {/* Login Popup */}
+        {/* Login Popup */}
         {showLoginPopup && (
           <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-8 w-full max-w-md relative">
@@ -310,7 +352,7 @@ export default function BMKGLandingPage() {
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     >
                       {showPassword ? (
-                         <FaEyeSlash className="w-4 h-4 md:w-5 md:h-5 text-gray-400 hover:text-gray-600" />
+                          <FaEyeSlash className="w-4 h-4 md:w-5 md:h-5 text-gray-400 hover:text-gray-600" />
                       ) : (
                         <FaRegEye className="w-4 h-4 md:w-5 md:h-5 text-gray-400 hover:text-gray-600" />
                       )}
@@ -318,23 +360,29 @@ export default function BMKGLandingPage() {
                   </div>
                 </div>
 
+                {/* Tampilkan pesan error */}
+                {loginError && (
+                  <p className="text-red-500 text-sm text-center">{loginError}</p>
+                )}
+
                 {/* Login Button */}
-                 <button
-        onClick={handleLogin}
-        className="w-full text-[15px] md:text-xl bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-      >
-        Masuk
-      </button>
+                <button
+                  onClick={handleLogin}
+                  className="w-full text-[15px] md:text-xl bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Memuat...' : 'Masuk'}
+                </button>
 
                 {/* Divider */}
-                <div className="flex items-center">
+                {/* <div className="flex items-center">
                   <div className="flex-1 border-t border-gray-300"></div>
                   <span className="px-2 text-[12px] md:text-[16px] text-black">atau masuk dengan</span>
                   <div className="flex-1 border-t border-gray-300"></div>
-                </div>
+                </div> */}
 
                 {/* Google Login Button */}
-                <button
+                {/* <button
                   type="button"
                   onClick={handleGoogleLogin}
                   className="w-full text-[15px] md:text-xl bg-cyan-400 text-white py-3 rounded-lg font-medium hover:bg-cyan-500 transition-colors flex items-center justify-center space-x-2"
@@ -346,7 +394,7 @@ export default function BMKGLandingPage() {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
                   <span>Google</span>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
