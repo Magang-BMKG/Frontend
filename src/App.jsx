@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import LandingPage from './pages/landingpage';
 import DaftarTeknisiPage from './pages/destopteknisi';
 import DaftarInstrumenPage from './pages/instrumen';
@@ -14,19 +15,21 @@ import PerkaSederhana from './pages/perkaSederhana';
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/destopteknisi" element={<DaftarTeknisiPage />} />
-        <Route path="/instrumen" element={<DaftarInstrumenPage />} />
-        <Route path="/logbook" element={<LogbookPage />} />
-        <Route path="/logbookPagi" element={<LogbookPagiPage />} />
-        <Route path="/perka" element={<Perka />} />
-        <Route path="/perkaMekanik" element={<PerkaMekanik />} />
-        <Route path="/perkaCanggih" element={<PerkaCanggih />} />
-        <Route path="/perkaSederhana" element={<PerkaSederhana />} />
-        {/* <Route path="/login" element={<Login />} /> */}
-        <Route path="*" element={<div>404 - Halaman tidak ditemukan</div>} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/destopteknisi" element={<DaftarTeknisiPage />} />
+          <Route path="/instrumen" element={<DaftarInstrumenPage />} />
+          <Route path="/logbook" element={<LogbookPage />} />
+          <Route path="/logbookPagi" element={<LogbookPagiPage />} />
+          <Route path="/perka" element={<Perka />} />
+          <Route path="/perkaMekanik" element={<PerkaMekanik />} />
+          <Route path="/perkaCanggih" element={<PerkaCanggih />} />
+          <Route path="/perkaSederhana" element={<PerkaSederhana />} />
+          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="*" element={<div>404 - Halaman tidak ditemukan</div>} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
