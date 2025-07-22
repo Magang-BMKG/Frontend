@@ -10,6 +10,7 @@ import { FiCheck } from "react-icons/fi";
 import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext'; // <-- Impor hook useAuth
 import { useNavigate } from 'react-router-dom'; // <-- Impor useNavigate untuk redireksi
+import { supabase } from '../supabaseClient';
 
 const DaftarTeknisiPage = () => {
   const [pegawaiData, setPegawaiData] = useState([]);
@@ -19,7 +20,18 @@ const DaftarTeknisiPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editData, setEditData] = useState({});
+  const [editData, setEditData] = useState({
+    nama: '',
+    nip: '',
+    pangkat: '',
+    fungsional: '',
+    pendidikanTerakhir: '',
+    diklatWorkshop: '',
+    tugas: '',
+    keterangan: '',
+    fotoFile: null, // <-- Untuk objek File yang akan diupload
+    fotoURL: '' // <-- Untuk URL foto yang sudah ada/baru
+  });
   const [newTechnician, setNewTechnician] = useState({
     nama: '',
     nip: '',
@@ -29,47 +41,45 @@ const DaftarTeknisiPage = () => {
     diklatWorkshop: '',
     tugas: '',
     keterangan: '',
-    foto: null // File object for upload
+    fotoFile: null // <-- Untuk objek File yang akan diupload
   });
+  const [isUploading, setIsUploading] = useState(false); // State untuk status upload
 
-  const { userRole, logout } = useAuth(); // <-- Dapatkan userRole dan logout dari konteks
+  const { userRole, logout } = useAuth();
   const navigate = useNavigate();
 
-  // <-- LOGIKA AUTORISASI DI SINI
   useEffect(() => {
-    // Jika tidak ada peran pengguna atau peran bukan "admin" atau "user",
-    // maka redirect ke halaman landing (login).
-    // Sesuaikan logika ini sesuai kebutuhan otorisasi Anda.
     if (!userRole || (userRole !== "admin" && userRole !== "user")) {
-      navigate('/'); // Redirect ke halaman login/landing
+      navigate('/');
     }
-  }, [userRole, navigate]); // Bergantung pada userRole dan navigate
+  }, [userRole, navigate]);
 
-  // URL GOOGLE APPS SCRIPT
+  // const GOOGLE_SHEETS_API_URL =
+  //   "https://script.google.com/macros/s/AKfycbxQyvGtri0z1XUNFaSlgJbOfaQncCDa-x3gWaapBIys5bW050m155F8ECVjvSyvDQ3NLQ/exec"; // Ganti dengan URL Anda
   const GOOGLE_SHEETS_API_URL =
-    "https://script.google.com/macros/s/AKfycbxQyvGtri0z1XUNFaSlgJbOfaQncCDa-x3gWaapBIys5bW050m155F8ECVjvSyvDQ3NLQ/exec"; // Ganti dengan URL Anda
-
-  // Fungsi untuk mengambil data dari API (GET)
+    "https://script.google.com/macros/s/AKfycbySKqncYDSRnSpxF0mUWrYQ69stq_e4e_yPeXg6vluR_F4hUlQi8fPpwKjlnVsxE6O9aQ/exec"; // Ganti dengan URL Anda
+  
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(GOOGLE_SHEETS_API_URL);
-
       if (!response.ok) {
         throw new Error(
           `HTTP error! Status: ${response.status} - ${response.statusText}`
         );
       }
-
-      const data = await response.json();
-
-      if (Array.isArray(data)) {
-        setPegawaiData(data);
+      const apiResponse = await response.json();
+      if (apiResponse.success) {
+        if (Array.isArray(apiResponse.data)) {
+          setPegawaiData(apiResponse.data); 
+        } else {
+          throw new Error(
+            "Format data tidak valid dari API. Diharapkan array di dalam properti 'data'."
+          );
+        }
       } else {
-        throw new Error(
-          "Format data tidak valid dari API. Diharapkan array."
-        );
+        throw new Error(apiResponse.message || "Gagal mengambil data dari API Google Apps Script.");
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -81,15 +91,31 @@ const DaftarTeknisiPage = () => {
       setLoading(false);
     }
   };
+  //     const data = await response.json();
+  //     if (Array.isArray(data)) {
+  //       setPegawaiData(data);
+  //     } else {
+  //       throw new Error(
+  //         "Format data tidak valid dari API. Diharapkan array."
+  //       );
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching data:", err);
+  //     setError(
+  //       err.message ||
+  //         "Gagal mengambil data. Silakan periksa koneksi atau URL API."
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
-    // Hanya ambil data jika userRole sudah valid (misal, setelah redirect selesai atau saat dimuat ulang)
-    if (userRole === "admin" || userRole === "user") { // Hanya ambil data jika pengguna diizinkan
+    if (userRole === "admin" || userRole === "user") {
       fetchData();
     }
-  }, [userRole]); // Bergantung pada `userRole`
+  }, [userRole]);
 
-  // Fungsi untuk mengirim permintaan POST ke Apps Script
   const sendTeknisiApiRequest = async (action, payload) => {
     try {
       const response = await fetch(GOOGLE_SHEETS_API_URL, {
@@ -116,12 +142,70 @@ const DaftarTeknisiPage = () => {
     }
   };
 
+  // Fungsi untuk mengunggah file ke Supabase Storage
+  const uploadFileToSupabase = async (file) => {
+    if (!file) return null;
+
+    setIsUploading(true);
+    const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`; // Nama file unik
+    const bucketName = 'teknisi'; // Ganti dengan nama bucket Supabase Anda
+
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false // Set true jika ingin menimpa file dengan nama yang sama
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Supabase biasanya tidak langsung mengembalikan URL publik lengkap
+      // Anda perlu membangunnya sendiri
+      const publicUrl = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(fileName).data.publicUrl;
+
+      setIsUploading(false);
+      return publicUrl;
+    } catch (error) {
+      setIsUploading(false);
+      console.error('Error uploading file to Supabase:', error);
+      Swal.fire('Error Upload!', `Gagal mengunggah foto: ${error.message}`, 'error');
+      return null;
+    }
+  };
+
+  // Fungsi untuk menghapus file dari Supabase Storage (opsional, jika Anda perlu)
+  const deleteFileFromSupabase = async (fileUrl) => {
+    if (!fileUrl || !fileUrl.includes('supabase.co')) return; // Hanya hapus jika dari Supabase
+
+    const bucketName = 'teknisi'; // Ganti dengan nama bucket Supabase Anda
+    // Ekstrak path file dari URL
+    const fileName = fileUrl.split(`${bucketName}/`)[1];
+
+    try {
+      const { error } = await supabase.storage.from(bucketName).remove([fileName]);
+      if (error) {
+        throw error;
+      }
+      console.log('File deleted from Supabase:', fileName);
+    } catch (error) {
+      console.error('Error deleting file from Supabase:', error);
+      Swal.fire('Error Hapus!', `Gagal menghapus foto lama: ${error.message}`, 'error');
+    }
+  };
+
 
   const handleBackToTechnicians = () => {
-    console.log('Tombol kembali teknisi diklik');
     setSelectedPegawai(null);
     setIsEditMode(false);
-    setEditData({});
+    setEditData({
+      nama: '', nip: '', pangkat: '', fungsional: '', pendidikanTerakhir: '',
+      diklatWorkshop: '', tugas: '', keterangan: '', fotoFile: null, fotoURL: ''
+    });
   };
 
   const handleSelectChange = (event) => {
@@ -129,12 +213,26 @@ const DaftarTeknisiPage = () => {
     if (selectedNIP === "") {
       setSelectedPegawai(null);
       setIsEditMode(false);
+      setEditData({}); // Reset editData
     } else {
       const foundPegawai = pegawaiData.find(
         (pegawai) => pegawai.NIP === selectedNIP
       );
       setSelectedPegawai(foundPegawai);
-      setIsEditMode(false);
+      // Saat memilih, inisialisasi editData dengan data pegawai yang dipilih
+      setEditData({
+        nama: foundPegawai.NAMA,
+        nip: foundPegawai.NIP,
+        pangkat: foundPegawai["PANGKAT / GOL"],
+        fungsional: foundPegawai.FUNGSIONAL,
+        pendidikanTerakhir: foundPegawai["PENDIDIKAN TERAKHIR"],
+        diklatWorkshop: foundPegawai["DIKLAT/WORKSHOP/TEMU TEKNISI"],
+        tugas: foundPegawai.TUGAS,
+        keterangan: foundPegawai.KETERANGAN,
+        fotoFile: null, // Tidak ada file baru yang dipilih saat pertama kali edit
+        fotoURL: foundPegawai.FotoURL || '' // Simpan URL foto yang sudah ada
+      });
+      setIsEditMode(false); // Pastikan bukan mode edit saat memilih
     }
   };
 
@@ -144,24 +242,21 @@ const DaftarTeknisiPage = () => {
 
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
+    setNewTechnician({ // Reset form saat membuka modal tambah
+      nama: '', nip: '', pangkat: '', fungsional: '', pendidikanTerakhir: '',
+      diklatWorkshop: '', tugas: '', keterangan: '', fotoFile: null
+    });
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
     setNewTechnician({
-      nama: '',
-      nip: '',
-      pangkat: '',
-      fungsional: '',
-      pendidikanTerakhir: '',
-      diklatWorkshop: '',
-      tugas: '',
-      keterangan: '',
-      foto: null
+      nama: '', nip: '', pangkat: '', fungsional: '', pendidikanTerakhir: '',
+      diklatWorkshop: '', tugas: '', keterangan: '', fotoFile: null
     });
   };
 
-  const handleInputChange = (e) => {
+  const handleNewTechnicianInputChange = (e) => {
     const { name, value } = e.target;
     setNewTechnician(prev => ({
       ...prev,
@@ -169,16 +264,20 @@ const DaftarTeknisiPage = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleNewTechnicianFileChange = (e) => {
     const file = e.target.files[0];
     setNewTechnician(prev => ({
       ...prev,
-      foto: file
+      fotoFile: file
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmitNewTechnician = async (e) => {
     e.preventDefault();
+    if (isUploading) {
+      Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
+      return;
+    }
 
     const result = await Swal.fire({
       title: 'Konfirmasi Tambah Teknisi',
@@ -192,6 +291,14 @@ const DaftarTeknisiPage = () => {
     });
 
     if (result.isConfirmed) {
+      let fotoUrl = '';
+      if (newTechnician.fotoFile) {
+        fotoUrl = await uploadFileToSupabase(newTechnician.fotoFile);
+        if (!fotoUrl) {
+          return; // Batalkan proses jika upload gagal
+        }
+      }
+
       try {
         const payload = {
           "NAMA": newTechnician.nama,
@@ -202,7 +309,7 @@ const DaftarTeknisiPage = () => {
           "DIKLAT/WORKSHOP/TEMU TEKNISI": newTechnician.diklatWorkshop,
           "TUGAS": newTechnician.tugas,
           "KETERANGAN": newTechnician.keterangan,
-          "FotoURL": newTechnician.foto ? `placeholder_url_${newTechnician.foto.name}` : ''
+          "FotoURL": fotoUrl // Kirim URL yang didapat dari Supabase
         };
 
         await sendTeknisiApiRequest("add", payload);
@@ -239,7 +346,8 @@ const DaftarTeknisiPage = () => {
       diklatWorkshop: pegawai["DIKLAT/WORKSHOP/TEMU TEKNISI"],
       tugas: pegawai.TUGAS,
       keterangan: pegawai.KETERANGAN,
-      fotoURL: pegawai.FotoURL
+      fotoFile: null, // Reset file input
+      fotoURL: pegawai.FotoURL || '' // Simpan URL foto yang sudah ada
     });
   };
 
@@ -255,11 +363,16 @@ const DaftarTeknisiPage = () => {
     const file = e.target.files[0];
     setEditData(prev => ({
       ...prev,
-      foto: file
+      fotoFile: file
     }));
   };
 
   const handleSaveEdit = async () => {
+    if (isUploading) {
+      Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
+      return;
+    }
+
     const result = await Swal.fire({
       title: 'Konfirmasi Perubahan',
       text: 'Apakah data yang telah diubah sudah sesuai?',
@@ -272,9 +385,22 @@ const DaftarTeknisiPage = () => {
     });
 
     if (result.isConfirmed) {
+      let newFotoUrl = editData.fotoURL; // Default ke URL yang sudah ada
+
+      if (editData.fotoFile) { // Jika ada file baru yang dipilih
+        // Opsional: Hapus foto lama dari Supabase sebelum mengunggah yang baru
+        if (editData.fotoURL) {
+          await deleteFileFromSupabase(editData.fotoURL);
+        }
+        newFotoUrl = await uploadFileToSupabase(editData.fotoFile);
+        if (!newFotoUrl) {
+          return; // Batalkan proses jika upload gagal
+        }
+      }
+
       try {
         const payload = {
-          "NIP_IDENTIFIER": editData.nip, // Kirim NIP asli sebagai identifier
+          "NIP_IDENTIFIER": editData.nip, // NIP lama sebagai identifier
           "NAMA": editData.nama,
           "NIP": editData.nip, // NIP baru jika diubah
           "PANGKAT / GOL": editData.pangkat,
@@ -283,12 +409,17 @@ const DaftarTeknisiPage = () => {
           "DIKLAT/WORKSHOP/TEMU TEKNISI": editData.diklatWorkshop,
           "TUGAS": editData.tugas,
           "KETERANGAN": editData.keterangan,
-          "FotoURL": editData.foto ? `placeholder_url_${editData.foto.name}` : editData.fotoURL || ''
+          "FotoURL": newFotoUrl // Gunakan URL baru atau yang lama
         };
 
         await sendTeknisiApiRequest("edit", payload);
 
         setIsEditMode(false);
+        setSelectedPegawai({ ...selectedPegawai, FotoURL: newFotoUrl, ...payload }); // Update selectedPegawai state
+        setEditData({ // Reset editData setelah disimpan
+          nama: '', nip: '', pangkat: '', fungsional: '', pendidikanTerakhir: '',
+          diklatWorkshop: '', tugas: '', keterangan: '', fotoFile: null, fotoURL: ''
+        });
 
         await Swal.fire({
           title: 'Berhasil!',
@@ -312,7 +443,23 @@ const DaftarTeknisiPage = () => {
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    setEditData({});
+    // Reset editData kembali ke nilai selectedPegawai agar perubahan tidak tersimpan
+    if (selectedPegawai) {
+        setEditData({
+            nama: selectedPegawai.NAMA,
+            nip: selectedPegawai.NIP,
+            pangkat: selectedPegawai["PANGKAT / GOL"],
+            fungsional: selectedPegawai.FUNGSIONAL,
+            pendidikanTerakhir: selectedPegawai["PENDIDIKAN TERAKHIR"],
+            diklatWorkshop: selectedPegawai["DIKLAT/WORKSHOP/TEMU TEKNISI"],
+            tugas: selectedPegawai.TUGAS,
+            keterangan: selectedPegawai.KETERANGAN,
+            fotoFile: null,
+            fotoURL: selectedPegawai.FotoURL || ''
+        });
+    } else {
+        setEditData({});
+    }
   };
 
   const handleDelete = async (nip) => {
@@ -332,6 +479,11 @@ const DaftarTeknisiPage = () => {
 
     if (result.isConfirmed) {
       try {
+        // Opsional: Hapus foto dari Supabase saat data dihapus
+        if (technicianToDelete && technicianToDelete.FotoURL) {
+          await deleteFileFromSupabase(technicianToDelete.FotoURL);
+        }
+
         await sendTeknisiApiRequest("delete", { "NIP_IDENTIFIER": nip }); // Kirim NIP sebagai identifier
 
         await Swal.fire({
@@ -355,7 +507,6 @@ const DaftarTeknisiPage = () => {
     }
   };
 
-  // Tampilkan loading atau redirect jika peran pengguna belum ditentukan
   if (!userRole) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -402,11 +553,7 @@ const DaftarTeknisiPage = () => {
         <main className="flex-1 p-4 sm:p-6 overflow-x-auto">
           {selectedPegawai && !isEditMode && (
             <button
-              onClick={() => {
-                setSelectedPegawai(null);
-                setIsEditMode(false);
-                setEditData({});
-              }}
+              onClick={handleBackToTechnicians}
               className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,7 +566,6 @@ const DaftarTeknisiPage = () => {
             Daftar Teknisi
           </h2>
 
-          {/* Menampilkan peran pengguna untuk demonstrasi (bisa dihapus nanti) */}
           {userRole && (
             <div className="text-center mb-4 text-gray-600">
               Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
@@ -518,7 +664,7 @@ const DaftarTeknisiPage = () => {
                     <h3 className="text-[14px] sm:text-xl lg:text-lg xl:text-xl font-semibold text-black text-center lg:text-left">
                       {selectedPegawai.NAMA}
                     </h3>
-                    {userRole === "admin" && ( // <-- Hanya tampilkan jika peran adalah "admin"
+                    {userRole === "admin" && (
                       <div className="flex items-center gap-0 sm:gap-1">
                         {isEditMode ? (
                           <>
@@ -526,6 +672,7 @@ const DaftarTeknisiPage = () => {
                               onClick={handleSaveEdit}
                               className="p-1.5 sm:p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors"
                               title="Simpan"
+                              disabled={isUploading}
                             >
                               <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
                             </button>
@@ -533,6 +680,7 @@ const DaftarTeknisiPage = () => {
                               onClick={handleCancelEdit}
                               className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-full transition-colors"
                               title="Batal"
+                              disabled={isUploading}
                             >
                               <IoClose className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
                             </button>
@@ -700,9 +848,10 @@ const DaftarTeknisiPage = () => {
                             Pilih File
                           </label>
                           <span className="text-[10px] sm:text-sm text-black">
-                            {editData.foto ? editData.foto.name : (editData.fotoURL ? 'Foto ada' : 'Tidak ada file yang dipilih')}
+                            {editData.fotoFile ? editData.fotoFile.name : (editData.fotoURL ? 'Foto ada' : 'Tidak ada file yang dipilih')}
                           </span>
                         </div>
+                        {isUploading && <p className="text-blue-500 text-sm mt-1">Mengunggah foto...</p>}
                       </div>
                     )}
                   </div>
@@ -759,7 +908,7 @@ const DaftarTeknisiPage = () => {
       </div>
 
       {/* Modal Tambah Teknisi */}
-      {isAddModalOpen && userRole === "admin" && ( // <-- Hanya tampilkan modal jika peran adalah "admin"
+      {isAddModalOpen && userRole === "admin" && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-200 max-h-[80vh] overflow-y-auto">
             {/* Modal Header */}
@@ -776,7 +925,7 @@ const DaftarTeknisiPage = () => {
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+            <form onSubmit={handleSubmitNewTechnician} className="p-4 space-y-4"> {/* <-- Ubah handleSubmit */}
               <div className="flex items-center space-x-4">
                 <label className="w-1/3 text-[13px] sm:text-sm font-medium text-black text-left">
                   Nama :
@@ -785,7 +934,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="nama"
                   value={newTechnician.nama}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                   required
                 />
@@ -799,7 +948,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="nip"
                   value={newTechnician.nip}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                   required
                 />
@@ -813,7 +962,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="pangkat"
                   value={newTechnician.pangkat}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -826,7 +975,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="fungsional"
                   value={newTechnician.fungsional}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -839,7 +988,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="pendidikanTerakhir"
                   value={newTechnician.pendidikanTerakhir}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -853,7 +1002,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="diklatWorkshop"
                   value={newTechnician.diklatWorkshop}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -866,7 +1015,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="tugas"
                   value={newTechnician.tugas}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -879,7 +1028,7 @@ const DaftarTeknisiPage = () => {
                   type="text"
                   name="keterangan"
                   value={newTechnician.keterangan}
-                  onChange={handleInputChange}
+                  onChange={handleNewTechnicianInputChange}
                   className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
@@ -892,7 +1041,7 @@ const DaftarTeknisiPage = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleFileChange}
+                    onChange={handleNewTechnicianFileChange}
                     className="hidden"
                     id="foto-upload"
                   />
@@ -903,9 +1052,10 @@ const DaftarTeknisiPage = () => {
                     Pilih File
                   </label>
                   <span className="text-[10px] sm:text-sm text-black">
-                    {newTechnician.foto ? newTechnician.foto.name : 'Tidak ada file yang dipilih'}
+                    {newTechnician.fotoFile ? newTechnician.fotoFile.name : 'Tidak ada file yang dipilih'}
                   </span>
                 </div>
+                {isUploading && <p className="text-blue-500 text-sm mt-1">Mengunggah foto...</p>}
               </div>
 
               {/* Modal Footer */}
@@ -914,14 +1064,16 @@ const DaftarTeknisiPage = () => {
                   type="button"
                   onClick={handleCloseAddModal}
                   className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                  disabled={isUploading}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                  disabled={isUploading}
                 >
-                  Tambah
+                  {isUploading ? 'Menambahkan...' : 'Tambah'}
                 </button>
               </div>
             </form>
