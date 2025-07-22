@@ -116,7 +116,7 @@ const LogbookPage = () => {
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
+            <h1 className="text-center text-[20px] sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
               Log Book
             </h1>
 

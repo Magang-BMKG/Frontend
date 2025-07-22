@@ -553,10 +553,14 @@ const DaftarTeknisiPage = () => {
         <main className="flex-1 p-4 sm:p-6 overflow-x-auto">
           {selectedPegawai && !isEditMode && (
             <button
-              onClick={handleBackToTechnicians}
-              className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
+              onClick={() => {
+                setSelectedPegawai(null);
+                setIsEditMode(false);
+                setEditData({});
+              }}
+              className="mb-6 text-[9px] sm:text-[15px] flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 sm:w-5 sm:h-5 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Kembali ke Daftar Teknisi
