@@ -28,9 +28,20 @@ const LogbookPagiPage = () => {
   const [editedPeralatan, setEditedPeralatan] = useState("");
   const [editedKeterangan, setEditedKeterangan] = useState("");
 
+  // States untuk modal Tambah Karyawan
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [newEmployeeName, setNewEmployeeName] = useState("");
+  const [newEmployeeDate, setNewEmployeeDate] = useState("");
+  const [newEmployeeDepartment, setNewEmployeeDepartment] = useState("");
+  const [employeeLoading, setEmployeeLoading] = useState(false);
+
   // GANTI DENGAN URL GOOGLE APPS SCRIPT API UNTUK SHEET 'LOGBOOK_PAGI_NORMALISASI' ANDA
   const LOGBOOK_API_URL =
     "https://script.google.com/macros/s/AKfycbz8cWrZ2JrXXS9amA9KCehWMWP3Hc8m5fn67qYhSJVD_OcGydPQNR0Fl3dL3PDiZVTBvg/exec";
+
+  // URL API untuk karyawan (sesuaikan dengan endpoint yang sesuai)
+  const EMPLOYEE_API_URL = 
+    "https://script.google.com/macros/s/YOUR_EMPLOYEE_SCRIPT_ID/exec";
 
   // Fungsi untuk mengambil data dari API
   const fetchData = async () => {
@@ -98,21 +109,83 @@ const LogbookPagiPage = () => {
     }
   };
 
-const handleBackToSummary = () => {
-  // Clear filter first
-  setFilterPeralatanDetail("");
-  
-  // Then clear selected entry
-  setSelectedPersonDateEntry(null);
-  
-  // Finally navigate back
-  handleBack();
-};
+  // Fungsi untuk mengirim permintaan ke Employee API
+  const sendEmployeeApiRequest = async (action, payload) => {
+    try {
+      const response = await fetch(EMPLOYEE_API_URL, {
+        redirect: "follow",
+        method: "POST",
+        body: JSON.stringify({ action, ...payload }),
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+      });
 
-const handleBackToLogbook = () => {
-  console.log('Navigating back to /logbook'); // Debug log
-  navigate("/logbook"); // Navigate to logbook page
-};
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Employee API request failed with status: ${response.status} - ${errorText}`);
+      }
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || "Employee operation failed on server.");
+      }
+      return result;
+    } catch (err) {
+      console.error("Employee API request error:", err);
+      throw err;
+    }
+  };
+
+  // Handler untuk Tambah Karyawan
+  const handleAddEmployee = async () => {
+    if (!newEmployeeName.trim()) {
+      Swal.fire('Peringatan', 'Nama Karyawan harus diisi.', 'warning');
+      return;
+    }
+
+    if (!newEmployeeDepartment.trim()) {
+      Swal.fire('Peringatan', 'Departemen harus diisi.', 'warning');
+      return;
+    }
+
+    setEmployeeLoading(true);
+    try {
+      await sendEmployeeApiRequest("addEmployee", {
+        nama: newEmployeeName.trim(),
+        departemen: newEmployeeDepartment.trim(),
+        tanggal_bergabung: new Date().toLocaleDateString('id-ID'),
+        status: "Aktif"
+      });
+      
+      Swal.fire('Berhasil!', 'Karyawan berhasil ditambahkan!', 'success');
+      setShowAddEmployeeModal(false);
+      setNewEmployeeName("");
+      setNewEmployeeDepartment("");
+      
+      // Refresh data logbook untuk mengupdate daftar penanggung jawab
+      fetchData();
+    } catch (err) {
+      Swal.fire('Gagal!', `Gagal menambahkan karyawan: ${err.message}`, 'error');
+    } finally {
+      setEmployeeLoading(false);
+    }
+  };
+
+  const handleBackToSummary = () => {
+    // Clear filter first
+    setFilterPeralatanDetail("");
+    
+    // Then clear selected entry
+    setSelectedPersonDateEntry(null);
+    
+    // Finally navigate back
+    handleBack();
+  };
+
+  const handleBackToLogbook = () => {
+    console.log('Navigating back to /logbook'); // Debug log
+    navigate("/logbook"); // Navigate to logbook page
+  };
 
   // Handler untuk Tambah Data
   const handleAddEntry = async () => {
@@ -171,35 +244,35 @@ const handleBackToLogbook = () => {
 
   // Handler untuk Hapus Data
   const handleDeleteClick = (item) => {
-  deleteEntry(item); // Tambahkan baris ini!
-};
+    deleteEntry(item);
+  };
 
-const deleteEntry = async (item) => {
-  Swal.fire({
-    title: 'Konfirmasi Hapus',
-    text: `Anda yakin ingin menghapus entri untuk Peralatan: ${item.Peralatan} pada Tanggal: ${item.Tanggal}?`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Ya, Hapus',
-    cancelButtonText: 'Batal'
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        await sendApiRequest("delete", {
-          Peralatan: item.Peralatan,
-          "Penanggung Jawab": item["Penanggung Jawab"],
-          Tanggal: item.Tanggal,
-        });
-        Swal.fire('Berhasil!', 'Data berhasil dihapus!', 'success');
-        fetchData();
-      } catch (err) {
-        Swal.fire('Gagal!', `Gagal menghapus data: ${err.message}`, 'error');
+  const deleteEntry = async (item) => {
+    Swal.fire({
+      title: 'Konfirmasi Hapus',
+      text: `Anda yakin ingin menghapus entri untuk Peralatan: ${item.Peralatan} pada Tanggal: ${item.Tanggal}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await sendApiRequest("delete", {
+            Peralatan: item.Peralatan,
+            "Penanggung Jawab": item["Penanggung Jawab"],
+            Tanggal: item.Tanggal,
+          });
+          Swal.fire('Berhasil!', 'Data berhasil dihapus!', 'success');
+          fetchData();
+        } catch (err) {
+          Swal.fire('Gagal!', `Gagal menghapus data: ${err.message}`, 'error');
+        }
       }
-    }
-  });
-};
+    });
+  };
 
   // Opsi status yang tersedia untuk dropdown
   const statusOptions = ["OK", "Rusak", "Perbaikan", "Tidak Beroperasi"];
@@ -359,19 +432,107 @@ const deleteEntry = async (item) => {
         {/* Main Content */}
         <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-full">
           <div className="max-w-7xl mx-auto">
-            <button
-              onClick={selectedPersonDateEntry ? handleBackToSummary : handleBackToLogbook}
-              className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              {selectedPersonDateEntry ? "Kembali ke Ringkasan Log Book" : "Kembali ke Log Book"}
-            </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <button
+                onClick={selectedPersonDateEntry ? handleBackToSummary : handleBackToLogbook}
+                className="text-[10px] sm:text-[15px] flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <svg className="w-3 h-3 sm:w-5 sm:h-5 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                {selectedPersonDateEntry ? "Kembali ke Ringkasan Log Book" : "Kembali ke Log Book"}
+              </button>
+
+              {/* Tombol Tambah Karyawan */}
+              <button
+                onClick={() => setShowAddEmployeeModal(true)}
+                className="flex items-center px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Tambah Karyawan
+              </button>
+            </div>
 
             <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-semibold mb-6 md:mb-8">
               Log Book Pagi
             </h2>
+
+            {/* Modal Tambah Karyawan */}
+            {showAddEmployeeModal && (
+              <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                     <h3 className="text-[15px] sm:text-xl font-semibold text-black w-full text-center">
+                      Tambah Karyawan Baru
+                    </h3>
+                    <button
+                      onClick={() => setShowAddEmployeeModal(false)}
+                      className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <label className="block text-[10px] sm:text-sm font-medium text-gray-700 mb-2">
+                        Nama Karyawan <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newEmployeeName}
+                        onChange={(e) => setNewEmployeeName(e.target.value)}
+                        className="w-full px-3 py-2 text-[10px] sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Masukkan nama lengkap karyawan"
+                        disabled={employeeLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] sm:text-sm font-medium text-gray-700 mb-2">
+                        Tanggal Bergabung
+                      </label>
+                      <input
+                        type="date"
+                        value={newEmployeeDate}
+                        onChange={(e) => setNewEmployeeDate(e.target.value)}
+                        className="w-full px-3 py-2 text-[10px] sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={employeeLoading}
+                      />
+                    </div>
+                    <div className="text-[10px] sm:text-sm text-gray-500">
+                      <span className="text-red-500">*</span> Field wajib diisi
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 p-4 border-t justify-end">
+                    <button
+                      onClick={() => setShowAddEmployeeModal(false)}
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                      disabled={employeeLoading}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleAddEmployee}
+                      disabled={employeeLoading}
+                      className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                     >
+                      {employeeLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Menyimpan...
+                        </>
+                      ) : (
+                        "Simpan"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {uniquePersonDateCombinations.length === 0 ? (
               <div className="text-center py-8">
