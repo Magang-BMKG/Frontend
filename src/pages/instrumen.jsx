@@ -151,6 +151,15 @@ import Footer from "../component/Footer";
       setSelectedForDelete(new Set());
     };
 
+    const handleBackToList = () => {
+      console.log('Tombol kembali diklik');
+      setSelectedInstrumen(null);
+      setIsEditing(false);
+      setEditData({});
+      setIsDeleteMode(false);
+      setSelectedForDelete(new Set());
+    };
+
     const filteredInstrumenData = useMemo(() => {
       if (!selectedKodeCategory) {
         return instrumenData;
@@ -495,6 +504,19 @@ import Footer from "../component/Footer";
 
           {/* Main Content */}
           <main className="flex-1 p-4 sm:p-6 lg:p-8">
+            {/* Tombol Kembali hanya ditampilkan ketika TIDAK sedang editing */}
+              {selectedInstrumen && !isEditing && !isDeleteMode && (
+                <button
+                  onClick={handleBackToList}
+                  className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Kembali ke Daftar Instrumen
+                </button>
+              )}
+              
             <h2 className="text-center text-[18px] sm:text-2xl font-semibold mb-6 sm:mb-8">
               Daftar Peralatan Instrumen
             </h2>
@@ -502,6 +524,7 @@ import Footer from "../component/Footer";
             {/* Dropdown untuk memilih kategori instrumen */}
             <div className="mb-4 sm:mb-6 md:mb-2 mx-1 sm:mx-2 lg:mx-4 xl:mx-auto max-w-7xl">
               <div className="w-full">
+                
                 <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4 bg-white p-3 sm:p-4 md:p-6 lg:p-8 rounded-lg  mx-1 sm:mx-2 lg:mx-4 xl:mx-auto max-w-7xl">
                   {/* Label */}
                   <label className="font-medium text-[10px] sm:text-base md:text-[15px] text-gray-700 text-center lg:text-center whitespace-nowrap lg:min-w-max">
@@ -591,8 +614,28 @@ import Footer from "../component/Footer";
 
             {selectedInstrumen ? (
               // Detail instrumen yang dipilih
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3  sm:p-4 md:p-6 shadow-md mb-4 sm:mb-6 md:mb-8 w-full max-w-6xl mx-auto">
-                <div className="flex flex-col gap-4 sm:gap-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 md:p-6 shadow-md mb-4 sm:mb-6 md:mb-8 w-full max-w-6xl mx-auto">
+                <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+                  {/* Bagian Foto */}
+                  <div className="flex-1 lg:flex-none lg:w-88 xl:w-88 flex items-center justify-center rounded-lg p-3 lg:p-4">
+                    {selectedInstrumen.FotoURL ? (
+                      <img
+                        src={selectedInstrumen.FotoURL}
+                        alt={selectedInstrumen.Peralatan}
+                        className="max-w-full h-auto rounded-lg max-h-50 lg:max-h-50"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                        }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-48 lg:h-66 bg-gray-300 rounded-lg">
+                        <svg className="w-12 h-12 lg:w-16 lg:h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19l3.5-4.5 2.5 3.01L14.5 12l4.5 7H5z"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <h3 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-semibold text-black text-center break-words flex-1">
@@ -605,7 +648,7 @@ import Footer from "../component/Footer";
                             <button
                               onClick={handleSaveEdit}
                               disabled={isSubmitting}
-                              className="flex items-center gap-1  text-blue-500 rounded hover:bg-green-200 transition-colors disabled:opacity-50 text-sm"
+                              className="flex items-center gap-1 text-blue-500 rounded hover:bg-green-200 transition-colors disabled:opacity-50 text-sm"
                             >
                               <FaCheck className="w-4 h-3 sm:w-4 sm:h-4" />
                               {isSubmitting ? 'Menyimpan...' : ''}
@@ -613,7 +656,7 @@ import Footer from "../component/Footer";
                             <button
                               onClick={handleCancelEdit}
                               disabled={isSubmitting}
-                              className="flex items-center gap-1  text-red-500 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
+                              className="flex items-center gap-1 text-red-500 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
                             >
                               <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
@@ -651,21 +694,6 @@ import Footer from "../component/Footer";
                       {renderEditableField('Sejak', 'Sejak', selectedInstrumen.Sejak)}
                       {renderEditableField('Posisi', 'Posisi', selectedInstrumen.Posisi)}
                     </div>
-                    
-                    {/* Tombol Kembali hanya ditampilkan ketika TIDAK sedang editing */}
-                    {!isEditing && (
-                      <button
-                        onClick={() => {
-                          setSelectedInstrumen(null);
-                          setIsEditing(false);
-                          setEditData({});
-                        }}
-                        className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 
-                        transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base"
-                      >
-                        ← Kembali ke Daftar Instrumen
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>

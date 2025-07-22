@@ -47,13 +47,16 @@ const NotFound = ({ pageName }) => (
 );
 
 const Sidebar = ({ 
-  onNavigate, // Callback function untuk navigasi
-  currentPage = '', // Prop untuk menentukan halaman yang sedang aktif
+  onNavigate,
+  currentPage = '',
   iconSize = { mobile: 20, tablet: 24, desktop: 28 }, 
   textSize = { mobile: 'text-[10px]', tablet: 'text-sm', desktop: 'text-sm' },
   sidebarWidth = { mobile: 'w-25', tablet: 'w-32', desktop: 'w-40' },
-  spacing = { mobile: 'space-y-8', tablet: 'space-y-3', desktop: 'space-y-4' },
-  padding = { mobile: 'p-8', tablet: 'p-4', desktop: 'p-6' }
+  spacing = { mobile: 'space-y-8', tablet: 'space-y-3', desktop: 'space-y-8' },
+  padding = { mobile: 'p-8', tablet: 'p-4', desktop: 'p-8' },
+  stickyPosition = 'top-0', // Posisi sticky (top-0, top-16, dll)
+  maxHeight = 'max-h-screen', // Tinggi maksimal sidebar
+  scrollable = true // Apakah sidebar bisa di-scroll
 }) => {
   const [activeItem, setActiveItem] = useState('');
 
@@ -163,78 +166,157 @@ const Sidebar = ({
   const responsiveSpacing = getResponsiveValue(spacing);
   const responsivePadding = getResponsiveValue(padding);
 
+  // Tentukan kelas CSS untuk sticky dan scrollable
+  const stickyClass = scrollable ? `sticky ${stickyPosition}` : 'relative';
+  const scrollableClass = scrollable ? `${maxHeight} overflow-y-auto` : '';
+
+
   return (
     <div className={`
       ${responsiveSidebarWidth.mobile} 
       sm:${responsiveSidebarWidth.tablet} 
       md:${responsiveSidebarWidth.desktop}
+      ${stickyClass}
+      ${scrollableClass}
       bg-white border-r border-gray-200 flex flex-col items-center py-4 sm:py-5 md:py-6 
       ${responsiveSpacing.mobile} 
       sm:${responsiveSpacing.tablet} 
       md:${responsiveSpacing.desktop}
+      z-10
     `}>
-      {menuItems.map((item) => (
-        <button
-          key={item.id}
-          onClick={() => handleItemClick(item)}
-          className={`
-            flex flex-col items-center space-y-1 sm:space-y-2 
-            ${responsivePadding.mobile} 
-            sm:${responsivePadding.tablet} 
-            md:${responsivePadding.desktop}
-            rounded-lg transition-all duration-200 w-full transform hover:scale-105
-            ${activeItem === item.id 
-              ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' 
-              : 'text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200 hover:text-gray-800'
-            }
-          `}
-        >
-          {/* Mobile Icon */}
-          <div className="block sm:hidden">
-            <item.icon size={responsiveIconSize.mobile} />
-          </div>
+      {/* Wrapper untuk menu items yang bisa di-scroll */}
+      <div className={`
+        flex flex-col items-center w-full
+        ${responsiveSpacing.mobile} 
+        sm:${responsiveSpacing.tablet} 
+        md:${responsiveSpacing.desktop}
+        ${scrollable ? 'flex-1 overflow-y-auto' : ''}
+      `}>
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => handleItemClick(item)}
+            className={`
+              flex flex-col items-center space-y-1 sm:space-y-2 
+              ${responsivePadding.mobile} 
+              sm:${responsivePadding.tablet} 
+              md:${responsivePadding.desktop}
+              rounded-lg transition-all duration-200 w-full transform hover:scale-105
+              ${activeItem === item.id 
+                ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' 
+                : 'text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200 hover:text-gray-800'
+              }
+            `}
+          >
+            {/* Mobile Icon */}
+            <div className="block sm:hidden">
+              <item.icon size={responsiveIconSize.mobile} />
+            </div>
+            
+            {/* Tablet Icon */}
+            <div className="hidden sm:block md:hidden">
+              <item.icon size={responsiveIconSize.tablet} />
+            </div>
+            
+            {/* Desktop Icon */}
+            <div className="hidden md:block">
+              <item.icon size={responsiveIconSize.desktop} />
+            </div>
+
+            {/* Mobile Text - Short Label */}
+            <span className={`
+              block sm:hidden 
+              ${responsiveTextSize.mobile} 
+              text-center font-medium leading-tight
+              ${activeItem === item.id ? 'text-blue-600' : ''}
+            `}>
+              {item.shortLabel}
+            </span>
+            
+            {/* Tablet Text */}
+            <span className={`
+              hidden sm:block md:hidden 
+              ${responsiveTextSize.tablet} 
+              text-center font-medium leading-tight
+              ${activeItem === item.id ? 'text-blue-600' : ''}
+            `}>
+              {item.label}
+            </span>
+            
+            {/* Desktop Text */}
+            <span className={`
+              hidden md:block 
+              ${responsiveTextSize.desktop} 
+              text-center font-medium leading-tight
+              ${activeItem === item.id ? 'text-blue-600' : ''}
+            `}>
+              {item.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Demo Component untuk menunjukkan sidebar yang mengikuti scroll
+const DemoApp = () => {
+  const [currentPage, setCurrentPage] = useState('profil');
+  
+  const handleNavigate = (route) => {
+    console.log('Navigating to:', route);
+    // Simulasi perubahan halaman
+    if (route.includes('destopteknisi')) setCurrentPage('profil');
+    else if (route.includes('instrumen')) setCurrentPage('meta');
+    else if (route.includes('logbook')) setCurrentPage('logbook');
+    else if (route.includes('perka')) setCurrentPage('perka');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <Sidebar 
+        onNavigate={handleNavigate}
+        currentPage={currentPage}
+        scrollable={true}
+        stickyPosition="top-0"
+        maxHeight="max-h-screen"
+      />
+      
+      {/* Main Content */}
+      <div className="flex-1 p-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">
+            Demo Sidebar dengan Scroll Following
+          </h1>
           
-          {/* Tablet Icon */}
-          <div className="hidden sm:block md:hidden">
-            <item.icon size={responsiveIconSize.tablet} />
-          </div>
-          
-          {/* Desktop Icon */}
-          <div className="hidden md:block">
-            <item.icon size={responsiveIconSize.desktop} />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Fitur Sidebar yang Mengikuti Scroll:
+            </h2>
+            <ul className="space-y-2 text-gray-600">
+              <li>• Sidebar menggunakan position sticky untuk mengikuti scroll</li>
+              <li>• Sidebar memiliki tinggi maksimal dan dapat di-scroll jika konten terlalu panjang</li>
+              <li>• Responsif di semua ukuran layar</li>
+              <li>• Dapat dikustomisasi posisi sticky dan tinggi maksimal</li>
+            </ul>
           </div>
 
-          {/* Mobile Text - Short Label */}
-          <span className={`
-            block sm:hidden 
-            ${responsiveTextSize.mobile} 
-            text-center font-medium leading-tight
-            ${activeItem === item.id ? 'text-blue-600' : ''}
-          `}>
-            {item.shortLabel}
-          </span>
-          
-          {/* Tablet Text */}
-          <span className={`
-            hidden sm:block md:hidden 
-            ${responsiveTextSize.tablet} 
-            text-center font-medium leading-tight
-            ${activeItem === item.id ? 'text-blue-600' : ''}
-          `}>
-            {item.label}
-          </span>
-          
-          {/* Desktop Text */}
-          <span className={`
-            hidden md:block 
-            ${responsiveTextSize.desktop} 
-            text-center font-medium leading-tight
-            ${activeItem === item.id ? 'text-blue-600' : ''}
-          `}>
-            {item.label}
-          </span>
-        </button>
-      ))}
+          {/* Konten panjang untuk testing scroll */}
+          {Array.from({ length: 50 }, (_, i) => (
+            <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Konten {i + 1}
+              </h3>
+              <p className="text-gray-600">
+                Ini adalah konten dummy untuk menguji apakah sidebar mengikuti scroll. 
+                Scroll halaman ini ke atas dan ke bawah untuk melihat sidebar tetap berada 
+                di posisi yang sama relatif terhadap viewport.
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

@@ -102,6 +102,14 @@ const DaftarTeknisiPage = () => {
     }
   };
 
+  // Fungsi untuk handle kembali ke daftar teknisi
+const handleBackToTechnicians = () => {
+  console.log('Tombol kembali teknisi diklik');
+  setSelectedPegawai(null);
+  setIsEditMode(false);
+  setEditData({});
+};
+
   // Fungsi untuk menangani perubahan pada dropdown
   const handleSelectChange = (event) => {
     const selectedNIP = event.target.value;
@@ -379,6 +387,23 @@ const DaftarTeknisiPage = () => {
         )}
 
         <main className="flex-1 p-4 sm:p-6 overflow-x-auto">
+          {selectedPegawai && !isEditMode && (
+            <button
+              onClick={() => {
+                setSelectedPegawai(null);
+                setIsEditMode(false);
+                setEditData({});
+                // Reset dropdown jika perlu
+                // document.getElementById('teknisi-dropdown').value = '';
+              }}
+              className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Kembali ke Daftar Teknisi
+            </button>
+          )}
           <h2 className="text-center text-[18px] sm:text-2xl font-semibold mb-6 sm:mb-8">
             Daftar Teknisi
           </h2>
@@ -662,15 +687,6 @@ const DaftarTeknisiPage = () => {
                       </div>
                     )}
                   </div>
-
-                  {!isEditMode && (
-                    <button
-                      onClick={() => setSelectedPegawai(null)}
-                      className="mt-4 lg:mt-6 w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base lg:text-sm"
-                    >
-                      ← Kembali ke Daftar Teknisi
-                    </button>
-                  )}
                 </div>
               </div>
             </div>

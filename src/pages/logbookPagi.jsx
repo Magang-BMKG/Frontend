@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom"; 
 import Header from "../component/Header";
 import Sidebar from "../component/sidebar"; 
 import Footer from "../component/Footer";
 import Swal from 'sweetalert2';
 
 const LogbookPagiPage = () => {
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -95,6 +97,22 @@ const LogbookPagiPage = () => {
       throw err;
     }
   };
+
+const handleBackToSummary = () => {
+  // Clear filter first
+  setFilterPeralatanDetail("");
+  
+  // Then clear selected entry
+  setSelectedPersonDateEntry(null);
+  
+  // Finally navigate back
+  handleBack();
+};
+
+const handleBackToLogbook = () => {
+  console.log('Navigating back to /logbook'); // Debug log
+  navigate("/logbook"); // Navigate to logbook page
+};
 
   // Handler untuk Tambah Data
   const handleAddEntry = async () => {
@@ -341,6 +359,16 @@ const deleteEntry = async (item) => {
         {/* Main Content */}
         <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-full">
           <div className="max-w-7xl mx-auto">
+            <button
+              onClick={selectedPersonDateEntry ? handleBackToSummary : handleBackToLogbook}
+              className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              {selectedPersonDateEntry ? "Kembali ke Ringkasan Log Book" : "Kembali ke Log Book"}
+            </button>
+
             <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-semibold mb-6 md:mb-8">
               Log Book Pagi
             </h2>
@@ -445,17 +473,6 @@ const deleteEntry = async (item) => {
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedPersonDateEntry(null);
-                      setFilterPeralatanDetail("");
-                    }}
-                    className="mt-6 w-full sm:w-auto px-6 py-3 bg-[#0066CC] text-white font-semibold rounded-lg shadow-md hover:bg-[#0066CC]/50 
-                        transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-[10px] sm:text-base"
-                      >
-                    ← Kembali ke Ringkasan Log Book
-                  </button>
                 </div>
               </div>
             ) : (
