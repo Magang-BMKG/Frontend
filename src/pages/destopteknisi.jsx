@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from "../component/Header";
-import Sidebar from "../component/sidebar"; 
+import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
 import { BsFillPersonPlusFill } from "react-icons/bs";
 import { FiEdit2 } from "react-icons/fi";
@@ -8,6 +8,8 @@ import { FiTrash2 } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
 import { FiCheck } from "react-icons/fi";
 import Swal from 'sweetalert2';
+import { useAuth } from '../context/AuthContext'; // <-- Impor hook useAuth
+import { useNavigate } from 'react-router-dom'; // <-- Impor useNavigate untuk redireksi
 
 const DaftarTeknisiPage = () => {
   const [pegawaiData, setPegawaiData] = useState([]);
@@ -30,8 +32,20 @@ const DaftarTeknisiPage = () => {
     foto: null // File object for upload
   });
 
+  const { userRole, logout } = useAuth(); // <-- Dapatkan userRole dan logout dari konteks
+  const navigate = useNavigate();
+
+  // <-- LOGIKA AUTORISASI DI SINI
+  useEffect(() => {
+    // Jika tidak ada peran pengguna atau peran bukan "admin" atau "user",
+    // maka redirect ke halaman landing (login).
+    // Sesuaikan logika ini sesuai kebutuhan otorisasi Anda.
+    if (!userRole || (userRole !== "admin" && userRole !== "user")) {
+      navigate('/'); // Redirect ke halaman login/landing
+    }
+  }, [userRole, navigate]); // Bergantung pada userRole dan navigate
+
   // URL GOOGLE APPS SCRIPT
-  // PASTIKAN INI ADALAH URL DEPLOYMENT APLIKASI WEB ANDA YANG BENAR DAN TERBARU
   const GOOGLE_SHEETS_API_URL =
     "https://script.google.com/macros/s/AKfycbxQyvGtri0z1XUNFaSlgJbOfaQncCDa-x3gWaapBIys5bW050m155F8ECVjvSyvDQ3NLQ/exec"; // Ganti dengan URL Anda
 
@@ -54,7 +68,7 @@ const DaftarTeknisiPage = () => {
         setPegawaiData(data);
       } else {
         throw new Error(
-          "Invalid data format received from API. Expected an array."
+          "Format data tidak valid dari API. Diharapkan array."
         );
       }
     } catch (err) {
@@ -69,8 +83,11 @@ const DaftarTeknisiPage = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Hanya ambil data jika userRole sudah valid (misal, setelah redirect selesai atau saat dimuat ulang)
+    if (userRole === "admin" || userRole === "user") { // Hanya ambil data jika pengguna diizinkan
+      fetchData();
+    }
+  }, [userRole]); // Bergantung pada `userRole`
 
   // Fungsi untuk mengirim permintaan POST ke Apps Script
   const sendTeknisiApiRequest = async (action, payload) => {
@@ -78,39 +95,35 @@ const DaftarTeknisiPage = () => {
       const response = await fetch(GOOGLE_SHEETS_API_URL, {
         redirect: "follow",
         method: "POST",
-        // Penting: Kirim body sebagai stringified JSON
         body: JSON.stringify({ action, ...payload }),
         headers: {
-          // Content-Type ini penting agar Apps Script dapat mengurai JSON
           "Content-Type": "text/plain;charset=utf-8",
         },
       });
 
       if (!response.ok) {
-        // Coba baca respons error dari server jika ada
         const errorText = await response.text();
-        throw new Error(`API request failed with status: ${response.status} - ${errorText}`);
+        throw new Error(`Permintaan API gagal dengan status: ${response.status} - ${errorText}`);
       }
       const result = await response.json();
       if (!result.success) {
-        throw new Error(result.message || "Operation failed on server.");
+        throw new Error(result.message || "Operasi gagal di server.");
       }
       return result;
     } catch (err) {
-      console.error("API request error:", err);
+      console.error("Kesalahan permintaan API:", err);
       throw err;
     }
   };
 
-  // Fungsi untuk handle kembali ke daftar teknisi
-const handleBackToTechnicians = () => {
-  console.log('Tombol kembali teknisi diklik');
-  setSelectedPegawai(null);
-  setIsEditMode(false);
-  setEditData({});
-};
 
-  // Fungsi untuk menangani perubahan pada dropdown
+  const handleBackToTechnicians = () => {
+    console.log('Tombol kembali teknisi diklik');
+    setSelectedPegawai(null);
+    setIsEditMode(false);
+    setEditData({});
+  };
+
   const handleSelectChange = (event) => {
     const selectedNIP = event.target.value;
     if (selectedNIP === "") {
@@ -125,12 +138,10 @@ const handleBackToTechnicians = () => {
     }
   };
 
-  // Toggle sidebar untuk mobile
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Handle add technician modal
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
   };
@@ -160,8 +171,6 @@ const handleBackToTechnicians = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    // Untuk saat ini, kita hanya akan menyimpan nama file atau URL placeholder
-    // Upload file sebenarnya membutuhkan integrasi Google Drive API di Apps Script
     setNewTechnician(prev => ({
       ...prev,
       foto: file
@@ -184,7 +193,6 @@ const handleBackToTechnicians = () => {
 
     if (result.isConfirmed) {
       try {
-        // Map newTechnician state to Google Sheet headers
         const payload = {
           "NAMA": newTechnician.nama,
           "NIP": newTechnician.nip,
@@ -194,8 +202,6 @@ const handleBackToTechnicians = () => {
           "DIKLAT/WORKSHOP/TEMU TEKNISI": newTechnician.diklatWorkshop,
           "TUGAS": newTechnician.tugas,
           "KETERANGAN": newTechnician.keterangan,
-          // Untuk foto, kirim URL placeholder atau string kosong untuk saat ini
-          // Implementasi upload foto ke Google Drive akan lebih kompleks
           "FotoURL": newTechnician.foto ? `placeholder_url_${newTechnician.foto.name}` : ''
         };
 
@@ -222,7 +228,6 @@ const handleBackToTechnicians = () => {
     }
   };
 
-  // Handle edit mode
   const handleEdit = (pegawai) => {
     setIsEditMode(true);
     setEditData({
@@ -268,9 +273,7 @@ const handleBackToTechnicians = () => {
 
     if (result.isConfirmed) {
       try {
-        // Map editData state to Google Sheet headers
         const payload = {
-          // NIP digunakan sebagai identifier untuk menemukan baris yang akan diedit
           "NIP_IDENTIFIER": editData.nip, // Kirim NIP asli sebagai identifier
           "NAMA": editData.nama,
           "NIP": editData.nip, // NIP baru jika diubah
@@ -280,7 +283,7 @@ const handleBackToTechnicians = () => {
           "DIKLAT/WORKSHOP/TEMU TEKNISI": editData.diklatWorkshop,
           "TUGAS": editData.tugas,
           "KETERANGAN": editData.keterangan,
-          "FotoURL": editData.foto ? `placeholder_url_${editData.foto.name}` : editData.fotoURL || '' // Update or keep existing
+          "FotoURL": editData.foto ? `placeholder_url_${editData.foto.name}` : editData.fotoURL || ''
         };
 
         await sendTeknisiApiRequest("edit", payload);
@@ -352,6 +355,16 @@ const handleBackToTechnicians = () => {
     }
   };
 
+  // Tampilkan loading atau redirect jika peran pengguna belum ditentukan
+  if (!userRole) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -393,8 +406,6 @@ const handleBackToTechnicians = () => {
                 setSelectedPegawai(null);
                 setIsEditMode(false);
                 setEditData({});
-                // Reset dropdown jika perlu
-                // document.getElementById('teknisi-dropdown').value = '';
               }}
               className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
             >
@@ -408,6 +419,13 @@ const handleBackToTechnicians = () => {
             Daftar Teknisi
           </h2>
 
+          {/* Menampilkan peran pengguna untuk demonstrasi (bisa dihapus nanti) */}
+          {userRole && (
+            <div className="text-center mb-4 text-gray-600">
+              Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+            </div>
+          )}
+
           {/* Dropdown untuk memilih teknisi - Centered */}
           <div className="mb-4 sm:mb-8 flex justify-center">
             <div className="w-full max-w-full sm:max-w-2x1 lg:max-w-4xl">
@@ -416,7 +434,7 @@ const handleBackToTechnicians = () => {
                 <label className="font-medium text-[10px] sm:text-base lg:text-lg text-gray-600 whitespace-nowrap flex-shrink-0">
                   Pilih Teknisi
                 </label>
-                
+
                 {/* Select */}
                 <select
                   className="flex-1 min-w-0 rounded-lg border border-gray-300 p-2 sm:p-3 text-[10px] sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -430,21 +448,22 @@ const handleBackToTechnicians = () => {
                     </option>
                   ))}
                 </select>
-                
-                {/* Add Button */}
-                <button
-                  className="flex-shrink-0 hover:bg-gray-100 p-2 md:p-0 rounded-lg transition-colors md:ml-2"
-                  onClick={handleOpenAddModal}
-                >
-                  <BsFillPersonPlusFill className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-600" />
-                </button>
+
+                {/* Tombol Tambah - Hanya terlihat jika pengguna adalah "admin" */}
+                {userRole === "admin" && (
+                  <button
+                    className="flex-shrink-0 hover:bg-gray-100 p-2 md:p-0 rounded-lg transition-colors md:ml-2"
+                    onClick={handleOpenAddModal}
+                  >
+                    <BsFillPersonPlusFill className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-600" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
           {/* Kondisional rendering berdasarkan state */}
           {loading ? (
-            // Loading state
             <div className="flex items-center justify-center min-h-[300px] bg-gray-50 rounded-lg">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -452,7 +471,6 @@ const handleBackToTechnicians = () => {
               </div>
             </div>
           ) : error ? (
-            // Error state
             <div className="flex flex-col items-center justify-center min-h-[300px] bg-red-50 p-4 rounded-lg shadow-lg border border-red-200">
               <div className="text-center max-w-md">
                 <div className="mb-4">
@@ -471,7 +489,6 @@ const handleBackToTechnicians = () => {
               </div>
             </div>
           ) : selectedPegawai ? (
-            // Detail pegawai yang dipilih
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 shadow-md mb-8 max-w-2xl lg:max-w-5xl mx-auto">
               <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                 {/* Bagian Foto */}
@@ -501,43 +518,45 @@ const handleBackToTechnicians = () => {
                     <h3 className="text-[14px] sm:text-xl lg:text-lg xl:text-xl font-semibold text-black text-center lg:text-left">
                       {selectedPegawai.NAMA}
                     </h3>
-                    <div className="flex items-center gap-0 sm:gap-1">
-                      {isEditMode ? (
-                        <>
-                          <button
-                            onClick={handleSaveEdit}
-                            className="p-1.5 sm:p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors"
-                            title="Simpan"
-                          >
-                            <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-full transition-colors"
-                            title="Batal"
-                          >
-                            <IoClose className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleEdit(selectedPegawai)}
-                            className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
-                            title="Edit"
-                          >
-                            <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(selectedPegawai.NIP)}
-                            className="p-1.5 sm:p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors"
-                            title="Hapus"
-                          >
-                            <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    {userRole === "admin" && ( // <-- Hanya tampilkan jika peran adalah "admin"
+                      <div className="flex items-center gap-0 sm:gap-1">
+                        {isEditMode ? (
+                          <>
+                            <button
+                              onClick={handleSaveEdit}
+                              className="p-1.5 sm:p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors"
+                              title="Simpan"
+                            >
+                              <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-full transition-colors"
+                              title="Batal"
+                            >
+                              <IoClose className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleEdit(selectedPegawai)}
+                              className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                              title="Edit"
+                            >
+                              <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(selectedPegawai.NIP)}
+                              className="p-1.5 sm:p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors"
+                              title="Hapus"
+                            >
+                              <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-4 lg:h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Form fields - editable when in edit mode */}
@@ -681,7 +700,7 @@ const handleBackToTechnicians = () => {
                             Pilih File
                           </label>
                           <span className="text-[10px] sm:text-sm text-black">
-                            {editData.foto ? editData.foto.name : (editData.fotoURL ? 'Existing Photo' : 'No file chosen')}
+                            {editData.foto ? editData.foto.name : (editData.fotoURL ? 'Foto ada' : 'Tidak ada file yang dipilih')}
                           </span>
                         </div>
                       </div>
@@ -739,8 +758,8 @@ const handleBackToTechnicians = () => {
         </main>
       </div>
 
-      {/* Add Technician Modal */}
-      {isAddModalOpen && (
+      {/* Modal Tambah Teknisi */}
+      {isAddModalOpen && userRole === "admin" && ( // <-- Hanya tampilkan modal jika peran adalah "admin"
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-200 max-h-[80vh] overflow-y-auto">
             {/* Modal Header */}
@@ -884,7 +903,7 @@ const handleBackToTechnicians = () => {
                     Pilih File
                   </label>
                   <span className="text-[10px] sm:text-sm text-black">
-                    {newTechnician.foto ? newTechnician.foto.name : 'No file chosen'}
+                    {newTechnician.foto ? newTechnician.foto.name : 'Tidak ada file yang dipilih'}
                   </span>
                 </div>
               </div>

@@ -10,6 +10,7 @@ import { CiLock } from "react-icons/ci";
 import { FaEyeSlash, FaRegEye } from 'react-icons/fa';
 import { AiOutlineClose } from 'react-icons/ai';
 import Logo from '../../assets/logo-bmkg.svg';
+import { useAuth } from '../context/AuthContext'; // <-- Impor hook useAuth
 
 export default function BMKGLandingPage() {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
@@ -19,12 +20,13 @@ export default function BMKGLandingPage() {
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const navigate = useNavigate();
+  const { setRole } = useAuth(); // <-- Dapatkan fungsi setRole dari konteks
+
   const handleLoginClick = () => {
     setShowLoginPopup(true);
     setLoginError('');
   };
-
-  const navigate = useNavigate();
 
   const handleLogin = async () => {
     setLoginError('');
@@ -40,7 +42,6 @@ export default function BMKGLandingPage() {
         headers: {
           "Content-Type": "text/plain;charset=utf-8",
         },
-        // Kirim email DAN password
         body: JSON.stringify({ email: email, password: password }),
       });
 
@@ -50,17 +51,17 @@ export default function BMKGLandingPage() {
       if (data.success) {
         const userRole = data.role;
         console.log('Login berhasil! Role:', userRole);
+        // <-- SIMPAN PERAN PENGGUNA KE KONTEKS GLOBAL DI SINI
+        setRole(userRole);
 
         if (userRole === "admin") {
           navigate('/destopteknisi');
         } else if (userRole === "user") {
           navigate('/destopteknisi');
         } else {
-          // Jika role tidak teridentifikasi atau guest (opsional)
           setLoginError('Role pengguna tidak valid atau tidak diizinkan.');
         }
       } else {
-        // Tampilkan pesan error dari Apps Script
         setLoginError(data.message || 'Login gagal. Cek kembali email dan kata sandi Anda.');
       }
 
@@ -77,12 +78,6 @@ export default function BMKGLandingPage() {
     setPassword('');
     setLoginError('');
   };
-
-  
-  //   const handleGoogleLogin = () => {
-  //   // Handle Google login logic here
-  //   console.log('Google login attempt');
-  // };
 
   const scrollToAbout = () => {
     const aboutSection = document.getElementById('tentang-section');
