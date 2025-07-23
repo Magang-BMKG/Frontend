@@ -10,6 +10,11 @@ import Perka from './pages/perka';
 import PerkaMekanik from './pages/perkaMekanik';
 import PerkaCanggih from './pages/perkaCanggih';
 import PerkaSederhana from './pages/perkaSederhana';
+import Jadwal from './pages/jadwal';
+import JadwalSenin from './pages/jadwalSenin';
+
+
+
 // import Login from './component/login';
 
 function App() {
@@ -26,6 +31,8 @@ function App() {
           <Route path="/perkaMekanik" element={<PerkaMekanik />} />
           <Route path="/perkaCanggih" element={<PerkaCanggih />} />
           <Route path="/perkaSederhana" element={<PerkaSederhana />} />
+          <Route path="/jadwal" element={<Jadwal/>} />
+          <Route path="/jadwalSenin" element={<JadwalSenin />} />
           {/* <Route path="/login" element={<Login />} /> */}
           <Route path="*" element={<div>404 - Halaman tidak ditemukan</div>} />
         </Routes>

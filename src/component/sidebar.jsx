@@ -12,7 +12,6 @@ const DatabaseIcon = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M42 10C42 13.3137 33.9411 16 24 16C14.0589 16 6 13.3137 6 10M42 10C42 6.68629 33.9411 4 24 4C14.0589 4 6 6.68629 6 10M42 10V38C42 41.32 34 44 24 44C14 44 6 41.32 6 38V10M42 24C42 27.32 34 30 24 30C14 30 6 27.32 6 24" />
   </svg>
-
 );
 
 const BookIcon = ({ size = 24 }) => (
@@ -25,6 +24,13 @@ const SettingsIcon = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
     <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
+// New Calendar/Schedule Icon
+const CalendarIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 55 55" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M36.6667 4.5835V13.7502M18.3333 4.5835V13.7502M6.875 22.9168H48.125M11.4583 9.16683H43.5417C46.073 9.16683 48.125 11.2189 48.125 13.7502V45.8335C48.125 48.3648 46.073 50.4168 43.5417 50.4168H11.4583C8.92703 50.4168 6.875 48.3648 6.875 45.8335V13.7502C6.875 11.2189 8.92703 9.16683 11.4583 9.16683Z"/>
   </svg>
 );
 
@@ -86,12 +92,20 @@ const Sidebar = ({
       keywords: ['logbook', 'log', 'book']
     },
     { 
+      id: 'jadwal', 
+      icon: CalendarIcon, 
+      label: 'Jadwal', 
+      shortLabel: 'Jadwal', 
+      route: '/jadwal',
+      keywords: ['jadwal', 'schedule', 'calendar', 'kalender']
+    },
+    { 
       id: 'perka', 
       icon: SettingsIcon, 
       label: 'Perka', 
       shortLabel: 'Perka', 
       route: '/perka',
-      keywords: ['perka', 'schedule', 'calendar']
+      keywords: ['perka']
     }
   ];
 
@@ -144,6 +158,8 @@ const Sidebar = ({
         window.location.href = '/instrumen';
       } else if (item.id === 'logbook') {
         window.location.href = '/logbook';
+      } else if (item.id === 'jadwal') {
+        window.location.href = '/jadwal';
       } else if (item.id === 'perka') {
         window.location.href = '/perka';
       } else {
@@ -269,6 +285,7 @@ const DemoApp = () => {
     if (route.includes('destopteknisi')) setCurrentPage('profil');
     else if (route.includes('instrumen')) setCurrentPage('meta');
     else if (route.includes('logbook')) setCurrentPage('logbook');
+    else if (route.includes('jadwal')) setCurrentPage('jadwal');
     else if (route.includes('perka')) setCurrentPage('perka');
   };
 
@@ -287,23 +304,35 @@ const DemoApp = () => {
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            Demo Sidebar dengan Scroll Following
+            Demo Sidebar dengan Menu Jadwal
           </h1>
           
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Fitur Sidebar yang Mengikuti Scroll:
+              Menu yang Tersedia:
             </h2>
             <ul className="space-y-2 text-gray-600">
-              <li>• Sidebar menggunakan position sticky untuk mengikuti scroll</li>
-              <li>• Sidebar memiliki tinggi maksimal dan dapat di-scroll jika konten terlalu panjang</li>
-              <li>• Responsif di semua ukuran layar</li>
-              <li>• Dapat dikustomisasi posisi sticky dan tinggi maksimal</li>
+              <li>• <strong>Profil Teknisi</strong> - Informasi profil teknisi</li>
+              <li>• <strong>Meta Data</strong> - Data instrumen dan peralatan</li>
+              <li>• <strong>Log Book</strong> - Catatan aktivitas</li>
+              <li>• <strong>Jadwal</strong> - Kalender dan penjadwalan (Baru!)</li>
+              <li>• <strong>Perka</strong> - Pengaturan sistem</li>
             </ul>
           </div>
 
+          {/* Demo active page indicator */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Halaman Aktif: <span className="text-blue-600">{currentPage}</span>
+            </h2>
+            <p className="text-gray-600">
+              Klik menu sidebar untuk melihat perubahan halaman aktif. 
+              Menu Jadwal sekarang sudah tersedia dengan ikon kalender.
+            </p>
+          </div>
+
           {/* Konten panjang untuk testing scroll */}
-          {Array.from({ length: 50 }, (_, i) => (
+          {Array.from({ length: 30 }, (_, i) => (
             <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
                 Konten {i + 1}
@@ -311,7 +340,8 @@ const DemoApp = () => {
               <p className="text-gray-600">
                 Ini adalah konten dummy untuk menguji apakah sidebar mengikuti scroll. 
                 Scroll halaman ini ke atas dan ke bawah untuk melihat sidebar tetap berada 
-                di posisi yang sama relatif terhadap viewport.
+                di posisi yang sama relatif terhadap viewport. Menu Jadwal baru sudah 
+                terintegrasi dengan navigasi sistem.
               </p>
             </div>
           ))}
