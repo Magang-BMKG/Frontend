@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import { IoClose } from "react-icons/io5";
 import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
+import { useAuth } from '../context/AuthContext';
 
 const LogbookPagiPage = () => {
     const navigate = useNavigate();
@@ -45,7 +46,13 @@ const LogbookPagiPage = () => {
 
     // State untuk menu kebab (titik tiga)
     const [openKebabMenuId, setOpenKebabMenuId] = useState(null); // Menyimpan ID unik dari kombinasi yang menu-nya terbuka
+    const { userRole, logout } = useAuth();
 
+    useEffect(() => {
+      if (!userRole || (userRole !== "admin" && userRole !== "user")) {
+        navigate('/');
+      }
+    }, [userRole, navigate]);
 
     // URL API Logbook (tetap sama)
     const LOGBOOK_API_URL =
@@ -85,8 +92,10 @@ const LogbookPagiPage = () => {
     };
 
     useEffect(() => {
+      if (userRole === "admin" || userRole === "user") {
         fetchData();
-    }, []);
+      }
+    }, [userRole]);
 
     // --- Fungsi Pengiriman Permintaan API Umum (untuk Logbook) ---
     const sendApiRequest = async (action, payload) => {
@@ -459,6 +468,16 @@ const LogbookPagiPage = () => {
         );
     }
 
+
+    if (!userRole) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
+        </div>
+      );
+    }
+
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
@@ -537,6 +556,12 @@ const LogbookPagiPage = () => {
                     <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-semibold mb-6 md:mb-8">
                         Log Book Pagi
                     </h2>
+
+                    {userRole && (
+                      <div className="text-center mb-4 text-gray-600">
+                        Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+                      </div>
+                    )}
 
                     {logbookData.length === 0 && !loading && !error ? (
                         <div className="text-center py-8">
@@ -671,28 +696,30 @@ const LogbookPagiPage = () => {
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
                                             >
-                                                <path
+                                                {/* <path
                                                     strokeLinecap="round"
                                                     strokeLinejoin="round"
                                                     strokeWidth="2"
                                                     d="M9 5l7 7-7 7"
-                                                />
+                                                /> */}
                                             </svg>
                                         </div>
                                         <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
 
                                         {/* Kebab Menu Button (tetap SVG inline) */}
-                                        <button
-                                            className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
-                                            onClick={(e) => {
-                                                e.stopPropagation(); // Mencegah klik kotak memicu setSelectedPersonDateEntry
-                                                handleOpenKebabMenu(comboId);
-                                            }}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                            </svg>
-                                        </button>
+                                        {userRole === "admin" && (
+                                          <button
+                                              className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
+                                              onClick={(e) => {
+                                                  e.stopPropagation(); // Mencegah klik kotak memicu setSelectedPersonDateEntry
+                                                  handleOpenKebabMenu(comboId);
+                                              }}
+                                          >
+                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                              </svg>
+                                          </button>
+                                        )}
 
                                         {/* Kebab Menu Dropdown (tetap menggunakan ikon yang sebelumnya Anda set) */}
                                         {openKebabMenuId === comboId && (
