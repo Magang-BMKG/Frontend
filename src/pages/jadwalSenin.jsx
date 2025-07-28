@@ -40,41 +40,48 @@ const JadwalSeninPage = () => {
   const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbz3yhsF_lGRlEGVCXLnDY_IzzKTklkSDCDinA2p2i_B-JCf4EhzATsB_RFlNxEKYW0Gog/exec";
 
   // Fungsi untuk mengambil data dari API (GET)
- // Fungsi untuk mengambil data dari API (GET)
-const fetchData = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const response = await fetch(JADWAL_API_URL);
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(JADWAL_API_URL);
 
-    if (!response.ok) {
-      throw new Error(
-        `HTTP error! Status: ${response.status} - ${response.statusText}`
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error! Status: ${response.status} - ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+
+      if (result && Array.isArray(result.data)) {
+        setJadwalData(result.data);
+        // --- PENTING: Inisialisasi localChecklistState dari data yang diambil ---
+        const initialChecklistState = {};
+        result.data.forEach(item => {
+          initialChecklistState[item.id] = {
+            isCompleted: item.Status, // 'Status' sudah boolean dari Apps Script
+            completedDate: item.completedDate || null
+          };
+        });
+        setLocalChecklistState(initialChecklistState);
+        setHasUnsavedChanges(false); // Pastikan tidak ada perubahan yang belum disimpan saat pertama kali memuat
+        // --- Akhir PENTING ---
+      } else {
+        throw new Error(
+          "Format data tidak valid. Seharusnya objek dengan properti 'data' berbentuk array."
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching jadwal data:", err);
+      setError(
+        err.message ||
+          "Gagal mengambil data jadwal. Silakan periksa koneksi atau API."
       );
+    } finally {
+      setLoading(false);
     }
-
-    const result = await response.json(); // Mengganti nama 'data' menjadi 'result' agar lebih jelas
-
-    // MODIFIKASI: Cek properti 'data' yang merupakan sebuah array
-    if (result && Array.isArray(result.data)) {
-      // Asumsinya respons API adalah { data: [...] }
-      setJadwalData(result.data); 
-    } else {
-      // Pesan eror yang lebih spesifik
-      throw new Error(
-        "Format data tidak valid. Seharusnya objek dengan properti 'data' berbentuk array."
-      );
-    }
-  } catch (err) {
-    console.error("Error fetching jadwal data:", err);
-    setError(
-      err.message ||
-        "Gagal mengambil data jadwal. Silakan periksa koneksi atau API."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchData();
@@ -159,7 +166,7 @@ const fetchData = async () => {
     if (selectedForDelete.size === jadwalData.length) {
       setSelectedForDelete(new Set());
     } else {
-      const allIds = new Set(jadwalData.map((jadwal, index) => jadwal.id || index));
+      const allIds = new Set(jadwalData.map(jadwal => jadwal.id)); // Menggunakan jadwal.id
       setSelectedForDelete(allIds);
     }
   };
@@ -204,7 +211,7 @@ const fetchData = async () => {
 
         setIsDeleteMode(false);
         setSelectedForDelete(new Set());
-        fetchData();
+        fetchData(); // Muat ulang data setelah perubahan
         
       } catch (error) {
         console.error('Error deleting schedules:', error);
@@ -263,8 +270,11 @@ const fetchData = async () => {
     try {
       setIsSubmitting(true);
       await sendApiRequest("edit", {
-        id: jadwalId,
-        ...editedData
+        id: jadwalId, // Kirim ID baris untuk identifikasi
+        Lokasi: editedData.Lokasi,
+        Keterangan: editedData.Keterangan,
+        Status: localChecklistState[jadwalId]?.isCompleted || false, // Kirim status checklist saat ini
+        completedDate: localChecklistState[jadwalId]?.completedDate || null // Kirim tanggal selesai
       });
 
       await Swal.fire({
@@ -275,7 +285,7 @@ const fetchData = async () => {
       });
 
       handleCancelEdit(jadwalId);
-      fetchData();
+      fetchData(); // Muat ulang data setelah perubahan
     } catch (error) {
       console.error('Error updating schedule:', error);
       await Swal.fire({
@@ -360,25 +370,49 @@ const fetchData = async () => {
     });
 
     if (result.isConfirmed) {
-      // Reset local state dulu
-      const resetState = {};
-      jadwalData.forEach((item, index) => {
-        const id = item.id || index;
-        resetState[id] = {
-          isCompleted: false,
-          completedDate: null
-        };
-      });
-      
-      setLocalChecklistState(resetState);
-      setHasUnsavedChanges(true);
-      
-      await Swal.fire({
-        title: 'Checklist Direset!',
-        text: 'Jangan lupa klik "Simpan Checklist" untuk menyimpan perubahan.',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
+      try {
+        setIsSubmitting(true);
+        const resetUpdates = jadwalData.map(item => {
+          return {
+            Lokasi: item.Lokasi, // Send the actual Lokasi
+            Keterangan: item.Keterangan, // Send the actual Keterangan
+            isCompleted: false,
+            completedDate: null
+          };
+        });
+        await sendApiRequest("resetChecklists", {}); // No specific payload needed for a global reset
+
+        // Reset local state after successful API call
+        const newLocalState = {};
+        jadwalData.forEach(item => {
+          newLocalState[item.id] = {
+            isCompleted: false,
+            completedDate: null
+          };
+        });
+        setLocalChecklistState(newLocalState);
+        setHasUnsavedChanges(false); // No unsaved changes after resetting and saving
+
+        await Swal.fire({
+          title: 'Checklist Berhasil Direset!',
+          text: 'Semua tugas telah direset menjadi belum selesai.',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+
+        fetchData(); // Re-fetch to ensure UI is in sync with backend
+
+      } catch (error) {
+        console.error('Error resetting checklists:', error);
+        await Swal.fire({
+          title: 'Error!',
+          text: `Gagal mereset checklist: ${error.message}. Silakan coba lagi.`,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -407,9 +441,10 @@ const fetchData = async () => {
       try {
         const payload = {
           action: "add",
-          ...formData,
-          isCompleted: false,
-          completedDate: null
+          Lokasi: formData.Lokasi, // Kirim Lokasi
+          Keterangan: formData.Keterangan, // Kirim Keterangan
+          Status: false, // Default status awal
+          completedDate: null // Default tanggal selesai awal
         };
 
         await sendApiRequest("add", payload);
@@ -422,7 +457,7 @@ const fetchData = async () => {
         });
 
         handleCloseAddModal();
-        fetchData();
+        fetchData(); // Muat ulang data setelah penambahan
         
       } catch (error) {
         console.error('Error adding schedule:', error);
@@ -438,7 +473,7 @@ const fetchData = async () => {
     }
   };
 
-  // Calculate stats from local state
+  // Calculate stats from local state (now correctly initialized)
   const completedCount = Object.values(localChecklistState).filter(state => state.isCompleted).length;
   const uncompletedCount = Object.values(localChecklistState).filter(state => !state.isCompleted).length;
   const progressPercentage = jadwalData.length > 0 ? Math.round((completedCount / jadwalData.length) * 100) : 0;
@@ -453,6 +488,7 @@ const fetchData = async () => {
           onClick={toggleSidebar}
           className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
         >
+          {/* SVG for menu icon */}
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -650,10 +686,10 @@ const fetchData = async () => {
                       </tr>
                     ) : (
                       jadwalData.map((jadwal, index) => {
-                        const jadwalId = jadwal.id || index;
+                        const jadwalId = jadwal.id; // Menggunakan ID dari Apps Script
                         const isEditing = editingRows.has(jadwalId);
                         const currentEditData = editData[jadwalId] || jadwal;
-                        const isCompleted = localChecklistState[jadwalId]?.isCompleted || false;
+                        const isCompleted = localChecklistState[jadwalId]?.isCompleted || false; // Ambil dari local state
                         
                         return (
                           <tr 
@@ -785,7 +821,7 @@ const fetchData = async () => {
               ) : (
                 <div className="space-y-2">
                   {jadwalData.map((jadwal, index) => {
-                    const jadwalId = jadwal.id || index;
+                    const jadwalId = jadwal.id;
                     const isEditing = editingRows.has(jadwalId);
                     const currentEditData = editData[jadwalId] || jadwal;
                     const isCompleted = localChecklistState[jadwalId]?.isCompleted || false;
