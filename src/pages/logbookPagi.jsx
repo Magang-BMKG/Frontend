@@ -8,6 +8,7 @@ import { IoClose } from "react-icons/io5";
 import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient'; // Import Supabase client
 
 const LogbookPagiPage = () => {
     const navigate = useNavigate();
@@ -26,6 +27,8 @@ const LogbookPagiPage = () => {
     const [showAddEntryModal, setShowAddEntryModal] = useState(false);
     const [newPeralatan, setNewPeralatan] = useState("");
     const [newKeterangan, setNewKeterangan] = useState("");
+    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk file foto baru
+    const [isUploading, setIsUploading] = useState(false); // State untuk status upload
 
     // States untuk modal Tambah Penanggung Jawab & Tanggal BARU
     const [showAddPersonDateModal, setShowAddPersonDateModal] = useState(false);
@@ -37,24 +40,26 @@ const LogbookPagiPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [editedPeralatan, setEditedPeralatan] = useState("");
     const [editedKeterangan, setEditedKeterangan] = useState("");
+    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk file foto yang diedit
+    const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState(""); // State untuk URL foto yang sudah ada
 
     // States untuk modal Edit Penanggung Jawab & Tanggal
     const [showEditPersonDateModal, setShowEditPersonDateModal] = useState(false);
-    const [editingPersonDateCombo, setEditingPersonDateCombo] = useState(null); // Kombinasi asli yang diedit
+    const [editingPersonDateCombo, setEditingPersonDateCombo] = useState(null);
     const [editedPersonDatePenanggungJawab, setEditedPersonDatePenanggungJawab] = useState("");
     const [editedPersonDateTanggal, setEditedPersonDateTanggal] = useState("");
 
     // State untuk menu kebab (titik tiga)
-    const [openKebabMenuId, setOpenKebabMenuId] = useState(null); // Menyimpan ID unik dari kombinasi yang menu-nya terbuka
+    const [openKebabMenuId, setOpenKebabMenuId] = useState(null);
     const { userRole, logout } = useAuth();
 
     useEffect(() => {
-      if (!userRole || (userRole !== "admin" && userRole !== "user")) {
-        navigate('/');
-      }
+        if (!userRole || (userRole !== "admin" && userRole !== "user")) {
+            navigate('/');
+        }
     }, [userRole, navigate]);
 
-    // URL API Logbook (tetap sama)
+    // URL API Logbook
     const LOGBOOK_API_URL =
         "https://script.google.com/macros/s/AKfycbzx8LbGA284ZXj_xg7hRqaF2GQe3TgNwBe8f7v1EkFmrRTd67AcUiAf6BEEqnFWbO5qQA/exec";
 
@@ -92,9 +97,9 @@ const LogbookPagiPage = () => {
     };
 
     useEffect(() => {
-      if (userRole === "admin" || userRole === "user") {
-        fetchData();
-      }
+        if (userRole === "admin" || userRole === "user") {
+            fetchData();
+        }
     }, [userRole]);
 
     // --- Fungsi Pengiriman Permintaan API Umum (untuk Logbook) ---
@@ -124,6 +129,60 @@ const LogbookPagiPage = () => {
         }
     };
 
+    // --- Fungsi untuk mengunggah file ke Supabase Storage ---
+    const uploadFileToSupabase = async (file) => {
+        if (!file) return null;
+
+        setIsUploading(true);
+        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`; // Nama file unik
+        const bucketName = 'logbook'; // Ganti dengan nama bucket Supabase Anda
+
+        try {
+            const { data, error } = await supabase.storage
+                .from(bucketName)
+                .upload(fileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (error) {
+                throw error;
+            }
+
+            const publicUrl = supabase.storage
+                .from(bucketName)
+                .getPublicUrl(fileName).data.publicUrl;
+
+            setIsUploading(false);
+            return publicUrl;
+        } catch (error) {
+            setIsUploading(false);
+            console.error('Error uploading file to Supabase:', error);
+            Swal.fire('Error Upload!', `Gagal mengunggah foto: ${error.message}`, 'error');
+            return null;
+        }
+    };
+
+    // --- Fungsi untuk menghapus file dari Supabase Storage (opsional) ---
+    const deleteFileFromSupabase = async (fileUrl) => {
+        if (!fileUrl || !fileUrl.includes('supabase.co')) return; // Hanya hapus jika dari Supabase
+
+        const bucketName = 'logbook'; // Ganti dengan nama bucket Supabase Anda
+        const fileName = fileUrl.split(`${bucketName}/`)[1]; // Ekstrak nama file dari URL
+
+        try {
+            const { error } = await supabase.storage.from(bucketName).remove([fileName]);
+            if (error) {
+                throw error;
+            }
+            console.log('File deleted from Supabase:', fileName);
+        } catch (error) {
+            console.error('Error deleting file from Supabase:', error);
+            // Swal.fire('Error Hapus!', `Gagal menghapus foto lama: ${error.message}`, 'error'); // Opsional: tampilkan error ke user
+        }
+    };
+
+
     // --- Handler Navigasi Kembali ---
     const handleBackToSummary = () => {
         setFilterPeralatanDetail("");
@@ -144,17 +203,32 @@ const LogbookPagiPage = () => {
             Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
             return;
         }
+        if (isUploading) {
+            Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
+            return;
+        }
+
+        let buktiFotoUrl = "";
+        if (newBuktiFotoFile) {
+            buktiFotoUrl = await uploadFileToSupabase(newBuktiFotoFile);
+            if (!buktiFotoUrl) {
+                return; // Batalkan jika upload gagal
+            }
+        }
+
         try {
             await sendApiRequest("add", {
                 Peralatan: newPeralatan,
                 Keterangan: newKeterangan,
-                "Penanggung Jawab": selectedPersonDateEntry.person, // Ambil dari yang dipilih
-                Tanggal: selectedPersonDateEntry.date, // Ambil dari yang dipilih
+                "Penanggung Jawab": selectedPersonDateEntry.person,
+                Tanggal: selectedPersonDateEntry.date,
+                "Bukti Foto": buktiFotoUrl // Kirim URL foto
             });
             Swal.fire('Berhasil!', 'Entri peralatan berhasil ditambahkan!', 'success');
             setShowAddEntryModal(false);
             setNewPeralatan("");
             setNewKeterangan("");
+            setNewBuktiFotoFile(null); // Reset file input
             fetchData(); // Muat ulang data
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri peralatan: ${err.message}`, 'error');
@@ -178,7 +252,8 @@ const LogbookPagiPage = () => {
                 "Penanggung Jawab": newPersonDatePenanggungJawab,
                 Tanggal: newPersonDateTanggal,
                 Peralatan: "", // Kosongkan Peralatan
-                Keterangan: "" // Kosongkan Keterangan
+                Keterangan: "", // Kosongkan Keterangan
+                "Bukti Foto": "" // Kosongkan Bukti Foto
             });
             Swal.fire('Berhasil!', 'Penanggung Jawab dan Tanggal baru berhasil ditambahkan!', 'success');
             setShowAddPersonDateModal(false);
@@ -195,6 +270,8 @@ const LogbookPagiPage = () => {
         setEditingItem(item);
         setEditedPeralatan(item.Peralatan);
         setEditedKeterangan(item.Keterangan);
+        setEditedBuktiFotoURL(item["Bukti Foto"] || ""); // Set URL foto yang sudah ada
+        setEditedBuktiFotoFile(null); // Reset file input
         setShowEditModal(true);
     };
 
@@ -203,6 +280,24 @@ const LogbookPagiPage = () => {
             Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
             return;
         }
+        if (isUploading) {
+            Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
+            return;
+        }
+
+        let finalBuktiFotoUrl = editedBuktiFotoURL; // Default ke URL yang sudah ada
+
+        if (editedBuktiFotoFile) { // Jika ada file baru yang dipilih
+            // Opsional: Hapus foto lama dari Supabase sebelum mengunggah yang baru
+            if (editedBuktiFotoURL) {
+                await deleteFileFromSupabase(editedBuktiFotoURL);
+            }
+            finalBuktiFotoUrl = await uploadFileToSupabase(editedBuktiFotoFile);
+            if (!finalBuktiFotoUrl) {
+                return; // Batalkan jika upload gagal
+            }
+        }
+
         try {
             await sendApiRequest("edit", {
                 originalPeralatan: editingItem.Peralatan,
@@ -210,12 +305,15 @@ const LogbookPagiPage = () => {
                 originalTanggal: editingItem.Tanggal,
                 Peralatan: editedPeralatan,
                 Keterangan: editedKeterangan,
+                "Bukti Foto": finalBuktiFotoUrl // Kirim URL foto (baru atau yang lama)
             });
             Swal.fire('Berhasil!', 'Data berhasil diubah!', 'success');
             setShowEditModal(false);
             setEditingItem(null);
             setEditedPeralatan("");
             setEditedKeterangan("");
+            setEditedBuktiFotoFile(null); // Reset file input
+            setEditedBuktiFotoURL(""); // Reset URL
             fetchData(); // Muat ulang data
         } catch (err) {
             Swal.fire('Gagal!', `Gagal mengubah data: ${err.message}`, 'error');
@@ -240,6 +338,11 @@ const LogbookPagiPage = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
+                    // Opsional: Hapus foto dari Supabase saat entri dihapus
+                    if (item["Bukti Foto"]) {
+                        await deleteFileFromSupabase(item["Bukti Foto"]);
+                    }
+
                     await sendApiRequest("delete", {
                         Peralatan: item.Peralatan,
                         "Penanggung Jawab": item["Penanggung Jawab"],
@@ -339,6 +442,16 @@ const LogbookPagiPage = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
+                    // Opsional: Dapatkan semua URL foto terkait dan hapus dari Supabase
+                    const entriesToDelete = logbookData.filter(item =>
+                        item["Penanggung Jawab"] === combo.person &&
+                        item.Tanggal === combo.date &&
+                        item["Bukti Foto"]
+                    );
+                    for (const entry of entriesToDelete) {
+                        await deleteFileFromSupabase(entry["Bukti Foto"]);
+                    }
+
                     await sendApiRequest("deletePersonDate", {
                         "Penanggung Jawab": combo.person,
                         Tanggal: combo.date,
@@ -470,12 +583,12 @@ const LogbookPagiPage = () => {
 
 
     if (!userRole) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
-        </div>
-      );
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
+            </div>
+        );
     }
 
     return (
@@ -558,9 +671,9 @@ const LogbookPagiPage = () => {
                     </h2>
 
                     {userRole && (
-                      <div className="text-center mb-4 text-gray-600">
-                        Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
-                      </div>
+                        <div className="text-center mb-4 text-gray-600">
+                            Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+                        </div>
                     )}
 
                     {logbookData.length === 0 && !loading && !error ? (
@@ -587,15 +700,15 @@ const LogbookPagiPage = () => {
                                 <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 text-center sm:text-left flex-grow">
                                     Detail Log Book untuk <span className="text-blue-700">{selectedPersonDateEntry.person}</span> pada <span className="text-blue-700">{selectedPersonDateEntry.date}</span>
                                 </h3>
-                                <button
-                                    onClick={() => setShowAddEntryModal(true)}
-                                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap flex items-center space-x-2"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    <span>Tambah Peralatan</span>
-                                </button>
+                                    <button
+                                        onClick={() => setShowAddEntryModal(true)}
+                                        className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap flex items-center space-x-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        <span>Tambah Peralatan</span>
+                                    </button>
                             </div>
 
                             {/* Input pencarian */}
@@ -622,6 +735,9 @@ const LogbookPagiPage = () => {
                                                     <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Keterangan
                                                     </th>
+                                                    <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Bukti Foto
+                                                    </th>
                                                     <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Aksi
                                                     </th>
@@ -647,24 +763,33 @@ const LogbookPagiPage = () => {
                                                                     {item.Keterangan}
                                                                 </div>
                                                             </td>
-                                                            <td className="px-3 py-4 text-center">
-                                                                <div className="flex justify-center items-center space-x-2">
-                                                                    <button
-                                                                        onClick={() => handleEditClick(item)}
-                                                                        className="text-blue-600 hover:text-blue-900 p-1"
-                                                                        title="Edit Entri"
-                                                                    >
-                                                                        <FiEdit2 className="w-4 h-4 md:w-5 md:h-5" /> {/* Ikon Edit */}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteClick(item)}
-                                                                        className="text-red-600 hover:text-red-900 p-1"
-                                                                        title="Hapus Entri"
-                                                                    >
-                                                                        <FiTrash2 className="w-4 h-4 md:w-5 md:h-5" /> {/* Ikon Hapus */}
-                                                                    </button>
-                                                                </div>
+                                                            <td className="px-3 py-4">
+                                                                {item["Bukti Foto"] ? (
+                                                                    <a href={item["Bukti Foto"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs sm:text-sm">
+                                                                        Lihat Foto
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="text-gray-500 text-xs sm:text-sm">Tidak Ada</span>
+                                                                )}
                                                             </td>
+                                                                <td className="px-3 py-4 text-center">
+                                                                    <div className="flex justify-center items-center space-x-2">
+                                                                        <button
+                                                                            onClick={() => handleEditClick(item)}
+                                                                            className="text-blue-600 hover:text-blue-900 p-1"
+                                                                            title="Edit Entri"
+                                                                        >
+                                                                            <FiEdit2 className="w-4 h-4 md:w-5 md:h-5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteClick(item)}
+                                                                            className="text-red-600 hover:text-red-900 p-1"
+                                                                            title="Hapus Entri"
+                                                                        >
+                                                                            <FiTrash2 className="w-4 h-4 md:w-5 md:h-5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
                                                         </tr>
                                                     ))
                                                 )}
@@ -678,7 +803,6 @@ const LogbookPagiPage = () => {
                         // Tampilan Grid Kotak Ringkasan (mirip PerkaCanggih)
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                             {uniquePersonDateCombinations.map((combo, index) => {
-                                // Membuat ID unik untuk setiap kotak untuk menu kebab
                                 const comboId = `${combo.person}-${combo.date}`;
                                 return (
                                     <div
@@ -706,26 +830,24 @@ const LogbookPagiPage = () => {
                                         </div>
                                         <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
 
-                                        {/* Kebab Menu Button (tetap SVG inline) */}
-                                        {userRole === "admin" && (
-                                          <button
-                                              className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
-                                              onClick={(e) => {
-                                                  e.stopPropagation(); // Mencegah klik kotak memicu setSelectedPersonDateEntry
-                                                  handleOpenKebabMenu(comboId);
-                                              }}
-                                          >
-                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                              </svg>
-                                          </button>
+                                        {userRole === "admin" && ( // Hanya tampilkan untuk admin
+                                            <button
+                                                className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenKebabMenu(comboId);
+                                                }}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                                </svg>
+                                            </button>
                                         )}
 
-                                        {/* Kebab Menu Dropdown (tetap menggunakan ikon yang sebelumnya Anda set) */}
-                                        {openKebabMenuId === comboId && (
+                                        {openKebabMenuId === comboId && userRole === "admin" && ( // Hanya tampilkan untuk admin
                                             <div
                                                 className="absolute top-10 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
-                                                onMouseLeave={handleCloseKebabMenu} // Tutup saat mouse keluar
+                                                onMouseLeave={handleCloseKebabMenu}
                                             >
                                                 <button
                                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
@@ -734,7 +856,7 @@ const LogbookPagiPage = () => {
                                                         handleEditPersonDateClick(combo);
                                                     }}
                                                 >
-                                                    <FiEdit2 className="w-4 h-4" /> {/* Ikon Edit */}
+                                                    <FiEdit2 className="w-4 h-4" />
                                                     <span>Edit</span>
                                                 </button>
                                                 <button
@@ -744,7 +866,7 @@ const LogbookPagiPage = () => {
                                                         handleDeletePersonDate(combo);
                                                     }}
                                                 >
-                                                    <FiTrash2 className="w-4 h-4" /> {/* Ikon Hapus */}
+                                                    <FiTrash2 className="w-4 h-4" />
                                                     <span>Hapus</span>
                                                 </button>
                                             </div>
@@ -934,7 +1056,7 @@ const LogbookPagiPage = () => {
                                 placeholder="Misal: AWOS Bandara"
                             />
                         </div>
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label
                                 htmlFor="newKeterangan"
                                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -955,18 +1077,50 @@ const LogbookPagiPage = () => {
                                 ))}
                             </select>
                         </div>
+                        {/* Input File untuk Bukti Foto */}
+                        <div className="mb-6">
+                            <label
+                                htmlFor="newBuktiFotoFile"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                Bukti Foto
+                            </label>
+                            <input
+                                type="file"
+                                id="newBuktiFotoFile"
+                                accept="image/*"
+                                className="w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-md file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-50 file:text-blue-700
+                                    hover:file:bg-blue-100"
+                                onChange={(e) => setNewBuktiFotoFile(e.target.files[0])}
+                                disabled={isUploading}
+                            />
+                            {newBuktiFotoFile && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    File dipilih: {newBuktiFotoFile.name}
+                                </p>
+                            )}
+                            {isUploading && (
+                                <p className="mt-2 text-blue-500 text-sm">Mengunggah foto...</p>
+                            )}
+                        </div>
                         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                             <button
                                 onClick={() => setShowAddEntryModal(false)}
                                 className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                                disabled={isUploading}
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleAddEntry}
                                 className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                                disabled={isUploading}
                             >
-                                Simpan
+                                {isUploading ? 'Menyimpan...' : 'Simpan'}
                             </button>
                         </div>
                     </div>
@@ -1020,7 +1174,7 @@ const LogbookPagiPage = () => {
                                 placeholder="Misal: AWOS Bandara"
                             />
                         </div>
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label
                                 htmlFor="editedKeterangan"
                                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -1040,18 +1194,55 @@ const LogbookPagiPage = () => {
                                 ))}
                             </select>
                         </div>
+                        {/* Input File untuk Bukti Foto di Edit Modal */}
+                        <div className="mb-6">
+                            <label
+                                htmlFor="editedBuktiFotoFile"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                Bukti Foto
+                            </label>
+                            <input
+                                type="file"
+                                id="editedBuktiFotoFile"
+                                accept="image/*"
+                                className="w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-md file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-50 file:text-blue-700
+                                    hover:file:bg-blue-100"
+                                onChange={(e) => setEditedBuktiFotoFile(e.target.files[0])}
+                                disabled={isUploading}
+                            />
+                            {editedBuktiFotoFile && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    File dipilih: {editedBuktiFotoFile.name}
+                                </p>
+                            )}
+                            {!editedBuktiFotoFile && editedBuktiFotoURL && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
+                                </p>
+                            )}
+                            {isUploading && (
+                                <p className="mt-2 text-blue-500 text-sm">Mengunggah foto...</p>
+                            )}
+                        </div>
                         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                             <button
                                 onClick={() => setShowEditModal(false)}
                                 className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                                disabled={isUploading}
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleEditEntry}
                                 className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                                disabled={isUploading}
                             >
-                                Simpan Perubahan
+                                {isUploading ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </button>
                         </div>
                     </div>
