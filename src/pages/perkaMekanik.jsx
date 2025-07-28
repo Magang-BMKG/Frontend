@@ -5,6 +5,7 @@ import Header from "../component/Header";
 import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
 import Swal from "sweetalert2";
+import { useAuth } from '../context/AuthContext';
 
 const PerkaMekanik = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -53,6 +54,12 @@ const PerkaMekanik = () => {
   // State untuk menu kebab (titik tiga)
   const [openKebabMenuId, setOpenKebabMenuId] = useState(null); // Menyimpan Nama Alat dari menu yang terbuka
 
+  const { userRole, logout } = useAuth();
+  useEffect(() => {
+    if (!userRole || (userRole !== "admin" && userRole !== "user")) {
+      navigate('/');
+    }
+  }, [userRole, navigate]);
 
   // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'PERKA' ANDA
   const PERKA_API_URL = "https://script.google.com/macros/s/AKfycbwVMXcJwMKNmIGQRmsnlgA0vwSTQTZqNZ2_lPal9LQIQRsODtJiwMyRYV-4TJoEM_5w1g/exec";
@@ -83,8 +90,10 @@ const PerkaMekanik = () => {
   };
 
   useEffect(() => {
-    fetchNamaAlatList();
-  }, []);
+    if (userRole === "admin" || userRole === "user") {
+      fetchNamaAlatList();
+    }
+  }, [userRole]);
 
   // Fungsi untuk mengirim permintaan POST ke Apps Script
   const sendPerkaApiRequest = async (action, payload) => {
@@ -429,6 +438,15 @@ const PerkaMekanik = () => {
     );
   }
 
+  if (!userRole) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -476,13 +494,19 @@ const PerkaMekanik = () => {
               </svg>
               Kembali ke Perka
             </button>
+            <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 flex-grow mb-6 sm:mb-8">
+              Perka Mekanik
+            </h1>
 
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 flex-grow">
-                Perka Mekanik
-              </h1>
+            {userRole && (
+              <div className="text-center mb-4 text-gray-600">
+                Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end items-center mb-8">
               {/* Tombol Tambah Nama Alat Baru - Dipindahkan ke sini */}
-              {!selectedNamaAlat && ( // Hanya tampilkan jika tidak ada nama alat yang dipilih
+              {!selectedNamaAlat && userRole === "admin" && ( // Hanya tampilkan jika tidak ada nama alat yang dipilih
                 <button
                   onClick={handleOpenAddNamaAlatModal}
                   className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -502,12 +526,14 @@ const PerkaMekanik = () => {
                   <h3 className="text-xl font-semibold text-gray-800">
                     Detail untuk: {selectedNamaAlat}
                   </h3>
-                  <button
-                    onClick={handleOpenAddDetailModal}
-                    className="px-4 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 transition-colors"
-                  >
-                    Tambah Detail
-                  </button>
+                  {userRole === "admin" && (
+                    <button
+                      onClick={handleOpenAddDetailModal}
+                      className="px-4 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 transition-colors"
+                    >
+                      Tambah Detail
+                    </button>
+                  )}
                 </div>
 
 
@@ -532,7 +558,9 @@ const PerkaMekanik = () => {
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pemeliharaan Berkala</th>
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penyediaan Suku Cadang</th>
+                          {userRole === "admin" && (
                           <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -543,6 +571,7 @@ const PerkaMekanik = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail['Pemeliharaan berkala']}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail['Waktu']}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detail['Penyedianan suku cadang']}</td>
+                            {userRole === "admin" && (
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                               <div className="flex justify-center items-center space-x-2">
                                 <button
@@ -567,6 +596,7 @@ const PerkaMekanik = () => {
                                 </button>
                               </div>
                             </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -593,23 +623,25 @@ const PerkaMekanik = () => {
                       onClick={() => handleNamaAlatClick(namaAlat)}
                     >
                       <p className="text-base font-semibold text-gray-800 mb-2">{namaAlat}</p>
-                      <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      {/* <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                      </svg>
+                      </svg> */}
 
                       {/* Kebab Menu Button */}
-                      <button
-                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Mencegah klik kotak memicu handleNamaAlatClick
-                          handleOpenKebabMenu(namaAlat);
-                        }}
-                      >
-                        {/* Three dots icon (kebab menu) */}
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                        </svg>
-                      </button>
+                      {userRole === "admin" && (
+                        <button
+                          className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Mencegah klik kotak memicu handleNamaAlatClick
+                            handleOpenKebabMenu(namaAlat);
+                          }}
+                        >
+                          {/* Three dots icon (kebab menu) */}
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                          </svg>
+                        </button>
+                      )}
 
                       {/* Kebab Menu Dropdown */}
                       {openKebabMenuId === namaAlat && (

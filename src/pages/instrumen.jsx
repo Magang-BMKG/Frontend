@@ -8,6 +8,8 @@ import Footer from "../component/Footer";
   import { FiEdit2 } from "react-icons/fi";
   import { FiTrash2 } from "react-icons/fi";
   import Swal from 'sweetalert2';
+  import { useAuth } from '../context/AuthContext';
+  import { useNavigate } from 'react-router-dom';
 
   const DaftarInstrumenPage = () => {
     const [instrumenData, setInstrumenData] = useState([]);
@@ -51,6 +53,15 @@ import Footer from "../component/Footer";
       'Kalibrasi Terakhir': '',
       Keterangan: ''
     });
+
+      const { userRole, logout } = useAuth();
+      const navigate = useNavigate();
+
+      useEffect(() => {
+          if (!userRole || (userRole !== "admin" && userRole !== "user")) {
+            navigate('/');
+          }
+        }, [userRole, navigate]);
 
     // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'INSTRUMEN' ANDA
     const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbw3XaGa3vR9N9Av43tCEFxgV0d2Ca4WiRTY4Zoi5AVB7C0xz7a3UK16VjzxNoDx9u_8AA/exec";
@@ -113,8 +124,10 @@ import Footer from "../component/Footer";
     };
 
     useEffect(() => {
-      fetchData();
-    }, []);
+      if (userRole === "admin" || userRole === "user") {
+        fetchData();
+      }
+    }, [userRole]);
 
     // Fungsi untuk mengirim permintaan POST ke Apps Script
     const sendApiRequest = async (action, payload) => {
@@ -437,8 +450,10 @@ import Footer from "../component/Footer";
     };
 
     const renderEditableField = (label, fieldName, value, type = 'text') => {
-      const isCurrentlyEditing = isEditing;
-      const currentValue = isCurrentlyEditing ? editData[fieldName] || '' : value || '';
+    const isCurrentlyEditing = isEditing;
+    const currentValue = isCurrentlyEditing ? editData[fieldName] || '' : value || '';
+
+    
       
       return (
         <div className="bg-white p-2 sm:p-3 rounded border-l-4 border-blue-500">
@@ -467,6 +482,15 @@ import Footer from "../component/Footer";
         </div>
       );
     };
+
+    if (!userRole) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
+        </div>
+      );
+    }
 
     return (
       <div className="flex flex-col min-h-screen">
@@ -521,6 +545,12 @@ import Footer from "../component/Footer";
               Daftar Peralatan Instrumen
             </h2>
 
+            {userRole && (
+              <div className="text-center mb-4 text-gray-600">
+                Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+              </div>
+            )}
+
             {/* Dropdown untuk memilih kategori instrumen */}
             <div className="mb-4 sm:mb-6 md:mb-2 mx-1 sm:mx-2 lg:mx-4 xl:mx-auto max-w-7xl">
               <div className="w-full">
@@ -550,7 +580,7 @@ import Footer from "../component/Footer";
                     {/* Button Group */}
                     <div className="flex items-center gap-0 sm:gap-0 flex-shrink-0">
                       {/* Add Button - Hanya tampil di halaman utama */}
-                      {!selectedInstrumen && (
+                      {!selectedInstrumen && userRole === "admin" && (
                         <button 
                           className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 rounded-lg transition-colors group"
                           onClick={handleOpenAddModal}
@@ -561,7 +591,7 @@ import Footer from "../component/Footer";
                       )}
                       
                       {/* Delete Button */}
-                      {!selectedInstrumen && (
+                      {!selectedInstrumen && userRole === "admin" && (
                         <button 
                           className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-red-100 rounded-lg transition-colors group"
                           onClick={handleDeleteInstrumen}
@@ -642,34 +672,36 @@ import Footer from "../component/Footer";
                         {selectedInstrumen.Peralatan}
                       </h3>
                       {/* Edit Button */}
-                      <div className="flex items-center gap-2 -ml-9">
-                        {isEditing ? (
-                          <>
+                      {userRole === "admin" && (
+                        <div className="flex items-center gap-2 -ml-9">
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={handleSaveEdit}
+                                disabled={isSubmitting}
+                                className="flex items-center gap-1 text-blue-500 rounded hover:bg-green-200 transition-colors disabled:opacity-50 text-sm"
+                              >
+                                <FaCheck className="w-4 h-3 sm:w-4 sm:h-4" />
+                                {isSubmitting ? 'Menyimpan...' : ''}
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                disabled={isSubmitting}
+                                className="flex items-center gap-1 text-red-500 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
+                              >
+                                <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
+                              </button>
+                            </>
+                          ) : (
                             <button
-                              onClick={handleSaveEdit}
-                              disabled={isSubmitting}
-                              className="flex items-center gap-1 text-blue-500 rounded hover:bg-green-200 transition-colors disabled:opacity-50 text-sm"
+                              onClick={handleEdit}
+                              className="flex items-center gap-1 px-3 py-1 text-blue-600 rounded hover:bg-blue-700 transition-colors text-sm"
                             >
-                              <FaCheck className="w-4 h-3 sm:w-4 sm:h-4" />
-                              {isSubmitting ? 'Menyimpan...' : ''}
+                              <FiEdit2 className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              disabled={isSubmitting}
-                              className="flex items-center gap-1 text-red-500 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
-                            >
-                              <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={handleEdit}
-                            className="flex items-center gap-1 px-3 py-1 text-blue-600 rounded hover:bg-blue-700 transition-colors text-sm"
-                          >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 gap-2 sm:gap-3 text-gray-700 text-xs sm:text-sm md:text-base">
