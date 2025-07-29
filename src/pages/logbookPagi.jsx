@@ -8,7 +8,7 @@ import { IoClose } from "react-icons/io5";
 import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabaseClient'; // Import Supabase client
+// import { supabase } from '../supabaseClient'; // Tidak perlu lagi jika pindah ke Google Drive
 
 const LogbookPagiPage = () => {
     const navigate = useNavigate();
@@ -27,7 +27,7 @@ const LogbookPagiPage = () => {
     const [showAddEntryModal, setShowAddEntryModal] = useState(false);
     const [newPeralatan, setNewPeralatan] = useState("");
     const [newKeterangan, setNewKeterangan] = useState("");
-    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk file foto baru
+    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk objek File foto baru
     const [isUploading, setIsUploading] = useState(false); // State untuk status upload
 
     // States untuk modal Tambah Penanggung Jawab & Tanggal BARU
@@ -40,8 +40,9 @@ const LogbookPagiPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [editedPeralatan, setEditedPeralatan] = useState("");
     const [editedKeterangan, setEditedKeterangan] = useState("");
-    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk file foto yang diedit
+    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk objek File foto yang diedit
     const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState(""); // State untuk URL foto yang sudah ada
+    const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false); // State untuk menghapus foto yang sudah ada
 
     // States untuk modal Edit Penanggung Jawab & Tanggal
     const [showEditPersonDateModal, setShowEditPersonDateModal] = useState(false);
@@ -61,7 +62,7 @@ const LogbookPagiPage = () => {
 
     // URL API Logbook
     const LOGBOOK_API_URL =
-        "https://script.google.com/macros/s/AKfycbzx8LbGA284ZXj_xg7hRqaF2GQe3TgNwBe8f7v1EkFmrRTd67AcUiAf6BEEqnFWbO5qQA/exec";
+        "https://script.google.com/macros/s/AKfycbwdCJ4ravHuphNoOfw1w63F5k6Dx3F-8CrBUjng74CJouvM2X4uAo0igExKvMLyKp8CJg/exec"; // Pastikan ini URL yang benar
 
     // --- Fungsi Pengambilan Data Logbook ---
     const fetchData = async () => {
@@ -129,59 +130,15 @@ const LogbookPagiPage = () => {
         }
     };
 
-    // --- Fungsi untuk mengunggah file ke Supabase Storage ---
-    const uploadFileToSupabase = async (file) => {
-        if (!file) return null;
-
-        setIsUploading(true);
-        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`; // Nama file unik
-        const bucketName = 'logbook'; // Ganti dengan nama bucket Supabase Anda
-
-        try {
-            const { data, error } = await supabase.storage
-                .from(bucketName)
-                .upload(fileName, file, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
-
-            if (error) {
-                throw error;
-            }
-
-            const publicUrl = supabase.storage
-                .from(bucketName)
-                .getPublicUrl(fileName).data.publicUrl;
-
-            setIsUploading(false);
-            return publicUrl;
-        } catch (error) {
-            setIsUploading(false);
-            console.error('Error uploading file to Supabase:', error);
-            Swal.fire('Error Upload!', `Gagal mengunggah foto: ${error.message}`, 'error');
-            return null;
-        }
+    // --- Fungsi untuk membaca file sebagai Base64 ---
+    const readFileAsBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
     };
-
-    // --- Fungsi untuk menghapus file dari Supabase Storage (opsional) ---
-    const deleteFileFromSupabase = async (fileUrl) => {
-        if (!fileUrl || !fileUrl.includes('supabase.co')) return; // Hanya hapus jika dari Supabase
-
-        const bucketName = 'logbook'; // Ganti dengan nama bucket Supabase Anda
-        const fileName = fileUrl.split(`${bucketName}/`)[1]; // Ekstrak nama file dari URL
-
-        try {
-            const { error } = await supabase.storage.from(bucketName).remove([fileName]);
-            if (error) {
-                throw error;
-            }
-            console.log('File deleted from Supabase:', fileName);
-        } catch (error) {
-            console.error('Error deleting file from Supabase:', error);
-            // Swal.fire('Error Hapus!', `Gagal menghapus foto lama: ${error.message}`, 'error'); // Opsional: tampilkan error ke user
-        }
-    };
-
 
     // --- Handler Navigasi Kembali ---
     const handleBackToSummary = () => {
@@ -208,22 +165,35 @@ const LogbookPagiPage = () => {
             return;
         }
 
-        let buktiFotoUrl = "";
+        let base64Foto = '';
+        let fileName = '';
+
         if (newBuktiFotoFile) {
-            buktiFotoUrl = await uploadFileToSupabase(newBuktiFotoFile);
-            if (!buktiFotoUrl) {
-                return; // Batalkan jika upload gagal
+            setIsUploading(true);
+            try {
+                base64Foto = await readFileAsBase64(newBuktiFotoFile);
+                fileName = newBuktiFotoFile.name;
+            } catch (fileError) {
+                Swal.fire('Error Membaca File!', `Gagal membaca file foto: ${fileError.message}`, 'error');
+                setIsUploading(false);
+                return;
             }
         }
 
+        const payload = { 
+            Peralatan: newPeralatan,
+            Keterangan: newKeterangan,
+            "Penanggung Jawab": selectedPersonDateEntry.person,
+            Tanggal: selectedPersonDateEntry.date,
+            "Bukti Foto": "",
+        };
+        if (newBuktiFotoFile) {
+            payload.base64Foto = base64Foto;
+            payload.fileName = fileName;
+        }
+
         try {
-            await sendApiRequest("add", {
-                Peralatan: newPeralatan,
-                Keterangan: newKeterangan,
-                "Penanggung Jawab": selectedPersonDateEntry.person,
-                Tanggal: selectedPersonDateEntry.date,
-                "Bukti Foto": buktiFotoUrl // Kirim URL foto
-            });
+            await sendApiRequest("add", payload);
             Swal.fire('Berhasil!', 'Entri peralatan berhasil ditambahkan!', 'success');
             setShowAddEntryModal(false);
             setNewPeralatan("");
@@ -232,6 +202,8 @@ const LogbookPagiPage = () => {
             fetchData(); // Muat ulang data
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri peralatan: ${err.message}`, 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -251,15 +223,15 @@ const LogbookPagiPage = () => {
             await sendApiRequest("add", {
                 "Penanggung Jawab": newPersonDatePenanggungJawab,
                 Tanggal: newPersonDateTanggal,
-                Peralatan: "", // Kosongkan Peralatan
-                Keterangan: "", // Kosongkan Keterangan
-                "Bukti Foto": "" // Kosongkan Bukti Foto
+                Peralatan: "",
+                Keterangan: "",
+                "Bukti Foto": "" 
             });
             Swal.fire('Berhasil!', 'Penanggung Jawab dan Tanggal baru berhasil ditambahkan!', 'success');
             setShowAddPersonDateModal(false);
             setNewPersonDatePenanggungJawab("");
             setNewPersonDateTanggal("");
-            fetchData(); // Muat ulang data
+            fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri: ${err.message}`, 'error');
         }
@@ -271,7 +243,8 @@ const LogbookPagiPage = () => {
         setEditedPeralatan(item.Peralatan);
         setEditedKeterangan(item.Keterangan);
         setEditedBuktiFotoURL(item["Bukti Foto"] || ""); // Set URL foto yang sudah ada
-        setEditedBuktiFotoFile(null); // Reset file input
+        setEditedBuktiFotoFile(null); // Reset file input saat modal dibuka
+        setRemoveExistingPhoto(false); // Reset checkbox hapus foto
         setShowEditModal(true);
     };
 
@@ -285,16 +258,18 @@ const LogbookPagiPage = () => {
             return;
         }
 
-        let finalBuktiFotoUrl = editedBuktiFotoURL; // Default ke URL yang sudah ada
+        let base64Foto = '';
+        let fileName = '';
 
         if (editedBuktiFotoFile) { // Jika ada file baru yang dipilih
-            // Opsional: Hapus foto lama dari Supabase sebelum mengunggah yang baru
-            if (editedBuktiFotoURL) {
-                await deleteFileFromSupabase(editedBuktiFotoURL);
-            }
-            finalBuktiFotoUrl = await uploadFileToSupabase(editedBuktiFotoFile);
-            if (!finalBuktiFotoUrl) {
-                return; // Batalkan jika upload gagal
+            setIsUploading(true);
+            try {
+                base64Foto = await readFileAsBase64(editedBuktiFotoFile);
+                fileName = editedBuktiFotoFile.name;
+            } catch (fileError) {
+                Swal.fire('Error Membaca File!', `Gagal membaca file foto: ${fileError.message}`, 'error');
+                setIsUploading(false);
+                return;
             }
         }
 
@@ -305,18 +280,24 @@ const LogbookPagiPage = () => {
                 originalTanggal: editingItem.Tanggal,
                 Peralatan: editedPeralatan,
                 Keterangan: editedKeterangan,
-                "Bukti Foto": finalBuktiFotoUrl // Kirim URL foto (baru atau yang lama)
+                "Bukti Foto": editedBuktiFotoURL, // Kirim URL yang ada, nanti Apps Script tentukan apakah pakai ini atau yang baru diupload
+                base64Foto: base64Foto, // Kirim Base64 string (hanya jika ada file baru)
+                fileName: fileName, // Kirim nama file (hanya jika ada file baru)
+                removeFoto: removeExistingPhoto // Kirim instruksi hapus foto lama
             });
             Swal.fire('Berhasil!', 'Data berhasil diubah!', 'success');
             setShowEditModal(false);
             setEditingItem(null);
             setEditedPeralatan("");
             setEditedKeterangan("");
-            setEditedBuktiFotoFile(null); // Reset file input
-            setEditedBuktiFotoURL(""); // Reset URL
-            fetchData(); // Muat ulang data
+            setEditedBuktiFotoFile(null);
+            setEditedBuktiFotoURL("");
+            setRemoveExistingPhoto(false);
+            fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal mengubah data: ${err.message}`, 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -338,15 +319,11 @@ const LogbookPagiPage = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    // Opsional: Hapus foto dari Supabase saat entri dihapus
-                    if (item["Bukti Foto"]) {
-                        await deleteFileFromSupabase(item["Bukti Foto"]);
-                    }
-
                     await sendApiRequest("delete", {
                         Peralatan: item.Peralatan,
                         "Penanggung Jawab": item["Penanggung Jawab"],
                         Tanggal: item.Tanggal,
+                        // Tidak perlu kirim URL foto ke frontend untuk dihapus, Apps Script yang tangani
                     });
                     Swal.fire('Berhasil!', 'Data berhasil dihapus!', 'success');
                     fetchData();
@@ -359,7 +336,7 @@ const LogbookPagiPage = () => {
 
     // Handlers untuk mengedit kombinasi Penanggung Jawab & Tanggal
     const handleEditPersonDateClick = (combo) => {
-        setOpenKebabMenuId(null); // Tutup menu kebab
+        setOpenKebabMenuId(null);
         setEditingPersonDateCombo(combo);
         setEditedPersonDatePenanggungJawab(combo.person);
         setEditedPersonDateTanggal(combo.date);
@@ -429,10 +406,10 @@ const LogbookPagiPage = () => {
 
     // Handlers untuk menghapus kombinasi Penanggung Jawab & Tanggal
     const handleDeletePersonDate = (combo) => {
-        setOpenKebabMenuId(null); // Tutup menu kebab
+        setOpenKebabMenuId(null);
         Swal.fire({
             title: 'Konfirmasi Hapus Semua Entri',
-            text: `Anda yakin ingin menghapus SEMUA entri logbook untuk ${combo.person} pada Tanggal: ${combo.date}?`,
+            text: `Anda yakin ingin menghapus SEMUA entri logbook untuk ${combo.person} pada Tanggal: ${combo.date}? Ini termasuk semua bukti foto terkait.`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -442,23 +419,13 @@ const LogbookPagiPage = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    // Opsional: Dapatkan semua URL foto terkait dan hapus dari Supabase
-                    const entriesToDelete = logbookData.filter(item =>
-                        item["Penanggung Jawab"] === combo.person &&
-                        item.Tanggal === combo.date &&
-                        item["Bukti Foto"]
-                    );
-                    for (const entry of entriesToDelete) {
-                        await deleteFileFromSupabase(entry["Bukti Foto"]);
-                    }
-
                     await sendApiRequest("deletePersonDate", {
                         "Penanggung Jawab": combo.person,
                         Tanggal: combo.date,
                     });
                     Swal.fire('Berhasil!', `Semua entri untuk ${combo.person} pada ${combo.date} berhasil dihapus!`, 'success');
                     fetchData();
-                    setSelectedPersonDateEntry(null); // Kembali ke tampilan ringkasan
+                    setSelectedPersonDateEntry(null);
                 } catch (err) {
                     Swal.fire('Gagal!', `Gagal menghapus entri: ${err.message}`, 'error');
                 }
@@ -653,7 +620,7 @@ const LogbookPagiPage = () => {
                         </button>
 
                         {/* Tombol Tambah Penanggung Jawab & Tanggal BARU */}
-                        {!selectedPersonDateEntry && ( // Hanya tampilkan di halaman ringkasan
+                        {!selectedPersonDateEntry && (
                             <button
                                 onClick={() => setShowAddPersonDateModal(true)}
                                 className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
@@ -738,9 +705,9 @@ const LogbookPagiPage = () => {
                                                     <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Bukti Foto
                                                     </th>
-                                                    <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Aksi
-                                                    </th>
+                                                        <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Aksi
+                                                        </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
@@ -830,7 +797,7 @@ const LogbookPagiPage = () => {
                                         </div>
                                         <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
 
-                                        {userRole === "admin" && ( // Hanya tampilkan untuk admin
+                                        {userRole === "admin" && (
                                             <button
                                                 className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
                                                 onClick={(e) => {
@@ -844,7 +811,7 @@ const LogbookPagiPage = () => {
                                             </button>
                                         )}
 
-                                        {openKebabMenuId === comboId && userRole === "admin" && ( // Hanya tampilkan untuk admin
+                                        {openKebabMenuId === comboId && userRole === "admin" && (
                                             <div
                                                 className="absolute top-10 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
                                                 onMouseLeave={handleCloseKebabMenu}
@@ -1195,12 +1162,12 @@ const LogbookPagiPage = () => {
                             </select>
                         </div>
                         {/* Input File untuk Bukti Foto di Edit Modal */}
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label
                                 htmlFor="editedBuktiFotoFile"
                                 className="block text-sm font-medium text-gray-700 mb-2"
                             >
-                                Bukti Foto
+                                Unggah Bukti Foto Baru
                             </label>
                             <input
                                 type="file"
@@ -1212,7 +1179,10 @@ const LogbookPagiPage = () => {
                                     file:text-sm file:font-semibold
                                     file:bg-blue-50 file:text-blue-700
                                     hover:file:bg-blue-100"
-                                onChange={(e) => setEditedBuktiFotoFile(e.target.files[0])}
+                                onChange={(e) => {
+                                    setEditedBuktiFotoFile(e.target.files[0]);
+                                    setRemoveExistingPhoto(false); 
+                                }}
                                 disabled={isUploading}
                             />
                             {editedBuktiFotoFile && (
@@ -1220,15 +1190,30 @@ const LogbookPagiPage = () => {
                                     File dipilih: {editedBuktiFotoFile.name}
                                 </p>
                             )}
-                            {!editedBuktiFotoFile && editedBuktiFotoURL && (
-                                <p className="mt-2 text-xs text-gray-500">
-                                    Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
-                                </p>
-                            )}
                             {isUploading && (
                                 <p className="mt-2 text-blue-500 text-sm">Mengunggah foto...</p>
                             )}
                         </div>
+                        {/* Opsi Hapus Foto Lama atau Tampilkan Link Foto Lama */}
+                        {editedBuktiFotoURL && !editedBuktiFotoFile && (
+                            <div className="mb-6 flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="removeExistingPhoto"
+                                    checked={removeExistingPhoto}
+                                    onChange={(e) => setRemoveExistingPhoto(e.target.checked)}
+                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                                />
+                                <label htmlFor="removeExistingPhoto" className="ml-2 text-sm text-gray-700">
+                                    Hapus foto saat ini
+                                </label>
+                                {!removeExistingPhoto && (
+                                    <p className="ml-4 text-xs text-gray-500">
+                                        Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                             <button
                                 onClick={() => setShowEditModal(false)}
