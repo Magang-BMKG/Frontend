@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from "../component/Header";
-import Sidebar from "../component/sidebar"; 
+import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
 import { AiTwotoneFileAdd } from "react-icons/ai";
 import { IoClose } from "react-icons/io5";
@@ -36,8 +36,8 @@ const JadwalSeninPage = () => {
     Keterangan: ''
   });
 
-  // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'JADWAL_SENIN' 
-  const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbz3yhsF_lGRlEGVCXLnDY_IzzKTklkSDCDinA2p2i_B-JCf4EhzATsB_RFlNxEKYW0Gog/exec";
+  // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'JADWAL_SENIN'
+  const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbxr1swP5qHnYuf5WcWVNh528z3u66ARc2rslLaUO9qIM3j4HcgVE9fAtH64v_5I0j3MtA/exec";
 
   // Fungsi untuk mengambil data dari API (GET)
   const fetchData = async () => {
@@ -56,17 +56,14 @@ const JadwalSeninPage = () => {
 
       if (result && Array.isArray(result.data)) {
         setJadwalData(result.data);
-        // --- PENTING: Inisialisasi localChecklistState dari data yang diambil ---
         const initialChecklistState = {};
         result.data.forEach(item => {
           initialChecklistState[item.id] = {
-            isCompleted: item.Status, // 'Status' sudah boolean dari Apps Script
-            completedDate: item.completedDate || null
+            isCompleted: item.Status // completedDate DIHAPUS
           };
         });
         setLocalChecklistState(initialChecklistState);
-        setHasUnsavedChanges(false); // Pastikan tidak ada perubahan yang belum disimpan saat pertama kali memuat
-        // --- Akhir PENTING ---
+        setHasUnsavedChanges(false);
       } else {
         throw new Error(
           "Format data tidak valid. Seharusnya objek dengan properti 'data' berbentuk array."
@@ -101,20 +98,19 @@ const JadwalSeninPage = () => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`API request failed with status: ${response.status} - ${errorText}`);
+        throw new Error(`Permintaan API gagal dengan status: ${response.status} - ${errorText}`);
       }
       const result = await response.json();
       if (!result.success) {
-        throw new Error(result.message || "Operation failed on server.");
+        throw new Error(result.message || "Operasi gagal di server.");
       }
       return result;
     } catch (err) {
-      console.error("API request error:", err);
+      console.error("Error permintaan API:", err);
       throw err;
     }
   };
 
-  // Toggle sidebar untuk mobile
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -166,7 +162,7 @@ const JadwalSeninPage = () => {
     if (selectedForDelete.size === jadwalData.length) {
       setSelectedForDelete(new Set());
     } else {
-      const allIds = new Set(jadwalData.map(jadwal => jadwal.id)); // Menggunakan jadwal.id
+      const allIds = new Set(jadwalData.map(jadwal => jadwal.id));
       setSelectedForDelete(allIds);
     }
   };
@@ -196,7 +192,7 @@ const JadwalSeninPage = () => {
     if (result.isConfirmed) {
       try {
         setIsSubmitting(true);
-        
+
         const deletePromises = Array.from(selectedForDelete).map(id =>
           sendApiRequest("delete", { id: id })
         );
@@ -211,10 +207,9 @@ const JadwalSeninPage = () => {
 
         setIsDeleteMode(false);
         setSelectedForDelete(new Set());
-        fetchData(); // Muat ulang data setelah perubahan
-        
+        fetchData();
       } catch (error) {
-        console.error('Error deleting schedules:', error);
+        console.error('Error menghapus jadwal:', error);
         await Swal.fire({
           title: 'Error!',
           text: `Gagal menghapus jadwal: ${error.message}. Silakan coba lagi.`,
@@ -261,7 +256,7 @@ const JadwalSeninPage = () => {
 
   const handleSaveEdit = async (jadwalId) => {
     const editedData = editData[jadwalId];
-    
+
     if (!editedData.Lokasi || !editedData.Keterangan) {
       await Swal.fire('Peringatan!', 'Lokasi dan Keterangan tidak boleh kosong.', 'warning');
       return;
@@ -270,11 +265,10 @@ const JadwalSeninPage = () => {
     try {
       setIsSubmitting(true);
       await sendApiRequest("edit", {
-        id: jadwalId, // Kirim ID baris untuk identifikasi
+        id: jadwalId,
         Lokasi: editedData.Lokasi,
         Keterangan: editedData.Keterangan,
-        Status: localChecklistState[jadwalId]?.isCompleted || false, // Kirim status checklist saat ini
-        completedDate: localChecklistState[jadwalId]?.completedDate || null // Kirim tanggal selesai
+        Status: localChecklistState[jadwalId]?.isCompleted || false,
       });
 
       await Swal.fire({
@@ -285,9 +279,9 @@ const JadwalSeninPage = () => {
       });
 
       handleCancelEdit(jadwalId);
-      fetchData(); // Muat ulang data setelah perubahan
+      fetchData();
     } catch (error) {
-      console.error('Error updating schedule:', error);
+      console.error('Error memperbarui jadwal:', error);
       await Swal.fire({
         title: 'Error!',
         text: `Gagal memperbarui data jadwal: ${error.message}. Silakan coba lagi.`,
@@ -304,15 +298,12 @@ const JadwalSeninPage = () => {
     setLocalChecklistState(prev => {
       const currentStatus = prev[jadwalId]?.isCompleted || false;
       const newStatus = !currentStatus;
-      const completedDate = newStatus ? new Date().toISOString() : null;
-      
-      setHasUnsavedChanges(true); // Mark as having unsaved changes
-      
+      setHasUnsavedChanges(true);
+
       return {
         ...prev,
         [jadwalId]: {
           isCompleted: newStatus,
-          completedDate: completedDate
         }
       };
     });
@@ -322,12 +313,10 @@ const JadwalSeninPage = () => {
   const handleSaveChecklists = async () => {
     try {
       setIsSubmitting(true);
-      
-      // Kirim semua perubahan checklist sekaligus
+
       const checklistUpdates = Object.entries(localChecklistState).map(([id, state]) => ({
-        id: id,
+        id: parseInt(id, 10), // Penting: Pastikan ID adalah integer (nomor baris)
         isCompleted: state.isCompleted,
-        completedDate: state.completedDate
       }));
 
       await sendApiRequest("bulkUpdateChecklists", { updates: checklistUpdates });
@@ -341,10 +330,9 @@ const JadwalSeninPage = () => {
       });
 
       setHasUnsavedChanges(false);
-      fetchData(); // Refresh data dari server
-
+      fetchData();
     } catch (error) {
-      console.error('Error saving checklists:', error);
+      console.error('Error menyimpan checklist:', error);
       await Swal.fire({
         title: 'Error!',
         text: `Gagal menyimpan checklist: ${error.message}`,
@@ -372,26 +360,17 @@ const JadwalSeninPage = () => {
     if (result.isConfirmed) {
       try {
         setIsSubmitting(true);
-        const resetUpdates = jadwalData.map(item => {
-          return {
-            Lokasi: item.Lokasi, // Send the actual Lokasi
-            Keterangan: item.Keterangan, // Send the actual Keterangan
-            isCompleted: false,
-            completedDate: null
-          };
-        });
-        await sendApiRequest("resetChecklists", {}); // No specific payload needed for a global reset
+        await sendApiRequest("resetAllChecklists", {});
 
-        // Reset local state after successful API call
+        // Setelah sukses, perbarui state lokal dan ambil data baru
         const newLocalState = {};
         jadwalData.forEach(item => {
           newLocalState[item.id] = {
             isCompleted: false,
-            completedDate: null
           };
         });
         setLocalChecklistState(newLocalState);
-        setHasUnsavedChanges(false); // No unsaved changes after resetting and saving
+        setHasUnsavedChanges(false);
 
         await Swal.fire({
           title: 'Checklist Berhasil Direset!',
@@ -400,10 +379,9 @@ const JadwalSeninPage = () => {
           confirmButtonText: 'OK'
         });
 
-        fetchData(); // Re-fetch to ensure UI is in sync with backend
-
+        fetchData();
       } catch (error) {
-        console.error('Error resetting checklists:', error);
+        console.error('Error mereset checklist:', error);
         await Swal.fire({
           title: 'Error!',
           text: `Gagal mereset checklist: ${error.message}. Silakan coba lagi.`,
@@ -423,7 +401,7 @@ const JadwalSeninPage = () => {
       await Swal.fire('Peringatan!', 'Lokasi dan Keterangan harus diisi.', 'warning');
       return;
     }
-    
+
     const result = await Swal.fire({
       title: 'Konfirmasi Tambah Jadwal',
       text: 'Apakah data jadwal yang akan ditambahkan sudah sesuai?',
@@ -437,14 +415,13 @@ const JadwalSeninPage = () => {
 
     if (result.isConfirmed) {
       setIsSubmitting(true);
-      
+
       try {
         const payload = {
           action: "add",
-          Lokasi: formData.Lokasi, // Kirim Lokasi
-          Keterangan: formData.Keterangan, // Kirim Keterangan
-          Status: false, // Default status awal
-          completedDate: null // Default tanggal selesai awal
+          Lokasi: formData.Lokasi,
+          Keterangan: formData.Keterangan,
+          Status: false,
         };
 
         await sendApiRequest("add", payload);
@@ -457,10 +434,9 @@ const JadwalSeninPage = () => {
         });
 
         handleCloseAddModal();
-        fetchData(); // Muat ulang data setelah penambahan
-        
+        fetchData();
       } catch (error) {
-        console.error('Error adding schedule:', error);
+        console.error('Error menambahkan jadwal:', error);
         await Swal.fire({
           title: 'Error!',
           text: `Gagal menambahkan data jadwal: ${error.message}. Silakan coba lagi.`,
@@ -473,7 +449,7 @@ const JadwalSeninPage = () => {
     }
   };
 
-  // Calculate stats from local state (now correctly initialized)
+  // Hitung statistik dari state lokal
   const completedCount = Object.values(localChecklistState).filter(state => state.isCompleted).length;
   const uncompletedCount = Object.values(localChecklistState).filter(state => !state.isCompleted).length;
   const progressPercentage = jadwalData.length > 0 ? Math.round((completedCount / jadwalData.length) * 100) : 0;
@@ -481,14 +457,13 @@ const JadwalSeninPage = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      
+
       {/* Mobile Menu Button */}
       <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2">
         <button
           onClick={toggleSidebar}
           className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
         >
-          {/* SVG for menu icon */}
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -498,8 +473,8 @@ const JadwalSeninPage = () => {
       <div className="flex flex-1 relative">
         {/* Sidebar */}
         <div className={`
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          lg:translate-x-0 lg:static absolute inset-y-0 left-0 z-50 
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 lg:static absolute inset-y-0 left-0 z-50
           transform transition-transform duration-300 ease-in-out
         `}>
           <Sidebar />
@@ -507,7 +482,7 @@ const JadwalSeninPage = () => {
 
         {/* Overlay untuk mobile */}
         {isSidebarOpen && (
-          <div 
+          <div
             className="lg:hidden fixed inset-0 bg-black/50 bg-opacity-50 z-40"
             onClick={toggleSidebar}
           ></div>
@@ -526,19 +501,19 @@ const JadwalSeninPage = () => {
                 <label className="font-medium text-[10px] sm:text-base md:text-[15px] text-gray-700 text-center lg:text-center whitespace-nowrap lg:min-w-max">
                   Kelola Jadwal Senin:
                 </label>
-                
+
                 <div className="flex flex-row items-center gap-3 sm:gap-4 w-full lg:flex-1 justify-center lg:justify-start">
                   {/* Add Button */}
-                  <button 
+                  <button
                     className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 rounded-lg transition-colors group"
                     onClick={handleOpenAddModal}
                     title="Tambah Jadwal"
                   >
                     <AiTwotoneFileAdd className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600 group-hover:text-blue-600" />
                   </button>
-                  
+
                   {/* Delete Button */}
-                  <button 
+                  <button
                     className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-red-100 rounded-lg transition-colors group"
                     onClick={handleDeleteJadwal}
                     title="Hapus Jadwal"
@@ -547,10 +522,10 @@ const JadwalSeninPage = () => {
                   </button>
 
                   {/* Save Checklist Button */}
-                  <button 
+                  <button
                     className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg transition-colors group ${
-                      hasUnsavedChanges 
-                        ? 'bg-green-100 hover:bg-green-200' 
+                      hasUnsavedChanges
+                        ? 'bg-green-100 hover:bg-green-200'
                         : 'hover:bg-gray-100'
                     }`}
                     onClick={handleSaveChecklists}
@@ -558,17 +533,18 @@ const JadwalSeninPage = () => {
                     title="Simpan Checklist"
                   >
                     <FaCheck className={`w-4 h-4 sm:w-6 sm:h-6 ${
-                      hasUnsavedChanges 
-                        ? 'text-green-600 group-hover:text-green-700' 
+                      hasUnsavedChanges
+                        ? 'text-green-600 group-hover:text-green-700'
                         : 'text-gray-400'
                     }`} />
                   </button>
 
                   {/* Reset Checklist Button */}
-                  <button 
+                  <button
                     className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-yellow-100 rounded-lg transition-colors group"
                     onClick={handleManualReset}
                     title="Reset Checklist"
+                    disabled={isSubmitting}
                   >
                     <svg className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-600 group-hover:text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -686,19 +662,19 @@ const JadwalSeninPage = () => {
                       </tr>
                     ) : (
                       jadwalData.map((jadwal, index) => {
-                        const jadwalId = jadwal.id; // Menggunakan ID dari Apps Script
+                        const jadwalId = jadwal.id;
                         const isEditing = editingRows.has(jadwalId);
                         const currentEditData = editData[jadwalId] || jadwal;
-                        const isCompleted = localChecklistState[jadwalId]?.isCompleted || false; // Ambil dari local state
-                        
+                        const isCompleted = localChecklistState[jadwalId]?.isCompleted || false;
+
                         return (
-                          <tr 
-                            key={jadwalId} 
+                          <tr
+                            key={jadwalId}
                             className={`hover:bg-gray-50 transition-colors duration-150 ${
-                              isDeleteMode && selectedForDelete.has(jadwalId) 
-                                ? 'bg-red-50 border-red-200' 
+                              isDeleteMode && selectedForDelete.has(jadwalId)
+                                ? 'bg-red-50 border-red-200'
                                 : isCompleted
-                                  ? 'bg-green-50' 
+                                  ? 'bg-green-50'
                                   : ''
                             }`}
                           >
@@ -712,7 +688,7 @@ const JadwalSeninPage = () => {
                                 />
                               </td>
                             )}
-                            
+
                             {/* Status Checklist Column */}
                             <td className="px-4 py-4 text-center">
                               <button
@@ -720,14 +696,14 @@ const JadwalSeninPage = () => {
                                 disabled={isDeleteMode || isEditing}
                                 className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                                   isCompleted
-                                    ? 'bg-green-500 border-green-500 text-white' 
+                                    ? 'bg-green-500 border-green-500 text-white'
                                     : 'border-gray-300 hover:border-green-400'
                                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                               >
                                 {isCompleted && <FaCheck className="w-3 h-3" />}
                               </button>
                             </td>
-                            
+
                             {/* Lokasi Column */}
                             <td className="px-4 py-4">
                               {isEditing ? (
@@ -743,7 +719,7 @@ const JadwalSeninPage = () => {
                                 </span>
                               )}
                             </td>
-                            
+
                             {/* Keterangan Column */}
                             <td className="px-4 py-4">
                               {isEditing ? (
@@ -759,7 +735,7 @@ const JadwalSeninPage = () => {
                                 </span>
                               )}
                             </td>
-                            
+
                             {/* Action Column */}
                             <td className="px-4 py-4 text-center">
                               {isEditing ? (
@@ -825,15 +801,15 @@ const JadwalSeninPage = () => {
                     const isEditing = editingRows.has(jadwalId);
                     const currentEditData = editData[jadwalId] || jadwal;
                     const isCompleted = localChecklistState[jadwalId]?.isCompleted || false;
-                    
+
                     return (
-                      <div 
-                        key={jadwalId} 
+                      <div
+                        key={jadwalId}
                         className={`bg-white rounded-lg shadow-sm p-3 border border-gray-100 transition-all duration-200 ${
-                          isDeleteMode && selectedForDelete.has(jadwalId) 
-                            ? 'bg-red-50 border-red-300 shadow-md' 
+                          isDeleteMode && selectedForDelete.has(jadwalId)
+                            ? 'bg-red-50 border-red-300 shadow-md'
                             : isCompleted
-                              ? 'bg-green-50 border-green-200' 
+                              ? 'bg-green-50 border-green-200'
                               : ''
                         }`}
                       >
@@ -846,13 +822,13 @@ const JadwalSeninPage = () => {
                               disabled={isDeleteMode || isEditing}
                               className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                                 isCompleted
-                                  ? 'bg-green-500 border-green-500 text-white' 
+                                  ? 'bg-green-500 border-green-500 text-white'
                                   : 'border-gray-300 hover:border-green-400'
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                               {isCompleted && <FaCheck className="w-3 h-3" />}
                             </button>
-                            
+
                             {/* Status Text */}
                             <span className={`text-xs font-medium ${
                               isCompleted ? 'text-green-600' : 'text-gray-500'
@@ -860,7 +836,7 @@ const JadwalSeninPage = () => {
                               {isCompleted ? 'Selesai' : 'Belum Selesai'}
                             </span>
                           </div>
-                          
+
                           {/* Delete Mode Checkbox */}
                           {isDeleteMode && (
                             <input
@@ -870,7 +846,7 @@ const JadwalSeninPage = () => {
                               className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                             />
                           )}
-                          
+
                           {/* Edit Actions */}
                           {!isDeleteMode && (
                             <div className="flex items-center gap-2">
@@ -928,7 +904,7 @@ const JadwalSeninPage = () => {
                               </p>
                             )}
                           </div>
-                          
+
                           {/* Keterangan */}
                           <div>
                             <span className="font-medium text-gray-800 text-sm">Keterangan:</span>
@@ -948,19 +924,6 @@ const JadwalSeninPage = () => {
                               </p>
                             )}
                           </div>
-                          
-                          {/* Completion Date */}
-                          {isCompleted && localChecklistState[jadwalId]?.completedDate && (
-                            <div className="text-xs text-green-600 mt-2">
-                              Diselesaikan: {new Date(localChecklistState[jadwalId].completedDate).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
@@ -987,7 +950,7 @@ const JadwalSeninPage = () => {
                 <div className="text-sm text-orange-700">Belum Selesai</div>
               </div>
             </div>
-            
+
             {/* Progress Bar */}
             <div className="mt-4">
               <div className="flex justify-between text-sm text-gray-600 mb-1">
@@ -995,7 +958,7 @@ const JadwalSeninPage = () => {
                 <span>{progressPercentage}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-green-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
@@ -1005,7 +968,7 @@ const JadwalSeninPage = () => {
 
         </main>
       </div>
-      
+
       {/* Add Schedule Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -1041,7 +1004,7 @@ const JadwalSeninPage = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-1">
                     <label className="block text-sm font-medium text-gray-700">
                       Keterangan <span className="text-red-500">*</span>
@@ -1056,10 +1019,10 @@ const JadwalSeninPage = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <p className="text-sm text-blue-700">
-                      <strong>Catatan:</strong> Tugas yang ditambahkan akan otomatis memiliki status "Belum Selesai" 
+                      <strong>Catatan:</strong> Tugas yang ditambahkan akan otomatis memiliki status "Belum Selesai"
                       dan dapat dicentang ketika sudah dikerjakan.
                     </p>
                   </div>
@@ -1087,7 +1050,7 @@ const JadwalSeninPage = () => {
           </div>
         </div>
       )}
-      
+
       {/* Footer */}
       <Footer />
     </div>
