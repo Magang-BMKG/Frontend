@@ -8,6 +8,7 @@ import { IoClose } from "react-icons/io5";
 import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 // import { supabase } from '../supabaseClient'; // Tidak perlu lagi jika pindah ke Google Drive
 
 const LogbookPagiPage = () => {
@@ -24,10 +25,15 @@ const LogbookPagiPage = () => {
     const [filterPeralatanDetail, setFilterPeralatanDetail] = useState("");
 
     // States untuk modal Tambah Entri Peralatan (Peralatan & Keterangan)
+    const [showCharts, setShowCharts] = useState(false);
+    const [showEquipmentCharts, setShowEquipmentCharts] = useState(false); // New state for equipment charts view
+    const [selectedEquipment, setSelectedEquipment] = useState(null); // New state for selected equipment
+
+    // States untuk modal Tambah Entri Peralatan (Peralatan & Keterangan)
     const [showAddEntryModal, setShowAddEntryModal] = useState(false);
     const [newPeralatan, setNewPeralatan] = useState("");
     const [newKeterangan, setNewKeterangan] = useState("");
-    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk objek File foto baru
+    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk file foto baru
     const [isUploading, setIsUploading] = useState(false); // State untuk status upload
 
     // States untuk modal Tambah Penanggung Jawab & Tanggal BARU
@@ -40,7 +46,7 @@ const LogbookPagiPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [editedPeralatan, setEditedPeralatan] = useState("");
     const [editedKeterangan, setEditedKeterangan] = useState("");
-    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk objek File foto yang diedit
+    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk file foto yang diedit
     const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState(""); // State untuk URL foto yang sudah ada
     const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false); // State untuk menghapus foto yang sudah ada
 
@@ -55,14 +61,14 @@ const LogbookPagiPage = () => {
     const { userRole, logout } = useAuth();
 
     useEffect(() => {
-        if (!userRole || (userRole !== "admin" && userRole !== "user")) {
-            navigate('/');
-        }
+      if (!userRole || (userRole !== "admin" && userRole !== "user")) {
+        navigate('/');
+      }
     }, [userRole, navigate]);
 
-    // URL API Logbook
+    // URL API Logbook (tetap sama)
     const LOGBOOK_API_URL =
-        "https://script.google.com/macros/s/AKfycbwdCJ4ravHuphNoOfw1w63F5k6Dx3F-8CrBUjng74CJouvM2X4uAo0igExKvMLyKp8CJg/exec"; // Pastikan ini URL yang benar
+        "https://script.google.com/macros/s/AKfycbzx8LbGA284ZXj_xg7hRqaF2GQe3TgNwBe8f7v1EkFmrRTd67AcUiAf6BEEqnFWbO5qQA/exec";
 
     // --- Fungsi Pengambilan Data Logbook ---
     const fetchData = async () => {
@@ -98,9 +104,9 @@ const LogbookPagiPage = () => {
     };
 
     useEffect(() => {
-        if (userRole === "admin" || userRole === "user") {
-            fetchData();
-        }
+      if (userRole === "admin" || userRole === "user") {
+        fetchData();
+      }
     }, [userRole]);
 
     // --- Fungsi Pengiriman Permintaan API Umum (untuk Logbook) ---
@@ -130,24 +136,21 @@ const LogbookPagiPage = () => {
         }
     };
 
-    // --- Fungsi untuk membaca file sebagai Base64 ---
-    const readFileAsBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-            reader.readAsDataURL(file);
-        });
-    };
-
     // --- Handler Navigasi Kembali ---
     const handleBackToSummary = () => {
         setFilterPeralatanDetail("");
         setSelectedPersonDateEntry(null);
+        setShowCharts(false);
+        setShowEquipmentCharts(false); // Reset equipment charts view
+        setSelectedEquipment(null); // Reset selected equipment
     };
 
     const handleBackToLogbook = () => {
         navigate("/logbook");
+    };
+
+    const handleBackToEquipmentList = () => {
+        setSelectedEquipment(null);
     };
 
     // --- Handlers Modal Tambah Entri Peralatan (Peralatan & Keterangan) ---
@@ -160,50 +163,20 @@ const LogbookPagiPage = () => {
             Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
             return;
         }
-        if (isUploading) {
-            Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
-            return;
-        }
-
-        let base64Foto = '';
-        let fileName = '';
-
-        if (newBuktiFotoFile) {
-            setIsUploading(true);
-            try {
-                base64Foto = await readFileAsBase64(newBuktiFotoFile);
-                fileName = newBuktiFotoFile.name;
-            } catch (fileError) {
-                Swal.fire('Error Membaca File!', `Gagal membaca file foto: ${fileError.message}`, 'error');
-                setIsUploading(false);
-                return;
-            }
-        }
-
-        const payload = { 
-            Peralatan: newPeralatan,
-            Keterangan: newKeterangan,
-            "Penanggung Jawab": selectedPersonDateEntry.person,
-            Tanggal: selectedPersonDateEntry.date,
-            "Bukti Foto": "",
-        };
-        if (newBuktiFotoFile) {
-            payload.base64Foto = base64Foto;
-            payload.fileName = fileName;
-        }
-
         try {
-            await sendApiRequest("add", payload);
+            await sendApiRequest("add", {
+                Peralatan: newPeralatan,
+                Keterangan: newKeterangan,
+                "Penanggung Jawab": selectedPersonDateEntry.person,
+                Tanggal: selectedPersonDateEntry.date,
+            });
             Swal.fire('Berhasil!', 'Entri peralatan berhasil ditambahkan!', 'success');
             setShowAddEntryModal(false);
             setNewPeralatan("");
             setNewKeterangan("");
-            setNewBuktiFotoFile(null); // Reset file input
-            fetchData(); // Muat ulang data
+            fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri peralatan: ${err.message}`, 'error');
-        } finally {
-            setIsUploading(false);
         }
     };
 
@@ -224,8 +197,7 @@ const LogbookPagiPage = () => {
                 "Penanggung Jawab": newPersonDatePenanggungJawab,
                 Tanggal: newPersonDateTanggal,
                 Peralatan: "",
-                Keterangan: "",
-                "Bukti Foto": "" 
+                Keterangan: ""
             });
             Swal.fire('Berhasil!', 'Penanggung Jawab dan Tanggal baru berhasil ditambahkan!', 'success');
             setShowAddPersonDateModal(false);
@@ -242,9 +214,6 @@ const LogbookPagiPage = () => {
         setEditingItem(item);
         setEditedPeralatan(item.Peralatan);
         setEditedKeterangan(item.Keterangan);
-        setEditedBuktiFotoURL(item["Bukti Foto"] || ""); // Set URL foto yang sudah ada
-        setEditedBuktiFotoFile(null); // Reset file input saat modal dibuka
-        setRemoveExistingPhoto(false); // Reset checkbox hapus foto
         setShowEditModal(true);
     };
 
@@ -253,26 +222,6 @@ const LogbookPagiPage = () => {
             Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
             return;
         }
-        if (isUploading) {
-            Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
-            return;
-        }
-
-        let base64Foto = '';
-        let fileName = '';
-
-        if (editedBuktiFotoFile) { // Jika ada file baru yang dipilih
-            setIsUploading(true);
-            try {
-                base64Foto = await readFileAsBase64(editedBuktiFotoFile);
-                fileName = editedBuktiFotoFile.name;
-            } catch (fileError) {
-                Swal.fire('Error Membaca File!', `Gagal membaca file foto: ${fileError.message}`, 'error');
-                setIsUploading(false);
-                return;
-            }
-        }
-
         try {
             await sendApiRequest("edit", {
                 originalPeralatan: editingItem.Peralatan,
@@ -280,24 +229,15 @@ const LogbookPagiPage = () => {
                 originalTanggal: editingItem.Tanggal,
                 Peralatan: editedPeralatan,
                 Keterangan: editedKeterangan,
-                "Bukti Foto": editedBuktiFotoURL, // Kirim URL yang ada, nanti Apps Script tentukan apakah pakai ini atau yang baru diupload
-                base64Foto: base64Foto, // Kirim Base64 string (hanya jika ada file baru)
-                fileName: fileName, // Kirim nama file (hanya jika ada file baru)
-                removeFoto: removeExistingPhoto // Kirim instruksi hapus foto lama
             });
             Swal.fire('Berhasil!', 'Data berhasil diubah!', 'success');
             setShowEditModal(false);
             setEditingItem(null);
             setEditedPeralatan("");
             setEditedKeterangan("");
-            setEditedBuktiFotoFile(null);
-            setEditedBuktiFotoURL("");
-            setRemoveExistingPhoto(false);
             fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal mengubah data: ${err.message}`, 'error');
-        } finally {
-            setIsUploading(false);
         }
     };
 
@@ -323,7 +263,6 @@ const LogbookPagiPage = () => {
                         Peralatan: item.Peralatan,
                         "Penanggung Jawab": item["Penanggung Jawab"],
                         Tanggal: item.Tanggal,
-                        // Tidak perlu kirim URL foto ke frontend untuk dihapus, Apps Script yang tangani
                     });
                     Swal.fire('Berhasil!', 'Data berhasil dihapus!', 'success');
                     fetchData();
@@ -409,7 +348,7 @@ const LogbookPagiPage = () => {
         setOpenKebabMenuId(null);
         Swal.fire({
             title: 'Konfirmasi Hapus Semua Entri',
-            text: `Anda yakin ingin menghapus SEMUA entri logbook untuk ${combo.person} pada Tanggal: ${combo.date}? Ini termasuk semua bukti foto terkait.`,
+            text: `Anda yakin ingin menghapus SEMUA entri logbook untuk ${combo.person} pada Tanggal: ${combo.date}?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -442,8 +381,50 @@ const LogbookPagiPage = () => {
         setOpenKebabMenuId(null);
     };
 
-
     const statusOptions = ["OK", "Rusak", "Perbaikan", "Tidak Beroperasi"];
+
+    // Function to map status to severity score
+    const getStatusScore = (status) => {
+        switch (status) {
+            case "OK": return 0;
+            case "Rusak": return 1;
+            case "Perbaikan": return 2;
+            case "Tidak Beroperasi": return 3;
+            default: return 0;
+        }
+    };
+
+    const getStatusLabelFromScore = (score) => {
+        const roundedScore = Math.round(score);
+        switch (roundedScore) {
+            case 0: return "OK";
+            case 1: return "Rusak";
+            case 2: return "Perbaikan";
+            case 3: return "Tidak Beroperasi";
+            default: return "";
+        }
+    };
+    
+    const getStatusLabel = (value) => {
+        const statusLabels = {
+            0: "OK",
+            1: "Rusak", 
+            2: "Perbaikan",
+            3: "Tidak Beroperasi"
+        };
+        return statusLabels[value] || "";
+    };
+
+    // Function to get status color
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "OK": return "#10B981";
+            case "Rusak": return "#EF4444";
+            case "Tidak Beroperasi": return "#DC2626";
+            case "Perbaikan": return "#F59E0B";
+            default: return "#6B7280";
+        }
+    };
 
     const parseDateForSort = (dateStr) => {
         if (!dateStr) return 0;
@@ -488,7 +469,7 @@ const LogbookPagiPage = () => {
             (item) =>
                 item.Tanggal === selectedPersonDateEntry.date &&
                 item["Penanggung Jawab"] === selectedPersonDateEntry.person &&
-                (item.Peralatan || item.Keterangan) // Hanya tampilkan baris yang memiliki peralatan/keterangan
+                (item.Peralatan || item.Keterangan)
         );
 
         if (filterPeralatanDetail) {
@@ -502,6 +483,141 @@ const LogbookPagiPage = () => {
         }
         return filtered;
     }, [logbookData, selectedPersonDateEntry, filterPeralatanDetail]);
+
+    // Data untuk grafik - hanya menghitung entri yang memiliki peralatan dan keterangan
+    const chartData = useMemo(() => {
+        const statusCount = {};
+        const equipmentData = logbookData.filter(item => item.Peralatan && item.Keterangan);
+        
+        statusOptions.forEach(status => {
+            statusCount[status] = 0;
+        });
+
+        equipmentData.forEach(item => {
+            if (statusCount.hasOwnProperty(item.Keterangan)) {
+                statusCount[item.Keterangan]++;
+            }
+        });
+
+        const dateStatusMap = {};
+        equipmentData.forEach(item => {
+            if (!dateStatusMap[item.Tanggal]) {
+                dateStatusMap[item.Tanggal] = {};
+            }
+            statusOptions.forEach(status => {
+                if (!dateStatusMap[item.Tanggal][status]) {
+                    dateStatusMap[item.Tanggal][status] = 0;
+                }
+            });
+            if (dateStatusMap[item.Tanggal][item.Keterangan] !== undefined) {
+                dateStatusMap[item.Tanggal][item.Keterangan]++;
+            }
+        });
+
+        const lineData = Object.entries(dateStatusMap)
+            .map(([date, statuses]) => {
+                const dataPoint = {
+                    date,
+                    dateSort: parseDateForSort(date)
+                };
+                
+                // Untuk setiap status, jika ada data, gunakan score-nya
+                statusOptions.forEach(status => {
+                    const count = statuses[status] || 0;
+                    if (count > 0) {
+                        // Jika ada data, gunakan exact score untuk status tersebut
+                        dataPoint[status] = getStatusScore(status);
+                    } else {
+                        // Jika tidak ada data, set null (tidak akan digambar di chart)
+                        dataPoint[status] = null;
+                    }
+                });
+                
+                return dataPoint;
+            })
+            .sort((a, b) => a.dateSort - b.dateSort);
+
+        return { lineData, totalEquipment: equipmentData.length };
+    }, [logbookData]);
+
+    // New: Get unique equipment list for equipment charts view
+    const uniqueEquipmentList = useMemo(() => {
+        const equipmentSet = new Set();
+        logbookData.forEach((item) => {
+            if (item.Peralatan && item.Peralatan.trim()) {
+                equipmentSet.add(item.Peralatan);
+            }
+        });
+        return Array.from(equipmentSet).sort();
+    }, [logbookData]);
+
+    // New: Get chart data for specific equipment
+    const getEquipmentChartData = (equipmentName) => {
+        const equipmentEntries = logbookData.filter(item => 
+            item.Peralatan === equipmentName && item.Keterangan
+        );
+
+        const dateStatusMap = {};
+        equipmentEntries.forEach(item => {
+            if (!dateStatusMap[item.Tanggal]) {
+                dateStatusMap[item.Tanggal] = {};
+                statusOptions.forEach(status => {
+                    dateStatusMap[item.Tanggal][status] = 0;
+                });
+            }
+            if (dateStatusMap[item.Tanggal][item.Keterangan] !== undefined) {
+                dateStatusMap[item.Tanggal][item.Keterangan]++;
+            }
+        });
+
+        const lineChartData = Object.entries(dateStatusMap)
+            .map(([date, statuses]) => {
+                const dataPoint = {
+                    date,
+                    dateSort: parseDateForSort(date)
+                };
+                
+                statusOptions.forEach(status => {
+                    const count = statuses[status] || 0;
+                    if (count > 0) {
+                        dataPoint[status] = getStatusScore(status);
+                    } else {
+                        dataPoint[status] = null;
+                    }
+                });
+                
+                return dataPoint;
+            })
+            .sort((a, b) => a.dateSort - b.dateSort);
+
+        return {
+            lineChartData,
+            totalEntries: equipmentEntries.length,
+            uniqueDates: Object.keys(dateStatusMap).length
+        };
+    };
+
+    // Custom tooltip for charts
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            const data = payload[0];
+            return (
+                <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
+                    <p className="font-semibold">{`${data.name || label}: ${data.value || data.payload.jumlah}`}</p>
+                    <p className="text-sm text-gray-600">
+                        Persentase: {((data.value || data.payload.jumlah) / chartData.totalEquipment * 100).toFixed(1)}%
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const formatYAxisTick = (tickItem) => {
+    // Bulatkan ke integer terdekat untuk mapping
+    const roundedValue = Math.round(tickItem);
+    return getStatusLabel(roundedValue);
+};
 
     // --- Tampilan Loading dan Error ---
     if (loading) {
@@ -548,14 +664,13 @@ const LogbookPagiPage = () => {
         );
     }
 
-
     if (!userRole) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
-            </div>
-        );
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
+        </div>
+      );
     }
 
     return (
@@ -610,27 +725,46 @@ const LogbookPagiPage = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         {/* Tombol Kembali */}
                         <button
-                            onClick={selectedPersonDateEntry ? handleBackToSummary : handleBackToLogbook}
+                            onClick={
+                                selectedEquipment ? handleBackToEquipmentList :
+                                selectedPersonDateEntry || showCharts || showEquipmentCharts ? handleBackToSummary : 
+                                handleBackToLogbook
+                            }
                             className="flex items-center text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md text-[10px] sm:text-sm md:text-base"
                         >
                             <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
-                            {selectedPersonDateEntry ? "Kembali ke Ringkasan Log Book" : "Kembali ke Halaman Log Book"}
+                            {selectedEquipment ? "Kembali ke Daftar Peralatan" :
+                             selectedPersonDateEntry || showCharts || showEquipmentCharts ? "Kembali ke Ringkasan Log Book" : 
+                             "Kembali ke Halaman Log Book"}
                         </button>
 
-                        {/* Tombol Tambah Penanggung Jawab & Tanggal BARU */}
-                        {!selectedPersonDateEntry && (
-                            <button
-                                onClick={() => setShowAddPersonDateModal(true)}
-                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                <span>Tambah Penanggung Jawab & Tanggal</span>
-                            </button>
-                        )}
+                        {/* Tombol untuk toggle grafik dan tambah data */}
+                        <div className="flex gap-2">
+                            {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && !selectedEquipment && (
+                                <>
+                                    <button
+                                        onClick={() => setShowEquipmentCharts(true)}
+                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                        </svg>
+                                        <span>Grafik per Peralatan</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowAddPersonDateModal(true)}
+                                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        <span>Tambah Penanggung Jawab & Tanggal</span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-semibold mb-6 md:mb-8">
@@ -638,17 +772,328 @@ const LogbookPagiPage = () => {
                     </h2>
 
                     {userRole && (
-                        <div className="text-center mb-4 text-gray-600">
-                            Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+                      <div className="text-center mb-4 text-gray-600">
+                        Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+                      </div>
+                    )}
+
+                    {/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
+                    {selectedEquipment && (
+                        <div className="space-y-6 mb-8">
+                            {(() => {
+                                const equipmentData = getEquipmentChartData(selectedEquipment);
+                                return (
+                                    <>
+                                        {/* Statistics Cards - TETAP */}
+                                        <div className="bg-white rounded-lg shadow-md p-6">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">
+                                                Analisis Peralatan: <span className="text-blue-600">{selectedEquipment}</span>
+                                            </h3>
+                                            
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                                                <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-600">Total Entri</p>
+                                                            <p className="text-2xl font-bold text-blue-600">{equipmentData.totalEntries}</p>
+                                                        </div>
+                                                        <div className="p-3 bg-blue-100 rounded-full">
+                                                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-600">Hari Tercatat</p>
+                                                            <p className="text-2xl font-bold text-green-600">{equipmentData.uniqueDates}</p>
+                                                        </div>
+                                                        <div className="p-3 bg-green-100 rounded-full">
+                                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-600">Status OK</p>
+                                                            <p className="text-2xl font-bold text-orange-600">
+                                                                {equipmentData.lineChartData.reduce((sum, item) => sum + (item.OK || 0), 0)}
+                                                            </p>
+                                                        </div>
+                                                        <div className="p-3 bg-orange-100 rounded-full">
+                                                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* HANYA LINE CHART - Hapus Pie Chart */}
+                                        <div className="bg-white rounded-lg shadow-md p-6">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                                Status Peralatan {selectedEquipment} Per Hari
+                                            </h4>
+                                            <div className="h-80">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <LineChart data={equipmentData.lineChartData}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis 
+                                                            dataKey="date" 
+                                                            angle={-45}
+                                                            textAnchor="end"
+                                                            height={80}
+                                                            fontSize={12}
+                                                        />
+                                                        <YAxis 
+                                                            domain={[0, 3]}
+                                                            type="number"
+                                                            tickCount={4}
+                                                            tickFormatter={(value) => getStatusLabelFromScore(value)}
+                                                            allowDecimals={false}
+                                                            tick={{ fontSize: 11, fill: '#666' }}
+                                                            width={120}
+                                                        />
+                                                        <Tooltip 
+                                                            formatter={(value, name) => {
+                                                                if (value === null) return ['Tidak Ada Data', name];
+                                                                return [getStatusLabelFromScore(value), name];
+                                                            }}
+                                                            labelFormatter={(label) => `Tanggal: ${label}`}
+                                                        />
+                                                        <Legend />
+                                                        {statusOptions.map((status) => (
+                                                            <Line 
+                                                                key={status}
+                                                                type="stepAfter"
+                                                                dataKey={status} 
+                                                                stroke={getStatusColor(status)}
+                                                                strokeWidth={3}
+                                                                connectNulls={false}
+                                                                dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
+                                                                activeDot={{ r: 7, fill: getStatusColor(status) }}
+                                                            />
+                                                        ))}
+                                                    </LineChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+
+                                    </>
+                                );
+                            })()}
                         </div>
                     )}
 
+                    {/* Tampilan Daftar Peralatan untuk Grafik */}
+                    {showEquipmentCharts && !selectedEquipment && (
+                        <div className="space-y-6 mb-8">
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
+                                    Pilih Peralatan untuk Melihat Grafik Detail
+                                </h3>
+                                
+                                {uniqueEquipmentList.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-600">Tidak ada data peralatan yang tersedia.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {uniqueEquipmentList.map((equipment, index) => {
+                                            const equipmentData = getEquipmentChartData(equipment);
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    onClick={() => setSelectedEquipment(equipment)}
+                                                    className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 border border-blue-200 cursor-pointer hover:shadow-lg hover:border-blue-400 transition-all duration-200 transform hover:-translate-y-1"
+                                                >
+                                                    <div className="flex flex-col items-center text-center">
+                                                        <div className="mb-3 p-3 bg-blue-100 rounded-full">
+                                                            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                                            </svg>
+                                                        </div>
+                                                        <h4 className="font-semibold text-gray-800 mb-2 text-sm break-words">
+                                                            {equipment}
+                                                        </h4>
+                                                        <div className="text-xs text-gray-600 space-y-1">
+                                                            <p>Entri: <span className="font-semibold text-blue-600">{equipmentData.totalEntries}</span></p>
+                                                            <p>Hari: <span className="font-semibold text-green-600">{equipmentData.uniqueDates}</span></p>
+                                                        </div>
+                                                        <div className="mt-2 flex items-center text-xs text-blue-600">
+                                                            <span>Lihat Detail</span>
+                                                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Tampilan Grafik Keseluruhan */}
+                    {showCharts && (
+                         <div className="space-y-6 mb-8">
+                            {/* Statistics Cards - TETAP */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Total Peralatan</p>
+                                            <p className="text-2xl font-bold text-gray-900">{chartData.totalEquipment}</p>
+                                        </div>
+                                        <div className="p-3 bg-green-100 rounded-full">
+                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Status OK</p>
+                                            <p className="text-2xl font-bold text-green-600">
+                                                {chartData.lineData.reduce((sum, item) => sum + (item.OK || 0), 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-green-100 rounded-full">
+                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Rusak/Tidak Beroperasi</p>
+                                            <p className="text-2xl font-bold text-red-600">
+                                                {chartData.lineData.reduce((sum, item) => sum + (item.Rusak || 0) + (item["Tidak Beroperasi"] || 0), 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-red-100 rounded-full">
+                                            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Dalam Perbaikan</p>
+                                            <p className="text-2xl font-bold text-orange-600">
+                                                {chartData.lineData.reduce((sum, item) => sum + (item.Perbaikan || 0), 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-orange-100 rounded-full">
+                                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* LINE CHART  */}
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                    Tren Status Peralatan Seiring Waktu
+                                </h3>
+                                <div className="h-96">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chartData.lineData}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis 
+                                                dataKey="date" 
+                                                angle={-45}
+                                                textAnchor="end"
+                                                height={80}
+                                                fontSize={12}
+                                            />
+                                            <YAxis 
+                                                domain={[0, 3]}
+                                                type="number"
+                                                tickCount={4}
+                                                tickFormatter={formatYAxisTick}
+                                                allowDecimals={false}
+                                                tick={{ fontSize: 11, fill: '#666' }}
+                                                width={120}
+                                            />
+                                            <Tooltip 
+                                                formatter={(value, name) => {
+                                                    if (value === null) return ['Tidak Ada Data', name];
+                                                    return [getStatusLabelFromScore(value), name];
+                                                }}
+                                                labelFormatter={(label) => `Tanggal: ${label}`}
+                                            />
+                                            <Legend />
+                                            {statusOptions.map((status) => (
+                                                <Line 
+                                                    key={status}
+                                                    type="stepAfter"
+                                                    dataKey={status}
+                                                    stroke={getStatusColor(status)}
+                                                    strokeWidth={3}
+                                                    connectNulls={false}
+                                                    dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
+                                                    activeDot={{ r: 7, fill: getStatusColor(status) }}
+                                                />
+                                            ))}
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Status Legend - TETAP */}
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Keterangan Status Peralatan</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {statusOptions.map((status, index) => (
+                                        <div key={status} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <div 
+                                                className="w-4 h-4 rounded-full"
+                                                style={{ backgroundColor: getStatusColor(status) }}
+                                            ></div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-gray-800">{status}</p>
+                                                <p className="text-sm text-gray-600">Level: {getStatusScore(status)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Level Status:</strong> OK (0) = Normal, Rusak (1) = Bermasalah, Perbaikan (2) = Dalam Perbaikan, Tidak Beroperasi (3) = Tidak Berfungsi
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {logbookData.length === 0 && !loading && !error ? (
                         <div className="text-center py-8">
                             <p className="text-gray-600 text-sm md:text-base">
                                 Tidak ada data logbook yang ditemukan.
                             </p>
-                            {!selectedPersonDateEntry && (
+                            {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && (
                                 <button
                                     onClick={() => setShowAddPersonDateModal(true)}
                                     className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 mx-auto"
@@ -662,7 +1107,7 @@ const LogbookPagiPage = () => {
                         </div>
                     ) : selectedPersonDateEntry ? (
                         // Tampilan Tabel Detail
-                        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
+                         <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
                             <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
                                 <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 text-center sm:text-left flex-grow">
                                     Detail Log Book untuk <span className="text-blue-700">{selectedPersonDateEntry.person}</span> pada <span className="text-blue-700">{selectedPersonDateEntry.date}</span>
@@ -705,9 +1150,9 @@ const LogbookPagiPage = () => {
                                                     <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Bukti Foto
                                                     </th>
-                                                        <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Aksi
-                                                        </th>
+                                                    <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Aksi
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
@@ -766,10 +1211,11 @@ const LogbookPagiPage = () => {
                                 </div>
                             </div>
                         </div>
-                    ) : (
+                    ) : !showCharts && !showEquipmentCharts ? (
                         // Tampilan Grid Kotak Ringkasan (mirip PerkaCanggih)
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                             {uniquePersonDateCombinations.map((combo, index) => {
+                                // Membuat ID unik untuk setiap kotak untuk menu kebab
                                 const comboId = `${combo.person}-${combo.date}`;
                                 return (
                                     <div
@@ -787,34 +1233,30 @@ const LogbookPagiPage = () => {
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
                                             >
-                                                {/* <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M9 5l7 7-7 7"
-                                                /> */}
                                             </svg>
                                         </div>
                                         <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
 
+                                        {/* Kebab Menu Button (tetap SVG inline) */}
                                         {userRole === "admin" && (
-                                            <button
-                                                className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleOpenKebabMenu(comboId);
-                                                }}
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                                </svg>
-                                            </button>
+                                          <button
+                                              className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
+                                              onClick={(e) => {
+                                                  e.stopPropagation(); // Mencegah klik kotak memicu setSelectedPersonDateEntry
+                                                  handleOpenKebabMenu(comboId);
+                                              }}
+                                          >
+                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                              </svg>
+                                          </button>
                                         )}
 
-                                        {openKebabMenuId === comboId && userRole === "admin" && (
+                                        {/* Kebab Menu Dropdown (tetap menggunakan ikon yang sebelumnya Anda set) */}
+                                        {openKebabMenuId === comboId && (
                                             <div
                                                 className="absolute top-10 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
-                                                onMouseLeave={handleCloseKebabMenu}
+                                                onMouseLeave={handleCloseKebabMenu} // Tutup saat mouse keluar
                                             >
                                                 <button
                                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
@@ -842,7 +1284,7 @@ const LogbookPagiPage = () => {
                                 );
                             })}
                         </div>
-                    )}
+                    ) : null} 
                 </main>
             </div>
 
@@ -1162,12 +1604,12 @@ const LogbookPagiPage = () => {
                             </select>
                         </div>
                         {/* Input File untuk Bukti Foto di Edit Modal */}
-                        <div className="mb-4">
+                        <div className="mb-6">
                             <label
                                 htmlFor="editedBuktiFotoFile"
                                 className="block text-sm font-medium text-gray-700 mb-2"
                             >
-                                Unggah Bukti Foto Baru
+                                Bukti Foto
                             </label>
                             <input
                                 type="file"
@@ -1179,10 +1621,7 @@ const LogbookPagiPage = () => {
                                     file:text-sm file:font-semibold
                                     file:bg-blue-50 file:text-blue-700
                                     hover:file:bg-blue-100"
-                                onChange={(e) => {
-                                    setEditedBuktiFotoFile(e.target.files[0]);
-                                    setRemoveExistingPhoto(false); 
-                                }}
+                                onChange={(e) => setEditedBuktiFotoFile(e.target.files[0])}
                                 disabled={isUploading}
                             />
                             {editedBuktiFotoFile && (
@@ -1190,30 +1629,15 @@ const LogbookPagiPage = () => {
                                     File dipilih: {editedBuktiFotoFile.name}
                                 </p>
                             )}
+                            {!editedBuktiFotoFile && editedBuktiFotoURL && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
+                                </p>
+                            )}
                             {isUploading && (
                                 <p className="mt-2 text-blue-500 text-sm">Mengunggah foto...</p>
                             )}
                         </div>
-                        {/* Opsi Hapus Foto Lama atau Tampilkan Link Foto Lama */}
-                        {editedBuktiFotoURL && !editedBuktiFotoFile && (
-                            <div className="mb-6 flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id="removeExistingPhoto"
-                                    checked={removeExistingPhoto}
-                                    onChange={(e) => setRemoveExistingPhoto(e.target.checked)}
-                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                />
-                                <label htmlFor="removeExistingPhoto" className="ml-2 text-sm text-gray-700">
-                                    Hapus foto saat ini
-                                </label>
-                                {!removeExistingPhoto && (
-                                    <p className="ml-4 text-xs text-gray-500">
-                                        Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
-                                    </p>
-                                )}
-                            </div>
-                        )}
                         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                             <button
                                 onClick={() => setShowEditModal(false)}
@@ -1239,4 +1663,4 @@ const LogbookPagiPage = () => {
     );
 };
 
-export default LogbookPagiPage;
+export default LogbookPagiPage;  
