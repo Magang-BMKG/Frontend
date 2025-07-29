@@ -22,7 +22,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/landingpage" element={<LandingPage />} />
           <Route path="/destopteknisi" element={<DaftarTeknisiPage />} />
           <Route path="/instrumen" element={<DaftarInstrumenPage />} />
           <Route path="/logbook" element={<LogbookPage />} />

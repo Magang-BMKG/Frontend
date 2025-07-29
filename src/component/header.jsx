@@ -26,6 +26,7 @@ const Header = () => {
     <header className="bg-white shadow-sm">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-3 md:py-4">
+            <a href="/landingpage">
                 <div className="flex items-center space-x-2 md:space-x-3">
                     <img 
                         src={Logo}
@@ -37,7 +38,9 @@ const Header = () => {
                         <h2 className="text-[6px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
                     </div>
                     </div>
+                </a>
                 <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
+              
                     <button 
                         onClick={scrollToContact}
                         className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
