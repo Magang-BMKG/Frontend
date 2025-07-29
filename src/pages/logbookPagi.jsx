@@ -9,6 +9,7 @@ import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// import { supabase } from '../supabaseClient'; // Tidak perlu lagi jika pindah ke Google Drive
 
 const LogbookPagiPage = () => {
     const navigate = useNavigate();
@@ -22,6 +23,8 @@ const LogbookPagiPage = () => {
     const [error, setError] = useState(null);
     const [selectedPersonDateEntry, setSelectedPersonDateEntry] = useState(null);
     const [filterPeralatanDetail, setFilterPeralatanDetail] = useState("");
+
+    // States untuk modal Tambah Entri Peralatan (Peralatan & Keterangan)
     const [showCharts, setShowCharts] = useState(false);
     const [showEquipmentCharts, setShowEquipmentCharts] = useState(false); // New state for equipment charts view
     const [selectedEquipment, setSelectedEquipment] = useState(null); // New state for selected equipment
@@ -45,6 +48,7 @@ const LogbookPagiPage = () => {
     const [editedKeterangan, setEditedKeterangan] = useState("");
     const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk file foto yang diedit
     const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState(""); // State untuk URL foto yang sudah ada
+    const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false); // State untuk menghapus foto yang sudah ada
 
     // States untuk modal Edit Penanggung Jawab & Tanggal
     const [showEditPersonDateModal, setShowEditPersonDateModal] = useState(false);
@@ -384,12 +388,32 @@ const LogbookPagiPage = () => {
         switch (status) {
             case "OK": return 0;
             case "Rusak": return 1;
-            case "Tidak Beroperasi": return 1;
             case "Perbaikan": return 2;
+            case "Tidak Beroperasi": return 3;
             default: return 0;
         }
     };
+
+    const getStatusLabelFromScore = (score) => {
+        const roundedScore = Math.round(score);
+        switch (roundedScore) {
+            case 0: return "OK";
+            case 1: return "Rusak";
+            case 2: return "Perbaikan";
+            case 3: return "Tidak Beroperasi";
+            default: return "";
+        }
+    };
     
+    const getStatusLabel = (value) => {
+        const statusLabels = {
+            0: "OK",
+            1: "Rusak", 
+            2: "Perbaikan",
+            3: "Tidak Beroperasi"
+        };
+        return statusLabels[value] || "";
+    };
 
     // Function to get status color
     const getStatusColor = (status) => {
@@ -491,12 +515,27 @@ const LogbookPagiPage = () => {
         });
 
         const lineData = Object.entries(dateStatusMap)
-        .map(([date, statuses]) => ({
-            date,
-            ...statuses,
-            dateSort: parseDateForSort(date)
-        }))
-        .sort((a, b) => a.dateSort - b.dateSort);
+            .map(([date, statuses]) => {
+                const dataPoint = {
+                    date,
+                    dateSort: parseDateForSort(date)
+                };
+                
+                // Untuk setiap status, jika ada data, gunakan score-nya
+                statusOptions.forEach(status => {
+                    const count = statuses[status] || 0;
+                    if (count > 0) {
+                        // Jika ada data, gunakan exact score untuk status tersebut
+                        dataPoint[status] = getStatusScore(status);
+                    } else {
+                        // Jika tidak ada data, set null (tidak akan digambar di chart)
+                        dataPoint[status] = null;
+                    }
+                });
+                
+                return dataPoint;
+            })
+            .sort((a, b) => a.dateSort - b.dateSort);
 
         return { lineData, totalEquipment: equipmentData.length };
     }, [logbookData]);
@@ -518,7 +557,6 @@ const LogbookPagiPage = () => {
             item.Peralatan === equipmentName && item.Keterangan
         );
 
-        // Group by date
         const dateStatusMap = {};
         equipmentEntries.forEach(item => {
             if (!dateStatusMap[item.Tanggal]) {
@@ -532,14 +570,25 @@ const LogbookPagiPage = () => {
             }
         });
 
-        // Convert to chart format for line chart (status count over time)
         const lineChartData = Object.entries(dateStatusMap)
-        .map(([date, statuses]) => ({
-            date,
-            ...statuses,
-            dateSort: parseDateForSort(date)
-        }))
-        .sort((a, b) => a.dateSort - b.dateSort);
+            .map(([date, statuses]) => {
+                const dataPoint = {
+                    date,
+                    dateSort: parseDateForSort(date)
+                };
+                
+                statusOptions.forEach(status => {
+                    const count = statuses[status] || 0;
+                    if (count > 0) {
+                        dataPoint[status] = getStatusScore(status);
+                    } else {
+                        dataPoint[status] = null;
+                    }
+                });
+                
+                return dataPoint;
+            })
+            .sort((a, b) => a.dateSort - b.dateSort);
 
         return {
             lineChartData,
@@ -563,6 +612,12 @@ const LogbookPagiPage = () => {
         }
         return null;
     };
+
+    const formatYAxisTick = (tickItem) => {
+    // Bulatkan ke integer terdekat untuk mapping
+    const roundedValue = Math.round(tickItem);
+    return getStatusLabel(roundedValue);
+};
 
     // --- Tampilan Loading dan Error ---
     if (loading) {
@@ -798,23 +853,40 @@ const LogbookPagiPage = () => {
                                                             height={80}
                                                             fontSize={12}
                                                         />
-                                                        <YAxis />
-                                                        <Tooltip />
+                                                        <YAxis 
+                                                            domain={[0, 3]}
+                                                            type="number"
+                                                            tickCount={4}
+                                                            tickFormatter={(value) => getStatusLabelFromScore(value)}
+                                                            allowDecimals={false}
+                                                            tick={{ fontSize: 11, fill: '#666' }}
+                                                            width={120}
+                                                        />
+                                                        <Tooltip 
+                                                            formatter={(value, name) => {
+                                                                if (value === null) return ['Tidak Ada Data', name];
+                                                                return [getStatusLabelFromScore(value), name];
+                                                            }}
+                                                            labelFormatter={(label) => `Tanggal: ${label}`}
+                                                        />
                                                         <Legend />
                                                         {statusOptions.map((status) => (
                                                             <Line 
                                                                 key={status}
-                                                                type="monotone" 
+                                                                type="stepAfter"
                                                                 dataKey={status} 
                                                                 stroke={getStatusColor(status)}
-                                                                strokeWidth={2}
+                                                                strokeWidth={3}
                                                                 connectNulls={false}
+                                                                dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
+                                                                activeDot={{ r: 7, fill: getStatusColor(status) }}
                                                             />
                                                         ))}
                                                     </LineChart>
                                                 </ResponsiveContainer>
                                             </div>
                                         </div>
+
                                     </>
                                 );
                             })()}
@@ -941,7 +1013,7 @@ const LogbookPagiPage = () => {
                                 </div>
                             </div>
 
-                            {/* HANYA LINE CHART - Hapus Pie Chart dan Bar Chart */}
+                            {/* LINE CHART  */}
                             <div className="bg-white rounded-lg shadow-md p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
                                     Tren Status Peralatan Seiring Waktu
@@ -957,17 +1029,33 @@ const LogbookPagiPage = () => {
                                                 height={80}
                                                 fontSize={12}
                                             />
-                                            <YAxis />
-                                            <Tooltip />
+                                            <YAxis 
+                                                domain={[0, 3]}
+                                                type="number"
+                                                tickCount={4}
+                                                tickFormatter={formatYAxisTick}
+                                                allowDecimals={false}
+                                                tick={{ fontSize: 11, fill: '#666' }}
+                                                width={120}
+                                            />
+                                            <Tooltip 
+                                                formatter={(value, name) => {
+                                                    if (value === null) return ['Tidak Ada Data', name];
+                                                    return [getStatusLabelFromScore(value), name];
+                                                }}
+                                                labelFormatter={(label) => `Tanggal: ${label}`}
+                                            />
                                             <Legend />
                                             {statusOptions.map((status) => (
                                                 <Line 
                                                     key={status}
-                                                    type="monotone" 
-                                                    dataKey={status} 
+                                                    type="stepAfter"
+                                                    dataKey={status}
                                                     stroke={getStatusColor(status)}
-                                                    strokeWidth={2}
+                                                    strokeWidth={3}
                                                     connectNulls={false}
+                                                    dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
+                                                    activeDot={{ r: 7, fill: getStatusColor(status) }}
                                                 />
                                             ))}
                                         </LineChart>
@@ -977,9 +1065,9 @@ const LogbookPagiPage = () => {
 
                             {/* Status Legend - TETAP */}
                             <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Keterangan Status & Skor Keparahan</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Keterangan Status Peralatan</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    {statusOptions.map((status) => (
+                                    {statusOptions.map((status, index) => (
                                         <div key={status} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                                             <div 
                                                 className="w-4 h-4 rounded-full"
@@ -987,14 +1075,14 @@ const LogbookPagiPage = () => {
                                             ></div>
                                             <div className="flex-1">
                                                 <p className="font-medium text-gray-800">{status}</p>
-                                                <p className="text-sm text-gray-600">Skor: {getStatusScore(status)}</p>
+                                                <p className="text-sm text-gray-600">Level: {getStatusScore(status)}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                                     <p className="text-sm text-blue-800">
-                                        <strong>Sistem Penilaian:</strong> OK = 0 (Normal), Rusak/Tidak Beroperasi = 1 (Kritis), Perbaikan = 2 (Sedang Diperbaiki)
+                                        <strong>Level Status:</strong> OK (0) = Normal, Rusak (1) = Bermasalah, Perbaikan (2) = Dalam Perbaikan, Tidak Beroperasi (3) = Tidak Berfungsi
                                     </p>
                                 </div>
                             </div>
