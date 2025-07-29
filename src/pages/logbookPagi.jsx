@@ -8,6 +8,7 @@ import { IoClose } from "react-icons/io5";
 import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const LogbookPagiPage = () => {
     const navigate = useNavigate();
@@ -21,11 +22,16 @@ const LogbookPagiPage = () => {
     const [error, setError] = useState(null);
     const [selectedPersonDateEntry, setSelectedPersonDateEntry] = useState(null);
     const [filterPeralatanDetail, setFilterPeralatanDetail] = useState("");
+    const [showCharts, setShowCharts] = useState(false);
+    const [showEquipmentCharts, setShowEquipmentCharts] = useState(false); // New state for equipment charts view
+    const [selectedEquipment, setSelectedEquipment] = useState(null); // New state for selected equipment
 
     // States untuk modal Tambah Entri Peralatan (Peralatan & Keterangan)
     const [showAddEntryModal, setShowAddEntryModal] = useState(false);
     const [newPeralatan, setNewPeralatan] = useState("");
     const [newKeterangan, setNewKeterangan] = useState("");
+    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk file foto baru
+    const [isUploading, setIsUploading] = useState(false); // State untuk status upload
 
     // States untuk modal Tambah Penanggung Jawab & Tanggal BARU
     const [showAddPersonDateModal, setShowAddPersonDateModal] = useState(false);
@@ -37,15 +43,17 @@ const LogbookPagiPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [editedPeralatan, setEditedPeralatan] = useState("");
     const [editedKeterangan, setEditedKeterangan] = useState("");
+    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk file foto yang diedit
+    const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState(""); // State untuk URL foto yang sudah ada
 
     // States untuk modal Edit Penanggung Jawab & Tanggal
     const [showEditPersonDateModal, setShowEditPersonDateModal] = useState(false);
-    const [editingPersonDateCombo, setEditingPersonDateCombo] = useState(null); // Kombinasi asli yang diedit
+    const [editingPersonDateCombo, setEditingPersonDateCombo] = useState(null);
     const [editedPersonDatePenanggungJawab, setEditedPersonDatePenanggungJawab] = useState("");
     const [editedPersonDateTanggal, setEditedPersonDateTanggal] = useState("");
 
     // State untuk menu kebab (titik tiga)
-    const [openKebabMenuId, setOpenKebabMenuId] = useState(null); // Menyimpan ID unik dari kombinasi yang menu-nya terbuka
+    const [openKebabMenuId, setOpenKebabMenuId] = useState(null);
     const { userRole, logout } = useAuth();
 
     useEffect(() => {
@@ -128,10 +136,17 @@ const LogbookPagiPage = () => {
     const handleBackToSummary = () => {
         setFilterPeralatanDetail("");
         setSelectedPersonDateEntry(null);
+        setShowCharts(false);
+        setShowEquipmentCharts(false); // Reset equipment charts view
+        setSelectedEquipment(null); // Reset selected equipment
     };
 
     const handleBackToLogbook = () => {
         navigate("/logbook");
+    };
+
+    const handleBackToEquipmentList = () => {
+        setSelectedEquipment(null);
     };
 
     // --- Handlers Modal Tambah Entri Peralatan (Peralatan & Keterangan) ---
@@ -148,14 +163,14 @@ const LogbookPagiPage = () => {
             await sendApiRequest("add", {
                 Peralatan: newPeralatan,
                 Keterangan: newKeterangan,
-                "Penanggung Jawab": selectedPersonDateEntry.person, // Ambil dari yang dipilih
-                Tanggal: selectedPersonDateEntry.date, // Ambil dari yang dipilih
+                "Penanggung Jawab": selectedPersonDateEntry.person,
+                Tanggal: selectedPersonDateEntry.date,
             });
             Swal.fire('Berhasil!', 'Entri peralatan berhasil ditambahkan!', 'success');
             setShowAddEntryModal(false);
             setNewPeralatan("");
             setNewKeterangan("");
-            fetchData(); // Muat ulang data
+            fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri peralatan: ${err.message}`, 'error');
         }
@@ -177,14 +192,14 @@ const LogbookPagiPage = () => {
             await sendApiRequest("add", {
                 "Penanggung Jawab": newPersonDatePenanggungJawab,
                 Tanggal: newPersonDateTanggal,
-                Peralatan: "", // Kosongkan Peralatan
-                Keterangan: "" // Kosongkan Keterangan
+                Peralatan: "",
+                Keterangan: ""
             });
             Swal.fire('Berhasil!', 'Penanggung Jawab dan Tanggal baru berhasil ditambahkan!', 'success');
             setShowAddPersonDateModal(false);
             setNewPersonDatePenanggungJawab("");
             setNewPersonDateTanggal("");
-            fetchData(); // Muat ulang data
+            fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri: ${err.message}`, 'error');
         }
@@ -216,7 +231,7 @@ const LogbookPagiPage = () => {
             setEditingItem(null);
             setEditedPeralatan("");
             setEditedKeterangan("");
-            fetchData(); // Muat ulang data
+            fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal mengubah data: ${err.message}`, 'error');
         }
@@ -256,7 +271,7 @@ const LogbookPagiPage = () => {
 
     // Handlers untuk mengedit kombinasi Penanggung Jawab & Tanggal
     const handleEditPersonDateClick = (combo) => {
-        setOpenKebabMenuId(null); // Tutup menu kebab
+        setOpenKebabMenuId(null);
         setEditingPersonDateCombo(combo);
         setEditedPersonDatePenanggungJawab(combo.person);
         setEditedPersonDateTanggal(combo.date);
@@ -326,7 +341,7 @@ const LogbookPagiPage = () => {
 
     // Handlers untuk menghapus kombinasi Penanggung Jawab & Tanggal
     const handleDeletePersonDate = (combo) => {
-        setOpenKebabMenuId(null); // Tutup menu kebab
+        setOpenKebabMenuId(null);
         Swal.fire({
             title: 'Konfirmasi Hapus Semua Entri',
             text: `Anda yakin ingin menghapus SEMUA entri logbook untuk ${combo.person} pada Tanggal: ${combo.date}?`,
@@ -345,7 +360,7 @@ const LogbookPagiPage = () => {
                     });
                     Swal.fire('Berhasil!', `Semua entri untuk ${combo.person} pada ${combo.date} berhasil dihapus!`, 'success');
                     fetchData();
-                    setSelectedPersonDateEntry(null); // Kembali ke tampilan ringkasan
+                    setSelectedPersonDateEntry(null);
                 } catch (err) {
                     Swal.fire('Gagal!', `Gagal menghapus entri: ${err.message}`, 'error');
                 }
@@ -362,8 +377,30 @@ const LogbookPagiPage = () => {
         setOpenKebabMenuId(null);
     };
 
-
     const statusOptions = ["OK", "Rusak", "Perbaikan", "Tidak Beroperasi"];
+
+    // Function to map status to severity score
+    const getStatusScore = (status) => {
+        switch (status) {
+            case "OK": return 0;
+            case "Rusak": return 1;
+            case "Tidak Beroperasi": return 1;
+            case "Perbaikan": return 2;
+            default: return 0;
+        }
+    };
+    
+
+    // Function to get status color
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "OK": return "#10B981";
+            case "Rusak": return "#EF4444";
+            case "Tidak Beroperasi": return "#DC2626";
+            case "Perbaikan": return "#F59E0B";
+            default: return "#6B7280";
+        }
+    };
 
     const parseDateForSort = (dateStr) => {
         if (!dateStr) return 0;
@@ -408,7 +445,7 @@ const LogbookPagiPage = () => {
             (item) =>
                 item.Tanggal === selectedPersonDateEntry.date &&
                 item["Penanggung Jawab"] === selectedPersonDateEntry.person &&
-                (item.Peralatan || item.Keterangan) // Hanya tampilkan baris yang memiliki peralatan/keterangan
+                (item.Peralatan || item.Keterangan)
         );
 
         if (filterPeralatanDetail) {
@@ -422,6 +459,110 @@ const LogbookPagiPage = () => {
         }
         return filtered;
     }, [logbookData, selectedPersonDateEntry, filterPeralatanDetail]);
+
+    // Data untuk grafik - hanya menghitung entri yang memiliki peralatan dan keterangan
+    const chartData = useMemo(() => {
+        const statusCount = {};
+        const equipmentData = logbookData.filter(item => item.Peralatan && item.Keterangan);
+        
+        statusOptions.forEach(status => {
+            statusCount[status] = 0;
+        });
+
+        equipmentData.forEach(item => {
+            if (statusCount.hasOwnProperty(item.Keterangan)) {
+                statusCount[item.Keterangan]++;
+            }
+        });
+
+        const dateStatusMap = {};
+        equipmentData.forEach(item => {
+            if (!dateStatusMap[item.Tanggal]) {
+                dateStatusMap[item.Tanggal] = {};
+            }
+            statusOptions.forEach(status => {
+                if (!dateStatusMap[item.Tanggal][status]) {
+                    dateStatusMap[item.Tanggal][status] = 0;
+                }
+            });
+            if (dateStatusMap[item.Tanggal][item.Keterangan] !== undefined) {
+                dateStatusMap[item.Tanggal][item.Keterangan]++;
+            }
+        });
+
+        const lineData = Object.entries(dateStatusMap)
+        .map(([date, statuses]) => ({
+            date,
+            ...statuses,
+            dateSort: parseDateForSort(date)
+        }))
+        .sort((a, b) => a.dateSort - b.dateSort);
+
+        return { lineData, totalEquipment: equipmentData.length };
+    }, [logbookData]);
+
+    // New: Get unique equipment list for equipment charts view
+    const uniqueEquipmentList = useMemo(() => {
+        const equipmentSet = new Set();
+        logbookData.forEach((item) => {
+            if (item.Peralatan && item.Peralatan.trim()) {
+                equipmentSet.add(item.Peralatan);
+            }
+        });
+        return Array.from(equipmentSet).sort();
+    }, [logbookData]);
+
+    // New: Get chart data for specific equipment
+    const getEquipmentChartData = (equipmentName) => {
+        const equipmentEntries = logbookData.filter(item => 
+            item.Peralatan === equipmentName && item.Keterangan
+        );
+
+        // Group by date
+        const dateStatusMap = {};
+        equipmentEntries.forEach(item => {
+            if (!dateStatusMap[item.Tanggal]) {
+                dateStatusMap[item.Tanggal] = {};
+                statusOptions.forEach(status => {
+                    dateStatusMap[item.Tanggal][status] = 0;
+                });
+            }
+            if (dateStatusMap[item.Tanggal][item.Keterangan] !== undefined) {
+                dateStatusMap[item.Tanggal][item.Keterangan]++;
+            }
+        });
+
+        // Convert to chart format for line chart (status count over time)
+        const lineChartData = Object.entries(dateStatusMap)
+        .map(([date, statuses]) => ({
+            date,
+            ...statuses,
+            dateSort: parseDateForSort(date)
+        }))
+        .sort((a, b) => a.dateSort - b.dateSort);
+
+        return {
+            lineChartData,
+            totalEntries: equipmentEntries.length,
+            uniqueDates: Object.keys(dateStatusMap).length
+        };
+    };
+
+    // Custom tooltip for charts
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            const data = payload[0];
+            return (
+                <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
+                    <p className="font-semibold">{`${data.name || label}: ${data.value || data.payload.jumlah}`}</p>
+                    <p className="text-sm text-gray-600">
+                        Persentase: {((data.value || data.payload.jumlah) / chartData.totalEquipment * 100).toFixed(1)}%
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     // --- Tampilan Loading dan Error ---
     if (loading) {
@@ -467,7 +608,6 @@ const LogbookPagiPage = () => {
             </div>
         );
     }
-
 
     if (!userRole) {
       return (
@@ -530,27 +670,46 @@ const LogbookPagiPage = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         {/* Tombol Kembali */}
                         <button
-                            onClick={selectedPersonDateEntry ? handleBackToSummary : handleBackToLogbook}
+                            onClick={
+                                selectedEquipment ? handleBackToEquipmentList :
+                                selectedPersonDateEntry || showCharts || showEquipmentCharts ? handleBackToSummary : 
+                                handleBackToLogbook
+                            }
                             className="flex items-center text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md text-[10px] sm:text-sm md:text-base"
                         >
                             <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
-                            {selectedPersonDateEntry ? "Kembali ke Ringkasan Log Book" : "Kembali ke Halaman Log Book"}
+                            {selectedEquipment ? "Kembali ke Daftar Peralatan" :
+                             selectedPersonDateEntry || showCharts || showEquipmentCharts ? "Kembali ke Ringkasan Log Book" : 
+                             "Kembali ke Halaman Log Book"}
                         </button>
 
-                        {/* Tombol Tambah Penanggung Jawab & Tanggal BARU */}
-                        {!selectedPersonDateEntry && ( // Hanya tampilkan di halaman ringkasan
-                            <button
-                                onClick={() => setShowAddPersonDateModal(true)}
-                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                <span>Tambah Penanggung Jawab & Tanggal</span>
-                            </button>
-                        )}
+                        {/* Tombol untuk toggle grafik dan tambah data */}
+                        <div className="flex gap-2">
+                            {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && !selectedEquipment && (
+                                <>
+                                    <button
+                                        onClick={() => setShowEquipmentCharts(true)}
+                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                        </svg>
+                                        <span>Grafik per Peralatan</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowAddPersonDateModal(true)}
+                                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        <span>Tambah Penanggung Jawab & Tanggal</span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-semibold mb-6 md:mb-8">
@@ -563,12 +722,290 @@ const LogbookPagiPage = () => {
                       </div>
                     )}
 
+                    {/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
+                    {selectedEquipment && (
+                        <div className="space-y-6 mb-8">
+                            {(() => {
+                                const equipmentData = getEquipmentChartData(selectedEquipment);
+                                return (
+                                    <>
+                                        {/* Statistics Cards - TETAP */}
+                                        <div className="bg-white rounded-lg shadow-md p-6">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">
+                                                Analisis Peralatan: <span className="text-blue-600">{selectedEquipment}</span>
+                                            </h3>
+                                            
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                                                <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-600">Total Entri</p>
+                                                            <p className="text-2xl font-bold text-blue-600">{equipmentData.totalEntries}</p>
+                                                        </div>
+                                                        <div className="p-3 bg-blue-100 rounded-full">
+                                                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-600">Hari Tercatat</p>
+                                                            <p className="text-2xl font-bold text-green-600">{equipmentData.uniqueDates}</p>
+                                                        </div>
+                                                        <div className="p-3 bg-green-100 rounded-full">
+                                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-600">Status OK</p>
+                                                            <p className="text-2xl font-bold text-orange-600">
+                                                                {equipmentData.lineChartData.reduce((sum, item) => sum + (item.OK || 0), 0)}
+                                                            </p>
+                                                        </div>
+                                                        <div className="p-3 bg-orange-100 rounded-full">
+                                                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* HANYA LINE CHART - Hapus Pie Chart */}
+                                        <div className="bg-white rounded-lg shadow-md p-6">
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                                Status Peralatan {selectedEquipment} Per Hari
+                                            </h4>
+                                            <div className="h-80">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <LineChart data={equipmentData.lineChartData}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis 
+                                                            dataKey="date" 
+                                                            angle={-45}
+                                                            textAnchor="end"
+                                                            height={80}
+                                                            fontSize={12}
+                                                        />
+                                                        <YAxis />
+                                                        <Tooltip />
+                                                        <Legend />
+                                                        {statusOptions.map((status) => (
+                                                            <Line 
+                                                                key={status}
+                                                                type="monotone" 
+                                                                dataKey={status} 
+                                                                stroke={getStatusColor(status)}
+                                                                strokeWidth={2}
+                                                                connectNulls={false}
+                                                            />
+                                                        ))}
+                                                    </LineChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    )}
+
+                    {/* Tampilan Daftar Peralatan untuk Grafik */}
+                    {showEquipmentCharts && !selectedEquipment && (
+                        <div className="space-y-6 mb-8">
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
+                                    Pilih Peralatan untuk Melihat Grafik Detail
+                                </h3>
+                                
+                                {uniqueEquipmentList.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-600">Tidak ada data peralatan yang tersedia.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {uniqueEquipmentList.map((equipment, index) => {
+                                            const equipmentData = getEquipmentChartData(equipment);
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    onClick={() => setSelectedEquipment(equipment)}
+                                                    className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 border border-blue-200 cursor-pointer hover:shadow-lg hover:border-blue-400 transition-all duration-200 transform hover:-translate-y-1"
+                                                >
+                                                    <div className="flex flex-col items-center text-center">
+                                                        <div className="mb-3 p-3 bg-blue-100 rounded-full">
+                                                            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                                            </svg>
+                                                        </div>
+                                                        <h4 className="font-semibold text-gray-800 mb-2 text-sm break-words">
+                                                            {equipment}
+                                                        </h4>
+                                                        <div className="text-xs text-gray-600 space-y-1">
+                                                            <p>Entri: <span className="font-semibold text-blue-600">{equipmentData.totalEntries}</span></p>
+                                                            <p>Hari: <span className="font-semibold text-green-600">{equipmentData.uniqueDates}</span></p>
+                                                        </div>
+                                                        <div className="mt-2 flex items-center text-xs text-blue-600">
+                                                            <span>Lihat Detail</span>
+                                                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Tampilan Grafik Keseluruhan */}
+                    {showCharts && (
+                         <div className="space-y-6 mb-8">
+                            {/* Statistics Cards - TETAP */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Total Peralatan</p>
+                                            <p className="text-2xl font-bold text-gray-900">{chartData.totalEquipment}</p>
+                                        </div>
+                                        <div className="p-3 bg-green-100 rounded-full">
+                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Status OK</p>
+                                            <p className="text-2xl font-bold text-green-600">
+                                                {chartData.lineData.reduce((sum, item) => sum + (item.OK || 0), 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-green-100 rounded-full">
+                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Rusak/Tidak Beroperasi</p>
+                                            <p className="text-2xl font-bold text-red-600">
+                                                {chartData.lineData.reduce((sum, item) => sum + (item.Rusak || 0) + (item["Tidak Beroperasi"] || 0), 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-red-100 rounded-full">
+                                            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
+                                    <div className="flex items-center">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-600">Dalam Perbaikan</p>
+                                            <p className="text-2xl font-bold text-orange-600">
+                                                {chartData.lineData.reduce((sum, item) => sum + (item.Perbaikan || 0), 0)}
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-orange-100 rounded-full">
+                                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* HANYA LINE CHART - Hapus Pie Chart dan Bar Chart */}
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                    Tren Status Peralatan Seiring Waktu
+                                </h3>
+                                <div className="h-96">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chartData.lineData}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis 
+                                                dataKey="date" 
+                                                angle={-45}
+                                                textAnchor="end"
+                                                height={80}
+                                                fontSize={12}
+                                            />
+                                            <YAxis />
+                                            <Tooltip />
+                                            <Legend />
+                                            {statusOptions.map((status) => (
+                                                <Line 
+                                                    key={status}
+                                                    type="monotone" 
+                                                    dataKey={status} 
+                                                    stroke={getStatusColor(status)}
+                                                    strokeWidth={2}
+                                                    connectNulls={false}
+                                                />
+                                            ))}
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Status Legend - TETAP */}
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Keterangan Status & Skor Keparahan</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {statusOptions.map((status) => (
+                                        <div key={status} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <div 
+                                                className="w-4 h-4 rounded-full"
+                                                style={{ backgroundColor: getStatusColor(status) }}
+                                            ></div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-gray-800">{status}</p>
+                                                <p className="text-sm text-gray-600">Skor: {getStatusScore(status)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Sistem Penilaian:</strong> OK = 0 (Normal), Rusak/Tidak Beroperasi = 1 (Kritis), Perbaikan = 2 (Sedang Diperbaiki)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {logbookData.length === 0 && !loading && !error ? (
                         <div className="text-center py-8">
                             <p className="text-gray-600 text-sm md:text-base">
                                 Tidak ada data logbook yang ditemukan.
                             </p>
-                            {!selectedPersonDateEntry && (
+                            {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && (
                                 <button
                                     onClick={() => setShowAddPersonDateModal(true)}
                                     className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 mx-auto"
@@ -582,20 +1019,20 @@ const LogbookPagiPage = () => {
                         </div>
                     ) : selectedPersonDateEntry ? (
                         // Tampilan Tabel Detail
-                        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
+                         <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
                             <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
                                 <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 text-center sm:text-left flex-grow">
                                     Detail Log Book untuk <span className="text-blue-700">{selectedPersonDateEntry.person}</span> pada <span className="text-blue-700">{selectedPersonDateEntry.date}</span>
                                 </h3>
-                                <button
-                                    onClick={() => setShowAddEntryModal(true)}
-                                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap flex items-center space-x-2"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    <span>Tambah Peralatan</span>
-                                </button>
+                                    <button
+                                        onClick={() => setShowAddEntryModal(true)}
+                                        className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap flex items-center space-x-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        <span>Tambah Peralatan</span>
+                                    </button>
                             </div>
 
                             {/* Input pencarian */}
@@ -622,6 +1059,9 @@ const LogbookPagiPage = () => {
                                                     <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Keterangan
                                                     </th>
+                                                    <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Bukti Foto
+                                                    </th>
                                                     <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Aksi
                                                     </th>
@@ -647,24 +1087,33 @@ const LogbookPagiPage = () => {
                                                                     {item.Keterangan}
                                                                 </div>
                                                             </td>
-                                                            <td className="px-3 py-4 text-center">
-                                                                <div className="flex justify-center items-center space-x-2">
-                                                                    <button
-                                                                        onClick={() => handleEditClick(item)}
-                                                                        className="text-blue-600 hover:text-blue-900 p-1"
-                                                                        title="Edit Entri"
-                                                                    >
-                                                                        <FiEdit2 className="w-4 h-4 md:w-5 md:h-5" /> {/* Ikon Edit */}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteClick(item)}
-                                                                        className="text-red-600 hover:text-red-900 p-1"
-                                                                        title="Hapus Entri"
-                                                                    >
-                                                                        <FiTrash2 className="w-4 h-4 md:w-5 md:h-5" /> {/* Ikon Hapus */}
-                                                                    </button>
-                                                                </div>
+                                                            <td className="px-3 py-4">
+                                                                {item["Bukti Foto"] ? (
+                                                                    <a href={item["Bukti Foto"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs sm:text-sm">
+                                                                        Lihat Foto
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="text-gray-500 text-xs sm:text-sm">Tidak Ada</span>
+                                                                )}
                                                             </td>
+                                                                <td className="px-3 py-4 text-center">
+                                                                    <div className="flex justify-center items-center space-x-2">
+                                                                        <button
+                                                                            onClick={() => handleEditClick(item)}
+                                                                            className="text-blue-600 hover:text-blue-900 p-1"
+                                                                            title="Edit Entri"
+                                                                        >
+                                                                            <FiEdit2 className="w-4 h-4 md:w-5 md:h-5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteClick(item)}
+                                                                            className="text-red-600 hover:text-red-900 p-1"
+                                                                            title="Hapus Entri"
+                                                                        >
+                                                                            <FiTrash2 className="w-4 h-4 md:w-5 md:h-5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
                                                         </tr>
                                                     ))
                                                 )}
@@ -674,7 +1123,7 @@ const LogbookPagiPage = () => {
                                 </div>
                             </div>
                         </div>
-                    ) : (
+                    ) : !showCharts && !showEquipmentCharts ? (
                         // Tampilan Grid Kotak Ringkasan (mirip PerkaCanggih)
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                             {uniquePersonDateCombinations.map((combo, index) => {
@@ -696,12 +1145,6 @@ const LogbookPagiPage = () => {
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
                                             >
-                                                {/* <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M9 5l7 7-7 7"
-                                                /> */}
                                             </svg>
                                         </div>
                                         <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
@@ -734,7 +1177,7 @@ const LogbookPagiPage = () => {
                                                         handleEditPersonDateClick(combo);
                                                     }}
                                                 >
-                                                    <FiEdit2 className="w-4 h-4" /> {/* Ikon Edit */}
+                                                    <FiEdit2 className="w-4 h-4" />
                                                     <span>Edit</span>
                                                 </button>
                                                 <button
@@ -744,7 +1187,7 @@ const LogbookPagiPage = () => {
                                                         handleDeletePersonDate(combo);
                                                     }}
                                                 >
-                                                    <FiTrash2 className="w-4 h-4" /> {/* Ikon Hapus */}
+                                                    <FiTrash2 className="w-4 h-4" />
                                                     <span>Hapus</span>
                                                 </button>
                                             </div>
@@ -753,7 +1196,7 @@ const LogbookPagiPage = () => {
                                 );
                             })}
                         </div>
-                    )}
+                    ) : null} 
                 </main>
             </div>
 
@@ -934,7 +1377,7 @@ const LogbookPagiPage = () => {
                                 placeholder="Misal: AWOS Bandara"
                             />
                         </div>
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label
                                 htmlFor="newKeterangan"
                                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -955,18 +1398,50 @@ const LogbookPagiPage = () => {
                                 ))}
                             </select>
                         </div>
+                        {/* Input File untuk Bukti Foto */}
+                        <div className="mb-6">
+                            <label
+                                htmlFor="newBuktiFotoFile"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                Bukti Foto
+                            </label>
+                            <input
+                                type="file"
+                                id="newBuktiFotoFile"
+                                accept="image/*"
+                                className="w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-md file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-50 file:text-blue-700
+                                    hover:file:bg-blue-100"
+                                onChange={(e) => setNewBuktiFotoFile(e.target.files[0])}
+                                disabled={isUploading}
+                            />
+                            {newBuktiFotoFile && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    File dipilih: {newBuktiFotoFile.name}
+                                </p>
+                            )}
+                            {isUploading && (
+                                <p className="mt-2 text-blue-500 text-sm">Mengunggah foto...</p>
+                            )}
+                        </div>
                         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                             <button
                                 onClick={() => setShowAddEntryModal(false)}
                                 className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                                disabled={isUploading}
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleAddEntry}
                                 className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                                disabled={isUploading}
                             >
-                                Simpan
+                                {isUploading ? 'Menyimpan...' : 'Simpan'}
                             </button>
                         </div>
                     </div>
@@ -1020,7 +1495,7 @@ const LogbookPagiPage = () => {
                                 placeholder="Misal: AWOS Bandara"
                             />
                         </div>
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label
                                 htmlFor="editedKeterangan"
                                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -1040,18 +1515,55 @@ const LogbookPagiPage = () => {
                                 ))}
                             </select>
                         </div>
+                        {/* Input File untuk Bukti Foto di Edit Modal */}
+                        <div className="mb-6">
+                            <label
+                                htmlFor="editedBuktiFotoFile"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                Bukti Foto
+                            </label>
+                            <input
+                                type="file"
+                                id="editedBuktiFotoFile"
+                                accept="image/*"
+                                className="w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-md file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-50 file:text-blue-700
+                                    hover:file:bg-blue-100"
+                                onChange={(e) => setEditedBuktiFotoFile(e.target.files[0])}
+                                disabled={isUploading}
+                            />
+                            {editedBuktiFotoFile && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    File dipilih: {editedBuktiFotoFile.name}
+                                </p>
+                            )}
+                            {!editedBuktiFotoFile && editedBuktiFotoURL && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
+                                </p>
+                            )}
+                            {isUploading && (
+                                <p className="mt-2 text-blue-500 text-sm">Mengunggah foto...</p>
+                            )}
+                        </div>
                         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                             <button
                                 onClick={() => setShowEditModal(false)}
                                 className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                                disabled={isUploading}
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleEditEntry}
                                 className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                                disabled={isUploading}
                             >
-                                Simpan Perubahan
+                                {isUploading ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </button>
                         </div>
                     </div>
@@ -1063,4 +1575,4 @@ const LogbookPagiPage = () => {
     );
 };
 
-export default LogbookPagiPage;
+export default LogbookPagiPage;  
