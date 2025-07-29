@@ -33,7 +33,7 @@ const LogbookPagiPage = () => {
     const [showAddEntryModal, setShowAddEntryModal] = useState(false);
     const [newPeralatan, setNewPeralatan] = useState("");
     const [newKeterangan, setNewKeterangan] = useState("");
-    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk file foto baru
+    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk objek File foto baru
     const [isUploading, setIsUploading] = useState(false); // State untuk status upload
 
     // States untuk modal Tambah Penanggung Jawab & Tanggal BARU
@@ -46,7 +46,7 @@ const LogbookPagiPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [editedPeralatan, setEditedPeralatan] = useState("");
     const [editedKeterangan, setEditedKeterangan] = useState("");
-    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk file foto yang diedit
+    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk objek File foto yang diedit
     const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState(""); // State untuk URL foto yang sudah ada
     const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false); // State untuk menghapus foto yang sudah ada
 
@@ -61,14 +61,14 @@ const LogbookPagiPage = () => {
     const { userRole, logout } = useAuth();
 
     useEffect(() => {
-      if (!userRole || (userRole !== "admin" && userRole !== "user")) {
-        navigate('/');
-      }
+        if (!userRole || (userRole !== "admin" && userRole !== "user")) {
+            navigate('/');
+        }
     }, [userRole, navigate]);
 
-    // URL API Logbook (tetap sama)
+    // URL API Logbook
     const LOGBOOK_API_URL =
-        "https://script.google.com/macros/s/AKfycbzx8LbGA284ZXj_xg7hRqaF2GQe3TgNwBe8f7v1EkFmrRTd67AcUiAf6BEEqnFWbO5qQA/exec";
+        "https://script.google.com/macros/s/AKfycbwdCJ4ravHuphNoOfw1w63F5k6Dx3F-8CrBUjng74CJouvM2X4uAo0igExKvMLyKp8CJg/exec"; // Pastikan ini URL yang benar
 
     // --- Fungsi Pengambilan Data Logbook ---
     const fetchData = async () => {
@@ -104,9 +104,9 @@ const LogbookPagiPage = () => {
     };
 
     useEffect(() => {
-      if (userRole === "admin" || userRole === "user") {
-        fetchData();
-      }
+        if (userRole === "admin" || userRole === "user") {
+            fetchData();
+        }
     }, [userRole]);
 
     // --- Fungsi Pengiriman Permintaan API Umum (untuk Logbook) ---
@@ -136,6 +136,16 @@ const LogbookPagiPage = () => {
         }
     };
 
+    // --- Fungsi untuk membaca file sebagai Base64 ---
+    const readFileAsBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    };
+
     // --- Handler Navigasi Kembali ---
     const handleBackToSummary = () => {
         setFilterPeralatanDetail("");
@@ -149,7 +159,7 @@ const LogbookPagiPage = () => {
         navigate("/logbook");
     };
 
-    const handleBackToEquipmentList = () => {
+        const handleBackToEquipmentList = () => {
         setSelectedEquipment(null);
     };
 
@@ -163,20 +173,50 @@ const LogbookPagiPage = () => {
             Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
             return;
         }
+        if (isUploading) {
+            Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
+            return;
+        }
+
+        let base64Foto = '';
+        let fileName = '';
+
+        if (newBuktiFotoFile) {
+            setIsUploading(true);
+            try {
+                base64Foto = await readFileAsBase64(newBuktiFotoFile);
+                fileName = newBuktiFotoFile.name;
+            } catch (fileError) {
+                Swal.fire('Error Membaca File!', `Gagal membaca file foto: ${fileError.message}`, 'error');
+                setIsUploading(false);
+                return;
+            }
+        }
+
+        const payload = { 
+            Peralatan: newPeralatan,
+            Keterangan: newKeterangan,
+            "Penanggung Jawab": selectedPersonDateEntry.person,
+            Tanggal: selectedPersonDateEntry.date,
+            "Bukti Foto": "",
+        };
+        if (newBuktiFotoFile) {
+            payload.base64Foto = base64Foto;
+            payload.fileName = fileName;
+        }
+
         try {
-            await sendApiRequest("add", {
-                Peralatan: newPeralatan,
-                Keterangan: newKeterangan,
-                "Penanggung Jawab": selectedPersonDateEntry.person,
-                Tanggal: selectedPersonDateEntry.date,
-            });
+            await sendApiRequest("add", payload);
             Swal.fire('Berhasil!', 'Entri peralatan berhasil ditambahkan!', 'success');
             setShowAddEntryModal(false);
             setNewPeralatan("");
             setNewKeterangan("");
-            fetchData();
+            setNewBuktiFotoFile(null); // Reset file input
+            fetchData(); // Muat ulang data
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri peralatan: ${err.message}`, 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -197,7 +237,8 @@ const LogbookPagiPage = () => {
                 "Penanggung Jawab": newPersonDatePenanggungJawab,
                 Tanggal: newPersonDateTanggal,
                 Peralatan: "",
-                Keterangan: ""
+                Keterangan: "",
+                "Bukti Foto": "" 
             });
             Swal.fire('Berhasil!', 'Penanggung Jawab dan Tanggal baru berhasil ditambahkan!', 'success');
             setShowAddPersonDateModal(false);
@@ -214,6 +255,9 @@ const LogbookPagiPage = () => {
         setEditingItem(item);
         setEditedPeralatan(item.Peralatan);
         setEditedKeterangan(item.Keterangan);
+        setEditedBuktiFotoURL(item["Bukti Foto"] || ""); // Set URL foto yang sudah ada
+        setEditedBuktiFotoFile(null); // Reset file input saat modal dibuka
+        setRemoveExistingPhoto(false); // Reset checkbox hapus foto
         setShowEditModal(true);
     };
 
@@ -222,6 +266,26 @@ const LogbookPagiPage = () => {
             Swal.fire('Peringatan', 'Nama Peralatan dan Keterangan harus diisi.', 'warning');
             return;
         }
+        if (isUploading) {
+            Swal.fire('Mohon Tunggu', 'Upload foto sedang berlangsung...', 'info');
+            return;
+        }
+
+        let base64Foto = '';
+        let fileName = '';
+
+        if (editedBuktiFotoFile) { // Jika ada file baru yang dipilih
+            setIsUploading(true);
+            try {
+                base64Foto = await readFileAsBase64(editedBuktiFotoFile);
+                fileName = editedBuktiFotoFile.name;
+            } catch (fileError) {
+                Swal.fire('Error Membaca File!', `Gagal membaca file foto: ${fileError.message}`, 'error');
+                setIsUploading(false);
+                return;
+            }
+        }
+
         try {
             await sendApiRequest("edit", {
                 originalPeralatan: editingItem.Peralatan,
@@ -229,15 +293,24 @@ const LogbookPagiPage = () => {
                 originalTanggal: editingItem.Tanggal,
                 Peralatan: editedPeralatan,
                 Keterangan: editedKeterangan,
+                "Bukti Foto": editedBuktiFotoURL, // Kirim URL yang ada, nanti Apps Script tentukan apakah pakai ini atau yang baru diupload
+                base64Foto: base64Foto, // Kirim Base64 string (hanya jika ada file baru)
+                fileName: fileName, // Kirim nama file (hanya jika ada file baru)
+                removeFoto: removeExistingPhoto // Kirim instruksi hapus foto lama
             });
             Swal.fire('Berhasil!', 'Data berhasil diubah!', 'success');
             setShowEditModal(false);
             setEditingItem(null);
             setEditedPeralatan("");
             setEditedKeterangan("");
+            setEditedBuktiFotoFile(null);
+            setEditedBuktiFotoURL("");
+            setRemoveExistingPhoto(false);
             fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal mengubah data: ${err.message}`, 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -348,7 +421,7 @@ const LogbookPagiPage = () => {
         setOpenKebabMenuId(null);
         Swal.fire({
             title: 'Konfirmasi Hapus Semua Entri',
-            text: `Anda yakin ingin menghapus SEMUA entri logbook untuk ${combo.person} pada Tanggal: ${combo.date}?`,
+            text: `Anda yakin ingin menghapus SEMUA entri logbook untuk ${combo.person} pada Tanggal: ${combo.date}? Ini termasuk semua bukti foto terkait.`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -382,7 +455,7 @@ const LogbookPagiPage = () => {
     };
 
     const statusOptions = ["OK", "Rusak", "Perbaikan", "Tidak Beroperasi"];
-
+    
     // Function to map status to severity score
     const getStatusScore = (status) => {
         switch (status) {
@@ -483,7 +556,7 @@ const LogbookPagiPage = () => {
         }
         return filtered;
     }, [logbookData, selectedPersonDateEntry, filterPeralatanDetail]);
-
+    
     // Data untuk grafik - hanya menghitung entri yang memiliki peralatan dan keterangan
     const chartData = useMemo(() => {
         const statusCount = {};
@@ -665,12 +738,12 @@ const LogbookPagiPage = () => {
     }
 
     if (!userRole) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
-        </div>
-      );
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="ml-4 text-lg text-gray-700">Memeriksa autentikasi...</p>
+            </div>
+        );
     }
 
     return (
@@ -753,17 +826,17 @@ const LogbookPagiPage = () => {
                                         </svg>
                                         <span>Grafik per Peralatan</span>
                                     </button>
-                                    <button
-                                        onClick={() => setShowAddPersonDateModal(true)}
-                                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        <span>Tambah Penanggung Jawab & Tanggal</span>
-                                    </button>
+                            <button
+                                onClick={() => setShowAddPersonDateModal(true)}
+                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                <span>Tambah Penanggung Jawab & Tanggal</span>
+                            </button>
                                 </>
-                            )}
+                        )}
                         </div>
                     </div>
 
@@ -772,12 +845,12 @@ const LogbookPagiPage = () => {
                     </h2>
 
                     {userRole && (
-                      <div className="text-center mb-4 text-gray-600">
-                        Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
-                      </div>
+                        <div className="text-center mb-4 text-gray-600">
+                            Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+                        </div>
                     )}
 
-                    {/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
+{/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
                     {selectedEquipment && (
                         <div className="space-y-6 mb-8">
                             {(() => {
@@ -1107,7 +1180,7 @@ const LogbookPagiPage = () => {
                         </div>
                     ) : selectedPersonDateEntry ? (
                         // Tampilan Tabel Detail
-                         <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
+                        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
                             <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
                                 <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 text-center sm:text-left flex-grow">
                                     Detail Log Book untuk <span className="text-blue-700">{selectedPersonDateEntry.person}</span> pada <span className="text-blue-700">{selectedPersonDateEntry.date}</span>
@@ -1150,9 +1223,9 @@ const LogbookPagiPage = () => {
                                                     <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Bukti Foto
                                                     </th>
-                                                    <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Aksi
-                                                    </th>
+                                                        <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Aksi
+                                                        </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
@@ -1215,7 +1288,6 @@ const LogbookPagiPage = () => {
                         // Tampilan Grid Kotak Ringkasan (mirip PerkaCanggih)
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                             {uniquePersonDateCombinations.map((combo, index) => {
-                                // Membuat ID unik untuk setiap kotak untuk menu kebab
                                 const comboId = `${combo.person}-${combo.date}`;
                                 return (
                                     <div
@@ -1237,26 +1309,24 @@ const LogbookPagiPage = () => {
                                         </div>
                                         <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
 
-                                        {/* Kebab Menu Button (tetap SVG inline) */}
                                         {userRole === "admin" && (
-                                          <button
-                                              className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
-                                              onClick={(e) => {
-                                                  e.stopPropagation(); // Mencegah klik kotak memicu setSelectedPersonDateEntry
-                                                  handleOpenKebabMenu(comboId);
-                                              }}
-                                          >
-                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                              </svg>
-                                          </button>
+                                            <button
+                                                className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenKebabMenu(comboId);
+                                                }}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                                </svg>
+                                            </button>
                                         )}
 
-                                        {/* Kebab Menu Dropdown (tetap menggunakan ikon yang sebelumnya Anda set) */}
-                                        {openKebabMenuId === comboId && (
+                                        {openKebabMenuId === comboId && userRole === "admin" && (
                                             <div
                                                 className="absolute top-10 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
-                                                onMouseLeave={handleCloseKebabMenu} // Tutup saat mouse keluar
+                                                onMouseLeave={handleCloseKebabMenu}
                                             >
                                                 <button
                                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
@@ -1284,7 +1354,7 @@ const LogbookPagiPage = () => {
                                 );
                             })}
                         </div>
-                    ) : null} 
+                    ) : null}
                 </main>
             </div>
 
@@ -1604,12 +1674,12 @@ const LogbookPagiPage = () => {
                             </select>
                         </div>
                         {/* Input File untuk Bukti Foto di Edit Modal */}
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label
                                 htmlFor="editedBuktiFotoFile"
                                 className="block text-sm font-medium text-gray-700 mb-2"
                             >
-                                Bukti Foto
+                                Unggah Bukti Foto Baru
                             </label>
                             <input
                                 type="file"
@@ -1621,7 +1691,10 @@ const LogbookPagiPage = () => {
                                     file:text-sm file:font-semibold
                                     file:bg-blue-50 file:text-blue-700
                                     hover:file:bg-blue-100"
-                                onChange={(e) => setEditedBuktiFotoFile(e.target.files[0])}
+                                onChange={(e) => {
+                                    setEditedBuktiFotoFile(e.target.files[0]);
+                                    setRemoveExistingPhoto(false); 
+                                }}
                                 disabled={isUploading}
                             />
                             {editedBuktiFotoFile && (
@@ -1629,15 +1702,30 @@ const LogbookPagiPage = () => {
                                     File dipilih: {editedBuktiFotoFile.name}
                                 </p>
                             )}
-                            {!editedBuktiFotoFile && editedBuktiFotoURL && (
-                                <p className="mt-2 text-xs text-gray-500">
-                                    Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
-                                </p>
-                            )}
                             {isUploading && (
                                 <p className="mt-2 text-blue-500 text-sm">Mengunggah foto...</p>
                             )}
                         </div>
+                        {/* Opsi Hapus Foto Lama atau Tampilkan Link Foto Lama */}
+                        {editedBuktiFotoURL && !editedBuktiFotoFile && (
+                            <div className="mb-6 flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="removeExistingPhoto"
+                                    checked={removeExistingPhoto}
+                                    onChange={(e) => setRemoveExistingPhoto(e.target.checked)}
+                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                                />
+                                <label htmlFor="removeExistingPhoto" className="ml-2 text-sm text-gray-700">
+                                    Hapus foto saat ini
+                                </label>
+                                {!removeExistingPhoto && (
+                                    <p className="ml-4 text-xs text-gray-500">
+                                        Foto saat ini: <a href={editedBuktiFotoURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Lihat Foto</a>
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                             <button
                                 onClick={() => setShowEditModal(false)}
@@ -1663,4 +1751,4 @@ const LogbookPagiPage = () => {
     );
 };
 
-export default LogbookPagiPage;  
+export default LogbookPagiPage;
