@@ -10,6 +10,7 @@ import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// import { supabase } from '../supabaseClient'; // Tidak perlu lagi jika pindah ke Google Drive
 
 const LogbookPagiPage = () => {
     const navigate = useNavigate();
