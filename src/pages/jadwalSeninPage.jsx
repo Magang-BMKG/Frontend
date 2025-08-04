@@ -4,7 +4,7 @@ import Header from "../component/Header";
 import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
 
-const JadwalPage = () => {
+const JadwalSeninPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -36,60 +36,40 @@ const JadwalPage = () => {
 
   // Check if current path matches any card to set initial active state
   useEffect(() => {
-    if (location.pathname === "/jadwalSeninPage") {
-      setActiveCard("senin");
+    if (location.pathname === "/senin1") {
+      setActiveCard("senin1");
     } else if (location.pathname === "/jadwal/selasa") {
-      setActiveCard("selasa");
+      setActiveCard("senin2");
     } else if (location.pathname === "/jadwal/rabu") {
-      setActiveCard("rabu");
-    } else if (location.pathname === "/jadwal/kamis") {
-      setActiveCard("kamis");
-    } else if (location.pathname === "/jadwal/insidental") {
-      setActiveCard("insidental");
+      setActiveCard("senin3");
     }
   }, [location.pathname]);
 
   // Day cards data
   const dayCards = [
     {
-      id: 'senin',
-      title: 'Senin',
-      route: '/jadwalSeninPage',
+      id: 'senin1',
+      title: 'Senin 1',
+      route: '/senin1',
       bgColor: 'bg-blue-50',
       hoverBgColor: 'group-hover:bg-blue-100',
       textColor: 'group-hover:text-blue-600'
     },
     {
-      id: 'selasa',
-      title: 'Selasa',
+      id: 'senin2',
+      title: 'Senin 2',
       route: '#', // Ubah ke '#' jika belum ready
       bgColor: 'bg-green-50',
       hoverBgColor: 'group-hover:bg-green-100',
       textColor: 'group-hover:text-green-600'
     },
     {
-      id: 'rabu',
-      title: 'Rabu',
+      id: 'senin3',
+      title: 'Senin 3',
       route: '#', // Ubah ke '#' jika belum ready
       bgColor: 'bg-yellow-50',
       hoverBgColor: 'group-hover:bg-yellow-100',
       textColor: 'group-hover:text-yellow-600'
-    },
-    {
-      id: 'kamis',
-      title: 'Kamis',
-      route: '#', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-purple-50',
-      hoverBgColor: 'group-hover:bg-purple-100',
-      textColor: 'group-hover:text-purple-600'
-    },
-    {
-      id: 'insidental',
-      title: 'Insidental',
-      route: '#', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-red-50',
-      hoverBgColor: 'group-hover:bg-red-100',
-      textColor: 'group-hover:text-red-600'
     }
   ];
 
@@ -162,7 +142,7 @@ const JadwalPage = () => {
             </h1>
 
             {/* Cards Container - Responsive grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {dayCards.map((day) => (
                 <div
                   key={day.id}
@@ -230,4 +210,4 @@ const JadwalPage = () => {
   );
 };
 
-export default JadwalPage;
+export default JadwalSeninPage;

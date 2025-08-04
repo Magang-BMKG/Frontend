@@ -105,17 +105,19 @@ export default function BMKGLandingPage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3 md:py-4">
-            <div className="flex items-center space-x-2 md:space-x-3">
-              <img
-                src={Logo}
-                alt="BMKG Logo"
-                className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
-              />
-              <div>
-                <h1 className="text-[8px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
-                <h2 className="text-[8px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
+            <a href="/">
+              <div className="flex items-center space-x-2 md:space-x-3">
+                <img
+                  src={Logo}
+                  alt="BMKG Logo"
+                  className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
+                />
+                <div>
+                  <h1 className="text-[8px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
+                  <h2 className="text-[8px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
+                </div>
               </div>
-            </div>
+            </a>
             <nav className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
               <button
                 onClick={scrollToContact}

@@ -11,7 +11,9 @@ import PerkaMekanik from './pages/perkaMekanik';
 import PerkaCanggih from './pages/perkaCanggih';
 import PerkaSederhana from './pages/perkaSederhana';
 import Jadwal from './pages/jadwal';
-import JadwalSenin from './pages/jadwalSenin';
+// import JadwalSenin from './pages/jadwalSenin';
+import JadwalSeninPage from './pages/jadwalSeninPage';
+import Senin1 from './pages/Senin1';
 
 
 
@@ -22,7 +24,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/landingpage" element={<LandingPage />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/destopteknisi" element={<DaftarTeknisiPage />} />
           <Route path="/instrumen" element={<DaftarInstrumenPage />} />
           <Route path="/logbook" element={<LogbookPage />} />
@@ -32,7 +34,9 @@ function App() {
           <Route path="/perkaCanggih" element={<PerkaCanggih />} />
           <Route path="/perkaSederhana" element={<PerkaSederhana />} />
           <Route path="/jadwal" element={<Jadwal/>} />
-          <Route path="/jadwalSenin" element={<JadwalSenin />} />
+          {/* <Route path="/jadwalSenin" element={<JadwalSenin />} /> */}
+          <Route path="/jadwalSeninPage" element={<JadwalSeninPage />} />
+          <Route path="/senin1" element={<Senin1 />} />
           {/* <Route path="/login" element={<Login />} /> */}
           <Route path="*" element={<div>404 - Halaman tidak ditemukan</div>} />
         </Routes>
