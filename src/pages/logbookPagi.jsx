@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../component/Header";
@@ -9,7 +10,6 @@ import { FiEdit2 } from "react-icons/fi";
 import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-// import { supabase } from '../supabaseClient'; // Tidak perlu lagi jika pindah ke Google Drive
 
 const LogbookPagiPage = () => {
     const navigate = useNavigate();
@@ -26,15 +26,15 @@ const LogbookPagiPage = () => {
 
     // States untuk modal Tambah Entri Peralatan (Peralatan & Keterangan)
     const [showCharts, setShowCharts] = useState(false);
-    const [showEquipmentCharts, setShowEquipmentCharts] = useState(false); // New state for equipment charts view
-    const [selectedEquipment, setSelectedEquipment] = useState(null); // New state for selected equipment
+    const [showEquipmentCharts, setShowEquipmentCharts] = useState(false);
+    const [selectedEquipment, setSelectedEquipment] = useState(null);
 
     // States untuk modal Tambah Entri Peralatan (Peralatan & Keterangan)
     const [showAddEntryModal, setShowAddEntryModal] = useState(false);
     const [newPeralatan, setNewPeralatan] = useState("");
     const [newKeterangan, setNewKeterangan] = useState("");
-    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null); // State untuk objek File foto baru
-    const [isUploading, setIsUploading] = useState(false); // State untuk status upload
+    const [newBuktiFotoFile, setNewBuktiFotoFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // States untuk modal Tambah Penanggung Jawab & Tanggal BARU
     const [showAddPersonDateModal, setShowAddPersonDateModal] = useState(false);
@@ -46,9 +46,9 @@ const LogbookPagiPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [editedPeralatan, setEditedPeralatan] = useState("");
     const [editedKeterangan, setEditedKeterangan] = useState("");
-    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null); // State untuk objek File foto yang diedit
-    const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState(""); // State untuk URL foto yang sudah ada
-    const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false); // State untuk menghapus foto yang sudah ada
+    const [editedBuktiFotoFile, setEditedBuktiFotoFile] = useState(null);
+    const [editedBuktiFotoURL, setEditedBuktiFotoURL] = useState("");
+    const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
 
     // States untuk modal Edit Penanggung Jawab & Tanggal
     const [showEditPersonDateModal, setShowEditPersonDateModal] = useState(false);
@@ -60,6 +60,27 @@ const LogbookPagiPage = () => {
     const [openKebabMenuId, setOpenKebabMenuId] = useState(null);
     const { userRole, logout } = useAuth();
 
+    // === FILTER STATE ===
+    const [selectedMonth, setSelectedMonth] = useState('');
+    const [selectedYear, setSelectedYear] = useState('');
+    const [showFilter, setShowFilter] = useState(false);
+
+    // Daftar bulan
+    const months = [
+        { value: '01', label: 'Januari' },
+        { value: '02', label: 'Februari' },
+        { value: '03', label: 'Maret' },
+        { value: '04', label: 'April' },
+        { value: '05', label: 'Mei' },
+        { value: '06', label: 'Juni' },
+        { value: '07', label: 'Juli' },
+        { value: '08', label: 'Agustus' },
+        { value: '09', label: 'September' },
+        { value: '10', label: 'Oktober' },
+        { value: '11', label: 'November' },
+        { value: '12', label: 'Desember' }
+    ];
+
     useEffect(() => {
         if (!userRole || (userRole !== "admin" && userRole !== "user")) {
             navigate('/');
@@ -68,7 +89,20 @@ const LogbookPagiPage = () => {
 
     // URL API Logbook
     const LOGBOOK_API_URL =
-        "https://script.google.com/macros/s/AKfycbwdCJ4ravHuphNoOfw1w63F5k6Dx3F-8CrBUjng74CJouvM2X4uAo0igExKvMLyKp8CJg/exec"; // Pastikan ini URL yang benar
+        "https://script.google.com/macros/s/AKfycbwdCJ4ravHuphNoOfw1w63F5k6Dx3F-8CrBUjng74CJouvM2X4uAo0igExKvMLyKp8CJg/exec";
+
+    // === Fungsi parsing tanggal ===
+    const parseDateToStandard = (dateStr) => {
+        if (!dateStr) return null;
+        const parts = dateStr.split("/");
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            return new Date(year, month - 1, day);
+        }
+        return null;
+    };
 
     // --- Fungsi Pengambilan Data Logbook ---
     const fetchData = async () => {
@@ -151,15 +185,15 @@ const LogbookPagiPage = () => {
         setFilterPeralatanDetail("");
         setSelectedPersonDateEntry(null);
         setShowCharts(false);
-        setShowEquipmentCharts(false); // Reset equipment charts view
-        setSelectedEquipment(null); // Reset selected equipment
+        setShowEquipmentCharts(false);
+        setSelectedEquipment(null);
     };
 
     const handleBackToLogbook = () => {
         navigate("/logbook");
     };
 
-        const handleBackToEquipmentList = () => {
+    const handleBackToEquipmentList = () => {
         setSelectedEquipment(null);
     };
 
@@ -211,8 +245,8 @@ const LogbookPagiPage = () => {
             setShowAddEntryModal(false);
             setNewPeralatan("");
             setNewKeterangan("");
-            setNewBuktiFotoFile(null); // Reset file input
-            fetchData(); // Muat ulang data
+            setNewBuktiFotoFile(null);
+            fetchData();
         } catch (err) {
             Swal.fire('Gagal!', `Gagal menambahkan entri peralatan: ${err.message}`, 'error');
         } finally {
@@ -255,9 +289,9 @@ const LogbookPagiPage = () => {
         setEditingItem(item);
         setEditedPeralatan(item.Peralatan);
         setEditedKeterangan(item.Keterangan);
-        setEditedBuktiFotoURL(item["Bukti Foto"] || ""); // Set URL foto yang sudah ada
-        setEditedBuktiFotoFile(null); // Reset file input saat modal dibuka
-        setRemoveExistingPhoto(false); // Reset checkbox hapus foto
+        setEditedBuktiFotoURL(item["Bukti Foto"] || "");
+        setEditedBuktiFotoFile(null);
+        setRemoveExistingPhoto(false);
         setShowEditModal(true);
     };
 
@@ -274,7 +308,7 @@ const LogbookPagiPage = () => {
         let base64Foto = '';
         let fileName = '';
 
-        if (editedBuktiFotoFile) { // Jika ada file baru yang dipilih
+        if (editedBuktiFotoFile) {
             setIsUploading(true);
             try {
                 base64Foto = await readFileAsBase64(editedBuktiFotoFile);
@@ -293,10 +327,10 @@ const LogbookPagiPage = () => {
                 originalTanggal: editingItem.Tanggal,
                 Peralatan: editedPeralatan,
                 Keterangan: editedKeterangan,
-                "Bukti Foto": editedBuktiFotoURL, // Kirim URL yang ada, nanti Apps Script tentukan apakah pakai ini atau yang baru diupload
-                base64Foto: base64Foto, // Kirim Base64 string (hanya jika ada file baru)
-                fileName: fileName, // Kirim nama file (hanya jika ada file baru)
-                removeFoto: removeExistingPhoto // Kirim instruksi hapus foto lama
+                "Bukti Foto": editedBuktiFotoURL,
+                base64Foto: base64Foto,
+                fileName: fileName,
+                removeFoto: removeExistingPhoto
             });
             Swal.fire('Berhasil!', 'Data berhasil diubah!', 'success');
             setShowEditModal(false);
@@ -454,6 +488,26 @@ const LogbookPagiPage = () => {
         setOpenKebabMenuId(null);
     };
 
+    // === FILTER FUNCTIONS ===
+    const clearFilters = () => {
+        setSelectedMonth('');
+        setSelectedYear('');
+    };
+
+    const hasActiveFilters = selectedMonth || selectedYear;
+
+    // Mendapatkan tahun unik dari data
+    const availableYears = useMemo(() => {
+        const years = logbookData
+            .filter(item => item.Tanggal)
+            .map(item => {
+                const date = parseDateToStandard(item.Tanggal);
+                return date ? date.getFullYear() : null;
+            })
+            .filter(year => year !== null);
+        return [...new Set(years)].sort((a, b) => b - a);
+    }, [logbookData]);
+
     const statusOptions = ["OK", "Rusak", "Perbaikan", "Tidak Beroperasi"];
     
     // Function to map status to severity score
@@ -511,6 +565,7 @@ const LogbookPagiPage = () => {
         return 0;
     };
 
+    // === FILTERED COMBINATIONS WITH MONTH/YEAR FILTER ===
     const uniquePersonDateCombinations = useMemo(() => {
         const combinations = new Set();
         logbookData.forEach((item) => {
@@ -523,17 +578,34 @@ const LogbookPagiPage = () => {
                 );
             }
         });
-        return Array.from(combinations)
-            .map((str) => JSON.parse(str))
-            .sort((a, b) => {
-                const dateComparison =
-                    parseDateForSort(a.date) - parseDateForSort(b.date);
-                if (dateComparison !== 0) {
-                    return dateComparison;
-                }
-                return a.person.localeCompare(b.person);
+        
+        let filteredCombinations = Array.from(combinations)
+            .map((str) => JSON.parse(str));
+
+        // Apply month and year filters
+        if (selectedMonth || selectedYear) {
+            filteredCombinations = filteredCombinations.filter(combo => {
+                const date = parseDateToStandard(combo.date);
+                if (!date) return false;
+                
+                const comboMonth = String(date.getMonth() + 1).padStart(2, '0');
+                const comboYear = date.getFullYear();
+
+                const monthMatch = !selectedMonth || comboMonth === selectedMonth;
+                const yearMatch = !selectedYear || comboYear === parseInt(selectedYear);
+
+                return monthMatch && yearMatch;
             });
-    }, [logbookData]);
+        }
+
+        return filteredCombinations.sort((a, b) => {
+            const dateComparison = parseDateForSort(a.date) - parseDateForSort(b.date);
+            if (dateComparison !== 0) {
+                return dateComparison;
+            }
+            return a.person.localeCompare(b.person);
+        });
+    }, [logbookData, selectedMonth, selectedYear]);
 
     const detailTableData = useMemo(() => {
         if (!selectedPersonDateEntry) return [];
@@ -557,7 +629,7 @@ const LogbookPagiPage = () => {
         return filtered;
     }, [logbookData, selectedPersonDateEntry, filterPeralatanDetail]);
     
-    // Data untuk grafik - hanya menghitung entri yang memiliki peralatan dan keterangan
+    // Data untuk grafik
     const chartData = useMemo(() => {
         const statusCount = {};
         const equipmentData = logbookData.filter(item => item.Peralatan && item.Keterangan);
@@ -594,14 +666,11 @@ const LogbookPagiPage = () => {
                     dateSort: parseDateForSort(date)
                 };
                 
-                // Untuk setiap status, jika ada data, gunakan score-nya
                 statusOptions.forEach(status => {
                     const count = statuses[status] || 0;
                     if (count > 0) {
-                        // Jika ada data, gunakan exact score untuk status tersebut
                         dataPoint[status] = getStatusScore(status);
                     } else {
-                        // Jika tidak ada data, set null (tidak akan digambar di chart)
                         dataPoint[status] = null;
                     }
                 });
@@ -613,7 +682,7 @@ const LogbookPagiPage = () => {
         return { lineData, totalEquipment: equipmentData.length };
     }, [logbookData]);
 
-    // New: Get unique equipment list for equipment charts view
+    // Get unique equipment list for equipment charts view
     const uniqueEquipmentList = useMemo(() => {
         const equipmentSet = new Set();
         logbookData.forEach((item) => {
@@ -624,7 +693,7 @@ const LogbookPagiPage = () => {
         return Array.from(equipmentSet).sort();
     }, [logbookData]);
 
-    // New: Get chart data for specific equipment
+    // Get chart data for specific equipment
     const getEquipmentChartData = (equipmentName) => {
         const equipmentEntries = logbookData.filter(item => 
             item.Peralatan === equipmentName && item.Keterangan
@@ -687,10 +756,9 @@ const LogbookPagiPage = () => {
     };
 
     const formatYAxisTick = (tickItem) => {
-    // Bulatkan ke integer terdekat untuk mapping
-    const roundedValue = Math.round(tickItem);
-    return getStatusLabel(roundedValue);
-};
+        const roundedValue = Math.round(tickItem);
+        return getStatusLabel(roundedValue);
+    };
 
     // --- Tampilan Loading dan Error ---
     if (loading) {
@@ -795,48 +863,25 @@ const LogbookPagiPage = () => {
 
                 {/* Main Content */}
                 <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto bg-gray-50">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        {/* Tombol Kembali */}
-                        <button
-                            onClick={
-                                selectedEquipment ? handleBackToEquipmentList :
-                                selectedPersonDateEntry || showCharts || showEquipmentCharts ? handleBackToSummary : 
-                                handleBackToLogbook
-                            }
-                            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md text-[10px] sm:text-sm md:text-base"
-                        >
-                            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            {selectedEquipment ? "Kembali ke Daftar Peralatan" :
-                             selectedPersonDateEntry || showCharts || showEquipmentCharts ? "Kembali ke Ringkasan Log Book" : 
-                             "Kembali ke Halaman Log Book"}
-                        </button>
-
-                        {/* Tombol untuk toggle grafik dan tambah data */}
-                        <div className="flex gap-2">
-                            {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && !selectedEquipment && (
-                                <>
-                                    <button
-                                        onClick={() => setShowEquipmentCharts(true)}
-                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                        </svg>
-                                        <span>Grafik per Peralatan</span>
-                                    </button>
+                    {/* Header dengan Tombol Kembali */}
+                    <div className="mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            {/* Tombol Kembali */}
                             <button
-                                onClick={() => setShowAddPersonDateModal(true)}
-                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                onClick={
+                                    selectedEquipment ? handleBackToEquipmentList :
+                                    selectedPersonDateEntry || showCharts || showEquipmentCharts ? handleBackToSummary : 
+                                    handleBackToLogbook
+                                }
+                                className="flex items-center text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md text-[10px] sm:text-sm md:text-base"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
-                                <span>Tambah Penanggung Jawab & Tanggal</span>
+                                {selectedEquipment ? "Kembali ke Daftar Peralatan" :
+                                 selectedPersonDateEntry || showCharts || showEquipmentCharts ? "Kembali ke Ringkasan Log Book" : 
+                                 "Kembali ke Halaman Log Book"}
                             </button>
-                                </>
-                        )}
                         </div>
                     </div>
 
@@ -850,7 +895,151 @@ const LogbookPagiPage = () => {
                         </div>
                     )}
 
-{/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
+                    {/* Action Buttons - Dipindahkan ke bawah "Anda login sebagai" */}
+                    {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && !selectedEquipment && (
+                        <div className="mb-6">
+                            {/* Tombol Sejajar - Filter di kiri, Grafik dan Tambah di kanan */}
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+                                {/* Tombol Filter dan Reset */}
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setShowFilter(!showFilter)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all${
+                                            hasActiveFilters 
+                                                ? 'bg-blue-500 text-white border-blue-500' 
+                                                : 'bg-white text-black border-blue-600 hover:border-blue-300'
+                                        }`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                        </svg>
+                                        Filter
+                                        {hasActiveFilters && (
+                                            <span className="bg-white text-blue-500 rounded-full px-2 py-0.5 text-xs font-medium">
+                                                {uniquePersonDateCombinations.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                    
+                                    {hasActiveFilters && (
+                                        <button
+                                            onClick={clearFilters}
+                                            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Reset
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Tombol Grafik dan Tambah - Kanan */}
+                                <div className="flex items-center gap-3">
+                                    {/* Tombol Grafik per Peralatan */}
+                                    <button
+                                        onClick={() => setShowEquipmentCharts(true)}
+                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                        </svg>
+                                        <span>Grafik per Peralatan</span>
+                                    </button>
+
+                                    {/* Tombol Tambah Penanggung Jawab & Tanggal */}
+                                    <button
+                                        onClick={() => setShowAddPersonDateModal(true)}
+                                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        <span>Tambah Penanggung Jawab & Tanggal</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Filter Controls */}
+                            {showFilter && (
+                                <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Filter Bulan */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Bulan
+                                            </label>
+                                            <select
+                                                value={selectedMonth}
+                                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">Semua Bulan</option>
+                                                {months.map(month => (
+                                                    <option key={month.value} value={month.value}>
+                                                        {month.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Filter Tahun */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Tahun
+                                            </label>
+                                            <select
+                                                value={selectedYear}
+                                                onChange={(e) => setSelectedYear(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">Semua Tahun</option>
+                                                {availableYears.map(year => (
+                                                    <option key={year} value={year}>
+                                                        {year}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Info Filter Aktif */}
+                            {hasActiveFilters && (
+                                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                                    {selectedMonth && (
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                                            {months.find(m => m.value === selectedMonth)?.label}
+                                            <button
+                                                onClick={() => setSelectedMonth('')}
+                                                className="ml-1 hover:text-blue-600"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    )}
+                                    {selectedYear && (
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                                            {selectedYear}
+                                            <button
+                                                onClick={() => setSelectedYear('')}
+                                                className="ml-1 hover:text-blue-600"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
                     {selectedEquipment && (
                         <div className="space-y-6 mb-8">
                             {(() => {
@@ -1164,7 +1353,7 @@ const LogbookPagiPage = () => {
                     {logbookData.length === 0 && !loading && !error ? (
                         <div className="text-center py-8">
                             <p className="text-gray-600 text-sm md:text-base">
-                                Tidak ada data logbook yang ditemukan.
+                                Tidak ada data yang ditemukan.
                             </p>
                             {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && (
                                 <button
@@ -1284,6 +1473,7 @@ const LogbookPagiPage = () => {
                                 </div>
                             </div>
                         </div>
+
                     ) : !showCharts && !showEquipmentCharts ? (
                         // Tampilan Grid Kotak Ringkasan (mirip PerkaCanggih)
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
