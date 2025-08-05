@@ -4,11 +4,15 @@ import Header from "../component/Header";
 import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
 
-const JadwalPage = () => {
+const JadwalKamisPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
+
+  const handleBack = () => {
+    navigate("/jadwal"); 
+  };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -36,60 +40,50 @@ const JadwalPage = () => {
 
   // Check if current path matches any card to set initial active state
   useEffect(() => {
-    if (location.pathname === "/jadwalSeninPage") {
-      setActiveCard("senin");
-    } else if (location.pathname === "/jadwalSelasaPage") {
-      setActiveCard("selasa");
-    } else if (location.pathname === "/jadwal/rabu") {
-      setActiveCard("rabu");
-    } else if (location.pathname === "/jadwal/kamis") {
-      setActiveCard("kamis");
-    } else if (location.pathname === "/jadwal/insidental") {
-      setActiveCard("insidental");
+    if (location.pathname === "/jadwal/kamis1") {
+      setActiveCard("kamis1");
+    } else if (location.pathname === "/jadwal/kamis2") {
+      setActiveCard("kamis2");
+    } else if (location.pathname === "/jadwal/kamis3") {
+      setActiveCard("kamis3");
+    } else if (location.pathname === "/jadwal/kamis4") {
+      setActiveCard("kamis4");
     }
   }, [location.pathname]);
 
   // Day cards data
   const dayCards = [
     {
-      id: 'senin',
-      title: 'Senin',
-      route: '/jadwal/senin',
+      id: 'kamis1',
+      title: 'Kamis 1',
+      route: '/jadwal/kamis1',
       bgColor: 'bg-blue-50',
       hoverBgColor: 'group-hover:bg-blue-100',
       textColor: 'group-hover:text-blue-600'
     },
     {
-      id: 'selasa',
-      title: 'Selasa',
-      route: '/jadwal/selasa', // Ubah ke '#' jika belum ready
+      id: 'kamis2',
+      title: 'Kamis 2',
+      route: '/jadwal/kamis2', // Ubah ke '#' jika belum ready
       bgColor: 'bg-green-50',
       hoverBgColor: 'group-hover:bg-green-100',
       textColor: 'group-hover:text-green-600'
     },
     {
-      id: 'rabu',
-      title: 'Rabu',
-      route: '/jadwal/rabu', // Ubah ke '#' jika belum ready
+      id: 'kamis3',
+      title: 'Kamis 3',
+      route: '/jadwal/kamis3', // Ubah ke '#' jika belum ready
       bgColor: 'bg-yellow-50',
       hoverBgColor: 'group-hover:bg-yellow-100',
       textColor: 'group-hover:text-yellow-600'
     },
     {
-      id: 'kamis',
-      title: 'Kamis',
-      route: '/jadwal/kamis', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-purple-50',
-      hoverBgColor: 'group-hover:bg-purple-100',
-      textColor: 'group-hover:text-purple-600'
-    },
-    {
-      id: 'insidental',
-      title: 'Insidental',
-      route: '/jadwal/insidental', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-red-50',
-      hoverBgColor: 'group-hover:bg-red-100',
-      textColor: 'group-hover:text-red-600'
+      id: 'kamis4',
+      title: 'Kamis 4',
+      route: '/jadwal/kamis4', // Ubah ke '#' jika belum ready
+      bgColor: 'bg-yellow-50',
+      hoverBgColor: 'group-hover:bg-yellow-100',
+      textColor: 'group-hover:text-yellow-600'
     }
   ];
 
@@ -157,12 +151,22 @@ const JadwalPage = () => {
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
           <div className="max-w-7xl mx-auto">
+            <button
+              onClick={handleBack}
+              className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Kembali ke Jadwal
+            </button>
+
             <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
               Jadwal
             </h1>
 
             {/* Cards Container - Responsive grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
               {dayCards.map((day) => (
                 <div
                   key={day.id}
@@ -215,4 +219,4 @@ const JadwalPage = () => {
   );
 };
 
-export default JadwalPage;
+export default JadwalKamisPage;

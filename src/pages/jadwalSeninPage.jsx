@@ -10,6 +10,10 @@ const JadwalSeninPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
 
+  const handleBack = () => {
+    navigate("/jadwal"); 
+  };
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -36,11 +40,11 @@ const JadwalSeninPage = () => {
 
   // Check if current path matches any card to set initial active state
   useEffect(() => {
-    if (location.pathname === "/senin1") {
+    if (location.pathname === "/jadwal/senin1") {
       setActiveCard("senin1");
-    } else if (location.pathname === "/jadwal/selasa") {
+    } else if (location.pathname === "/jadwal/senin2") {
       setActiveCard("senin2");
-    } else if (location.pathname === "/jadwal/rabu") {
+    } else if (location.pathname === "/jadwal/senin3") {
       setActiveCard("senin3");
     }
   }, [location.pathname]);
@@ -50,7 +54,7 @@ const JadwalSeninPage = () => {
     {
       id: 'senin1',
       title: 'Senin 1',
-      route: '/senin1',
+      route: '/jadwal/senin1',
       bgColor: 'bg-blue-50',
       hoverBgColor: 'group-hover:bg-blue-100',
       textColor: 'group-hover:text-blue-600'
@@ -58,7 +62,7 @@ const JadwalSeninPage = () => {
     {
       id: 'senin2',
       title: 'Senin 2',
-      route: '#', // Ubah ke '#' jika belum ready
+      route: '/jadwal/senin2', // Ubah ke '#' jika belum ready
       bgColor: 'bg-green-50',
       hoverBgColor: 'group-hover:bg-green-100',
       textColor: 'group-hover:text-green-600'
@@ -66,7 +70,7 @@ const JadwalSeninPage = () => {
     {
       id: 'senin3',
       title: 'Senin 3',
-      route: '#', // Ubah ke '#' jika belum ready
+      route: '/jadwal/senin3', // Ubah ke '#' jika belum ready
       bgColor: 'bg-yellow-50',
       hoverBgColor: 'group-hover:bg-yellow-100',
       textColor: 'group-hover:text-yellow-600'
@@ -137,8 +141,18 @@ const JadwalSeninPage = () => {
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
           <div className="max-w-7xl mx-auto">
+            <button
+              onClick={handleBack}
+              className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Kembali ke Jadwal
+            </button>
+
             <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
-              Jadwal
+              Jadwal Senin
             </h1>
 
             {/* Cards Container - Responsive grid */}
@@ -184,21 +198,6 @@ const JadwalSeninPage = () => {
                   </div>
                 </div>
               ))}
-            </div>
-
-            {/* Optional: Weekly overview section */}
-            <div className="mt-12 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Ringkasan Minggu Ini</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                <div>
-                  <p><span className="font-medium">Kegiatan Terjadwal:</span> 4 hari kerja</p>
-                  <p><span className="font-medium">Kegiatan Insidental:</span> Sesuai kebutuhan</p>
-                </div>
-                <div>
-                  <p><span className="font-medium">Status:</span> <span className="text-green-600">Aktif</span></p>
-                  <p><span className="font-medium">Update Terakhir:</span> Hari ini</p>
-                </div>
-              </div>
             </div>
           </div>
         </main>
