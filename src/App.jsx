@@ -11,9 +11,9 @@ import PerkaMekanik from './pages/perkaMekanik';
 import PerkaCanggih from './pages/perkaCanggih';
 import PerkaSederhana from './pages/perkaSederhana';
 import Jadwal from './pages/jadwal';
-import JadwalSenin from './pages/jadwalSenin';
+import JadwalPemkala from './pages/jadwalPemkala';
 import SarmutPage from './pages/sarmut';
-// import Sarmut2024 from './pages/sarmut2024';
+import Sarmut2024 from './pages/sarmut2024';
 import JadwalSeninPage from './pages/jadwalSeninPage';
 import Senin1 from './pages/Senin1';
 import Senin2 from './pages/Senin2';
@@ -53,9 +53,9 @@ function App() {
           <Route path="/perkaCanggih" element={<PerkaCanggih />} />
           <Route path="/perkaSederhana" element={<PerkaSederhana />} />
           <Route path="/jadwal" element={<Jadwal/>} />
-          <Route path="/jadwalSenin" element={<JadwalSenin />} />
+          <Route path="/jadwalPemkala" element={<JadwalPemkala />} />
           <Route path="/sarmut" element={<SarmutPage />} />
-          {/* <route path="/sarmut2024" element={<Sarmut2024 />} /> */}
+          <Route path="/sarmut2024" element={<Sarmut2024 />} />
           <Route path="/jadwal/senin" element={<JadwalSeninPage />} />
           <Route path="/jadwal/senin1" element={<Senin1 />} />
           <Route path="/jadwal/senin2" element={<Senin2 />} />
