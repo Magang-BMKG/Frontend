@@ -1,44 +1,66 @@
-import React from "react";
-import logo from "../assets/logo-bmkg.svg"; // Pastikan path ini sesuai dengan lokasi logo Anda
+// import React, { useState } from 'react';
+import { FaUser } from 'react-icons/fa';
+import Logo from '../../assets/logo-bmkg.svg';
 
-function Header() {
+const Header = () => {
+    const scrollToAbout = () => {
+    const aboutSection = document.getElementById('tentang-section');
+    if (aboutSection) {
+      aboutSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
+  const scrollToContact = () => {
+    const contactSection = document.getElementById('kontak-section');
+    if (contactSection) {
+      contactSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
   return (
-    <header className="bg-white text-black h-[85px] flex items-center justify-between px-10 py-2 shadow-lg">
-      {/* Logo dan Judul */}
-      <div className="flex items-center gap-5">
-        {/* Placeholder untuk logo-bmkg.svg */}
-        <img src={logo} alt="Logo BMKG" className="h-full w-auto" />
-        <span className="w-64 text-[15px] font-semibold uppercase">
-          BADAN METEOROLOGI, KLIMATOLOGI, DAN GEOFISIKA
-        </span>
-      </div>
-
-      {/* Navigasi dan Tombol Login */}
-      <nav className="flex items-center space-x-4 md:space-x-10">
-        <ul className="flex space-x-5 md:space-x-10">
-          <li>
-            <a
-              href="#kontak"
-              className="hover:underline decoration-blue-500 decoration-1 transition duration-300"
-            >
-              Kontak
-            </a>
-          </li>
-          <li>
-            <a
-              href="#tentang"
-              className="hover:underline decoration-blue-500 decoration-1 transition duration-300"
-            >
-              Tentang
-            </a>
-          </li>
-        </ul>
-        <button className="h-9 w-25 bg-[#0066CC] text-white px-4 rounded-full font-semibold border-1 border-black hover:border-[#0066CC] transition duration-300 shadow-md">
-          Login
-        </button>
-      </nav>
+    <header className="bg-white shadow-sm">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-3 md:py-4">
+            <a href="/landingpage">
+                <div className="flex items-center space-x-2 md:space-x-3">
+                    <img 
+                        src={Logo}
+                        alt="BMKG Logo" 
+                        className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
+                    />
+                    <div>
+                        <h1 className="text-[6px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
+                        <h2 className="text-[6px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
+                    </div>
+                    </div>
+                </a>
+                <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
+              
+                    <button 
+                        onClick={scrollToContact}
+                        className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
+                    >
+                        Kontak
+                    </button>
+                    <button 
+                        onClick={scrollToAbout}
+                        className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
+                    >
+                        Tentang
+                    </button>
+                    <button className="p-2 rounded-full border border-gray-300 hover:bg-gray-50">
+                        <FaUser className="w-3 h-3 sm:w-5 sm:h-5 text-gray-600" />
+                    </button>
+                </div>
+            </div>
+        </div>
     </header>
   );
-}
+};
 
 export default Header;
