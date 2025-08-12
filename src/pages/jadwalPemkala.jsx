@@ -335,7 +335,7 @@ const JadwalPemkala = ({ api_url, page_title, back_path }) => {
   const handleDuplicateAllTasks = async () => {
     const result = await Swal.fire({
       title: 'Mulai Tugas Baru',
-      text: 'Ini akan membuat salinan semua tugas yang ada sebagai tugas baru dengan status "Belum Selesai". Lanjutkan?',
+      text: 'Ini akan membuat salinan tugas sebagai tugas baru dengan status "Belum Selesai". Lanjutkan?',
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Ya, Buat Tugas Baru',
@@ -353,7 +353,7 @@ const JadwalPemkala = ({ api_url, page_title, back_path }) => {
           return;
         }
         await sendApiRequest("duplicateAll", { tasks: tasksToDuplicate });
-        await Swal.fire('Berhasil!', `${tasksToDuplicate.length} tugas baru berhasil dibuat.`, 'success');
+        await Swal.fire('Berhasil!', 'tugas baru berhasil dibuat.', 'success');
         fetchData();
       } catch (error) {
         await Swal.fire('Error!', `Gagal menduplikasi tugas: ${error.message}.`, 'error');
