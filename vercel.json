@@ -1,8 +1,36 @@
 {
   "routes": [
     {
-      "source": "/(.*)",
+      "source": "/",
       "destination": "/"
+    },
+    {
+      "source": "/",
+      "destination": "/destopteknisi"
+    },
+    {
+      "source": "/",
+      "destination": "/instrumen"
+    },
+    {
+      "source": "/",
+      "destination": "/logbook"
+    },
+    {
+      "source": "/",
+      "destination": "/logbookPagi"
+    },
+    {
+      "source": "/",
+      "destination": "/perka"
+    },
+    {
+      "source": "/",
+      "destination": "/jadwal"
+    },
+    {
+      "source": "/",
+      "destination": "/sarmut"
     }
   ]
 }
