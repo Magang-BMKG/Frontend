@@ -1,36 +1,8 @@
 {
-  "routes": [
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/"
-    },
-    {
-      "src": "/",
-      "dest": "/destopteknisi"
-    },
-    {
-      "src": "/",
-      "dest": "/instrumen"
-    },
-    {
-      "src": "/",
-      "dest": "/logbook"
-    },
-    {
-      "src": "/",
-      "dest": "/logbookPagi"
-    },
-    {
-      "src": "/",
-      "dest": "/perka"
-    },
-    {
-      "src": "/",
-      "dest": "/jadwal"
-    },
-    {
-      "src": "/",
-      "dest": "/sarmut"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
