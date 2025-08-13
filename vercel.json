@@ -1,36 +1,36 @@
 {
   "routes": [
     {
-      "source": "/",
-      "destination": "/"
+      "src": "/",
+      "dest": "/"
     },
     {
-      "source": "/",
-      "destination": "/destopteknisi"
+      "src": "/",
+      "dest": "/destopteknisi"
     },
     {
-      "source": "/",
-      "destination": "/instrumen"
+      "src": "/",
+      "dest": "/instrumen"
     },
     {
-      "source": "/",
-      "destination": "/logbook"
+      "src": "/",
+      "dest": "/logbook"
     },
     {
-      "source": "/",
-      "destination": "/logbookPagi"
+      "src": "/",
+      "dest": "/logbookPagi"
     },
     {
-      "source": "/",
-      "destination": "/perka"
+      "src": "/",
+      "dest": "/perka"
     },
     {
-      "source": "/",
-      "destination": "/jadwal"
+      "src": "/",
+      "dest": "/jadwal"
     },
     {
-      "source": "/",
-      "destination": "/sarmut"
+      "src": "/",
+      "dest": "/sarmut"
     }
   ]
 }
