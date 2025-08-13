@@ -24,40 +24,40 @@ const Header = () => {
   };
   return (
     <header className="bg-white shadow-sm">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-3 md:py-4">
-              <a href="/">
-                <div className="flex items-center space-x-2 md:space-x-3">
-                    <img 
-                        src={Logo}
-                        alt="BMKG Logo" 
-                        className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
-                    />
-                    <div>
-                        <h1 className="text-[6px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
-                        <h2 className="text-[6px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
-                    </div>
-                </div>
-              </a>
-                <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
-              
-                    <button 
-                        onClick={scrollToContact}
-                        className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
-                    >
-                        Kontak
-                    </button>
-                    <button 
-                        onClick={scrollToAbout}
-                        className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
-                    >
-                        Tentang
-                    </button>
-                    <button className="p-2 rounded-full border border-gray-300 hover:bg-gray-50">
-                        <FaUser className="w-3 h-3 sm:w-5 sm:h-5 text-gray-600" />
-                    </button>
-                </div>
-            </div>
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-3 md:py-4">
+            <a href="/">
+              <div className="flex items-center space-x-2 md:space-x-3">
+                  <img 
+                      src={Logo}
+                      alt="BMKG Logo" 
+                      className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
+                  />
+                  <div>
+                      <h1 className="text-[6px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
+                      <h2 className="text-[6px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
+                  </div>
+              </div>
+            </a>
+              <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
+            
+                  <button 
+                      onClick={scrollToContact}
+                      className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
+                  >
+                      Kontak
+                  </button>
+                  <button 
+                      onClick={scrollToAbout}
+                      className="text-[10px] sm:text-[12px] md:text-base text-gray-600 hover:text-gray-800 cursor-pointer"
+                  >
+                      Tentang
+                  </button>
+                  <button className="p-2 rounded-full border border-gray-300 hover:bg-gray-50">
+                      <FaUser className="w-3 h-3 sm:w-5 sm:h-5 text-gray-600" />
+                  </button>
+              </div>
+          </div>
         </div>
     </header>
   );
