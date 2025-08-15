@@ -31,11 +31,11 @@ const Header = () => {
                   <img 
                       src={Logo}
                       alt="BMKG Logo" 
-                      className="w-8 h-8 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
+                      className="w-9 h-9 sm:w-10 sm:h-10 md:w-15 md:h-15 object-contain"
                   />
                   <div>
-                      <h1 className="text-[6px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
-                      <h2 className="text-[6px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
+                      <h1 className="text-[8px] sm:text-sm font-bold text-gray-800">BADAN METEOROLOGI,</h1>
+                      <h2 className="text-[8px] sm:text-sm font-bold text-gray-800">KLIMATOLOGI, DAN GEOFISIKA</h2>
                   </div>
               </div>
             </a>

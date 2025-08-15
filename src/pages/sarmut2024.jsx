@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FaChartLine, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
+import { IoClose } from "react-icons/io5";
 import Header from "../component/Header";
 import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
@@ -17,6 +18,7 @@ const Sarmut2024 = () => {
   const [dataSarmut, setDataSarmut] = useState([]); // State untuk data mentah dari Apps Script
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // State untuk data yang sudah diproses agar sesuai dengan struktur komponen
   const [processedMetricsData, setProcessedMetricsData] = useState([]);
@@ -53,6 +55,12 @@ const Sarmut2024 = () => {
       setLoading(false);
     }
   };
+
+  // Toggle sidebar untuk mobile
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
 
   // Fungsi untuk memproses data mentah dari Apps Script menjadi format yang dibutuhkan komponen
   const processFetchedData = (rawData) => {
@@ -236,66 +244,93 @@ const Sarmut2024 = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
+
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2">
+        <button
+          onClick={toggleSidebar}
+          className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
       
-      <div className="flex flex-1">
-        <Sidebar />
+     <div className="flex flex-1 relative">
+        {/* Sidebar - Hidden on mobile, overlay when open */}
+        <div className={`
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+          lg:translate-x-0 lg:static absolute inset-y-0 left-0 z-50 
+          transform transition-transform duration-300 ease-in-out
+        `}>
+          <Sidebar />
+        </div>
+
+        {/* Overlay untuk mobile ketika sidebar terbuka */}
+        {isSidebarOpen && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/50 bg-opacity-50 z-40"
+            onClick={toggleSidebar}
+          ></div>
+        )}
         
         <div className="flex-1 p-6">
           {/* Dashboard Header */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard SARMUT 2024</h2>
-            <p className="text-gray-600">Monitoring Sistem Peralatan Operasional</p>
+          <div className="mb-8 text-[17px] sm:text-[35px]">
+            <h2 className=" font-bold text-center text-gray-900 mb-2">Dashboard SARMUT 2024</h2>
+            <p className="text-gray-600 text-center text-[10px] sm:text-[20px]">Monitoring Sistem Peralatan Operasional</p>
           </div>
 
           {/* Loading and Error States */}
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <p className="text-lg text-gray-700">Memuat data dari Google Sheet...</p>
+              <p className="text-[12px] sm:text-[20px] text-gray-700">Memuat data dari Google Sheet...</p>
             </div>
           )}
           {error && (
             <div className="flex flex-col items-center justify-center bg-red-100 text-red-800 p-4 rounded-lg shadow-md mb-4">
-              <p className="text-xl font-bold mb-2">Terjadi Kesalahan Saat Memuat Data:</p>
-              <p className="text-lg">{error}</p>
-              <p className="text-md mt-4">Pastikan URL Google Apps Script Anda benar, script telah di-deploy dengan benar, dan sheet 'SARMUT' ada di spreadsheet.</p>
+              <p className="text-[9px] sm:text-[15px] font-bold mb-2">Terjadi Kesalahan Saat Memuat Data:</p>
+              <p className="text-[9px] sm:text-[15px]">{error}</p>
+              <p className="text-[9px] sm:text-[15px] mt-4">Pastikan URL Google Apps Script Anda benar, script telah di-deploy dengan benar, dan sheet 'SARMUT' ada di spreadsheet.</p>
             </div>
           )}
 
           {!loading && !error && processedMetricsData.length === 0 && (
-            <p className="text-center text-gray-600 text-lg py-8">Tidak ada data SARMUT yang tersedia untuk ditampilkan.</p>
+            <p className="text-center text-gray-600 text-[9px] sm:text-[15px] py-8">Tidak ada data SARMUT yang tersedia untuk ditampilkan.</p>
           )}
 
           {/* Metrics Grid */}
           {!loading && !error && processedMetricsData.length > 0 && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 {processedMetricsData.map((metric, index) => {
                   const IconComponent = metric.icon;
                   return (
                     <div
                       key={metric.id}
-                      className="bg-white rounded-lg shadow-md p-6 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                      className="bg-white rounded-lg shadow-md p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-lg"
                       onClick={() => handleMetricClick(metric)}
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className={`p-3 rounded-full ${metric.color}`}>
-                          <IconComponent className="w-6 h-6 text-white" />
+                      <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2 rounded-full ${metric.color}`}>
+                          <IconComponent className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        <div className={`px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium ${
                           metric.status === 'success' 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-orange-100 text-orange-800'
                         }`}>
-                          {metric.status === 'success' ? 'Target Tercapai' : 'Perlu Perhatian'}
+                          {metric.status === 'success' ? 'Tercapai' : 'Perhatian'}
                         </div>
                       </div>
                       
-                      <h3 className="text-sm text-gray-600 mb-2 line-clamp-3">
+                      <h3 className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2 leading-tight">
                         {metric.title}
                       </h3>
                       
-                      <div className="text-3xl font-bold text-gray-900 mb-2">
+                      <div className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
                         {metric.value}%
                       </div>
                       
@@ -311,22 +346,22 @@ const Sarmut2024 = () => {
               </div>
 
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">{summaryStats.totalIndicators}</div>
-                  <div className="text-gray-600">Total Indikator</div>
+                  <div className="text-[15px] sm:text-[17px] font-bold text-blue-600 mb-2">{summaryStats.totalIndicators}</div>
+                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Total Indikator</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-3xl font-bold text-green-600 mb-2">{summaryStats.targetAchieved}</div>
-                  <div className="text-gray-600">Target Tercapai</div>
+                  <div className="text-[15px] sm:text-[17px] font-bold text-green-600 mb-2">{summaryStats.targetAchieved}</div>
+                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Target Tercapai</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-3xl font-bold text-orange-600 mb-2">{summaryStats.needsAttention}</div>
-                  <div className="text-gray-600">Perlu Perhatian</div>
+                  <div className="text-[15px] sm:text-[17px] font-bold text-orange-600 mb-2">{summaryStats.needsAttention}</div>
+                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Perlu Perhatian</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">{summaryStats.averagePerformance}%</div>
-                  <div className="text-gray-600">Rata-rata Kinerja</div>
+                  <div className="text-[15px] sm:text-[17px] font-bold text-purple-600 mb-2">{summaryStats.averagePerformance}%</div>
+                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Rata-rata Kinerja</div>
                 </div>
               </div>
             </>
@@ -336,25 +371,25 @@ const Sarmut2024 = () => {
 
       {/* Modal for Charts and Table */}
       {isModalOpen && selectedMetric && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
             <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900">
+              <div className="flex items-start justify-between p-4 sm:p-6 border-b border-gray-200">
+                <h3 className="text-[9px] sm:text-[15px] md:text-base font-semibold text-black w-full text-justify">
                   Detail: {selectedMetric.title}
                 </h3>
                 <button
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                  className="text-gray-400 hover:text-gray-600 transition-colors ml-3 flex-shrink-0"
                 >
-                  ×
+                  <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Tabel Data Bulanan */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">Data Bulanan</h4>
+                  <h4 className="text-[9px] sm:text-[15px] font-semibold text-gray-800 mb-3">Data Bulanan</h4>
                   {editRowMessage && (
                     <p className={`mb-3 text-center ${editRowMessage.includes('Gagal') ? 'text-red-600' : 'text-green-600'} font-medium`}>
                       {editRowMessage}
@@ -364,18 +399,18 @@ const Sarmut2024 = () => {
                     <table className="min-w-full bg-white">
                       <thead className="bg-blue-100 text-blue-800">
                         <tr>
-                          <th className="py-2 px-3 text-left text-sm font-semibold">Bulan</th>
-                          <th className="py-2 px-3 text-left text-sm font-semibold">Persentase</th>
-                          <th className="py-2 px-3 text-left text-sm font-semibold">Aksi</th>
+                          <th className="py-2 px-3 text-left text-[9px] sm:text-[15px] font-semibold">Bulan</th>
+                          <th className="py-2 px-3 text-left text-[9px] sm:text-[15px] font-semibold">Persentase</th>
+                          <th className="py-2 px-3 text-left text-[9px] sm:text-[15px] font-semibold">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {processedChartData[selectedMetric.id]?.data.map((item, index) => (
                           <tr key={item.Bulan} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                            <td className="py-2 px-3 text-gray-800 text-sm">
+                            <td className="py-2 px-3 text-gray-800 text-[9px] sm:text-[15px]">
                               {getMonthName(item.Bulan)}
                             </td>
-                            <td className="py-2 px-3 text-gray-800 text-sm">
+                            <td className="py-2 px-3 text-gray-800 text-[9px] sm:text-[15px]">
                               {editingRow && editingRow.uraian === item.URAIAN && editingRow.bulan === item.Bulan ? (
                                 <input
                                   type="number"
@@ -389,7 +424,7 @@ const Sarmut2024 = () => {
                                 `${item.Persentase}%`
                               )}
                             </td>
-                            <td className="py-2 px-3 text-sm">
+                            <td className="py-2 px-3 text-[9px] sm:text-[15px]">
                               {editingRow && editingRow.uraian === item.URAIAN && editingRow.bulan === item.Bulan ? (
                                 <div className="flex space-x-2">
                                   <button
@@ -424,7 +459,7 @@ const Sarmut2024 = () => {
 
                 {/* Diagram Batang */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">Grafik Persentase Bulanan</h4>
+                  <h4 className="text-[9px] sm:text-[15px] font-semibold text-gray-800 mb-3">Grafik Persentase Bulanan</h4>
                   {renderChart(
                     processedChartData[selectedMetric.id]?.data,
                     'bar' // Selalu render BarChart di sini

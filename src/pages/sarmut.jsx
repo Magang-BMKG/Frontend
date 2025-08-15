@@ -142,10 +142,10 @@ const SarmutPage = () => {
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-center text-[20px] sm:text-3xl font-bold text-gray-800 mb-4">
+            <h1 className="text-center text-[14px] sm:text-3xl font-bold text-gray-800 mb-2">
               Sasaran Mutu (SARMUT)
             </h1>
-            <p className="text-center text-gray-600 mb-8 sm:mb-12">
+            <p className="text-center text-[10px] sm:text-3xl text-gray-600 mb-8 sm:mb-12">
               Pilih tahun untuk mengakses data Sasaran Mutu
             </p>
 
@@ -163,12 +163,12 @@ const SarmutPage = () => {
                 >
                   <div className="flex flex-col items-center text-center">
                     {/* Icon Container */}
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                    <div className="w-10 h-10 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
                       {icon}
                     </div>
                     
                     {/* Title */}
-                    <h3 className={`text-xl sm:text-2xl font-semibold transition-colors ${
+                    <h3 className={`text-[12px] sm:text-2xl font-semibold transition-colors ${
                       activeCard === year 
                         ? "text-blue-600" 
                         : "text-gray-800 group-hover:text-blue-600"
@@ -177,13 +177,13 @@ const SarmutPage = () => {
                     </h3>
                     
                     {/* Year Badge */}
-                    <div className="mt-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-black text-white text-sm rounded-full font-medium">
+                    <div className="mt-2 px-4 py-2 text-[11px] sm:text-2xl bg-gradient-to-r from-blue-500 to-black text-white text-sm rounded-full font-medium">
                       Tahun {year}
                     </div>
                     
                     {/* Coming Soon Badge */}
                     {path === "#" && (
-                      <span className="mt-2 px-3 py-1 bg-gray-200 text-gray-600 text-sm rounded-full">
+                      <span className="mt-2 px-3 py-1 text-[10px] sm:text-2xl bg-gray-200 text-gray-600 text-sm rounded-full">
                         Coming Soon
                       </span>
                     )}
