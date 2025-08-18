@@ -30,9 +30,14 @@ const DaftarInstrumenPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
 
-    // Image upload state
+  // Image upload state
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+
+  // Edit image state - NEW
+  const [editSelectedImage, setEditSelectedImage] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState(null);
+  const [isEditingImage, setIsEditingImage] = useState(false);
 
   // Form state untuk add modal - UPDATED STRUCTURE
   const [formData, setFormData] = useState({
@@ -70,21 +75,172 @@ const DaftarInstrumenPage = () => {
   const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbw3XaGa3vR9N9Av43tCEFxgV0d2Ca4WiRTY4Zoi5AVB7C0xz7a3UK16VjzxNoDx9u_8AA/exec";
 
   // Fungsi helper untuk mendapatkan kategori filter dari data instrumen
-  const getFilterCategory = (instrumen) => {
-    const kode = instrumen.Kode;
-    const noPeralatan = instrumen.NoPeralatan;
+    const getFilterCategory = (instrumen) => {
+      // Pastikan kode dikonversi ke string dan dibersihkan
+      let kode = '';
+      if (instrumen.Kode !== null && instrumen.Kode !== undefined) {
+        kode = instrumen.Kode.toString().trim();
+      }
+      
+      const noPeralatan = instrumen.NoPeralatan?.toString().trim() || '';
 
-    if (noPeralatan && noPeralatan.includes("AWOS")) return "AWOS";
-    if (noPeralatan && (noPeralatan.includes("PC Display") || noPeralatan.includes("PC OBS") || noPeralatan.includes("PC AFTN") || noPeralatan.includes("PC FCT") || noPeralatan.includes("PC National Digital Forcasting") || noPeralatan.includes("PC Maritim"))) return "PC";
-    
-    if (kode) {
-      const parts = kode.split('_');
-      return parts[0];
+      // Debug log
+      console.log(`Processing: Kode="${kode}", NoPeralatan="${noPeralatan}"`);
+
+      // Prioritas untuk kategori khusus dari NoPeralatan
+      if (noPeralatan) {
+        if (noPeralatan.toUpperCase().includes("AWOS")) return "AWOS";
+        if (noPeralatan.toUpperCase().includes("PC DISPLAY") || 
+            noPeralatan.toUpperCase().includes("PC OBS") || 
+            noPeralatan.toUpperCase().includes("PC AFTN") || 
+            noPeralatan.toUpperCase().includes("PC FCT") || 
+            noPeralatan.toUpperCase().includes("PC NATIONAL") || 
+            noPeralatan.toUpperCase().includes("PC MARITIM")) {
+          return "PC";
+        }
+      }
+      
+      // Jika kode kosong atau null
+      if (!kode || kode === '' || kode === 'null' || kode === 'undefined') {
+        console.log('Empty/null kode, returning Lain-lain');
+        return 'Lain-lain';
+      }
+
+      let category = '';
+      
+      // PERBAIKAN: Buat logika ekstraksi kategori yang lebih ketat dan konsisten
+      try {
+        // Method 1: Split dengan underscore (prioritas utama)
+        if (kode.includes('_')) {
+          const parts = kode.split('_');
+          if (parts.length >= 2 && parts[0].trim() !== '') {
+            category = parts[0].trim();
+          }
+        }
+        // Method 2: Split dengan dash
+        else if (kode.includes('-')) {
+          const parts = kode.split('-');
+          if (parts.length >= 2 && parts[0].trim() !== '') {
+            category = parts[0].trim();
+          }
+        }
+        // Method 3: Split dengan dot
+        else if (kode.includes('.')) {
+          const parts = kode.split('.');
+          if (parts.length >= 2 && parts[0].trim() !== '') {
+            category = parts[0].trim();
+          }
+        }
+        // Method 4: Split dengan space
+        else if (kode.includes(' ')) {
+          const parts = kode.split(' ');
+          if (parts.length >= 2 && parts[0].trim() !== '') {
+            category = parts[0].trim();
+          }
+        }
+        // Method 5: Regex untuk memisahkan huruf dari angka - DIPERBAIKI
+        else {
+          // Cari pola huruf di awal yang diikuti angka
+          const letterMatch = kode.match(/^([A-Za-z]+)(?=\d)/);
+          if (letterMatch && letterMatch[1] && letterMatch[1].length >= 2) {
+            category = letterMatch[1];
+          } else {
+            // Jika tidak ada pola huruf-angka yang jelas, coba ambil semua huruf di awal
+            const allLettersMatch = kode.match(/^([A-Za-z]+)/);
+            if (allLettersMatch && allLettersMatch[1] && allLettersMatch[1].length >= 2) {
+              category = allLettersMatch[1];
+            } else {
+              // Fallback: jika kode pendek atau tidak mengikuti pola, masukkan ke Lain-lain
+              console.log(`Kode "${kode}" tidak mengikuti pola yang dikenali, dikategorikan sebagai Lain-lain`);
+              return 'Lain-lain';
+            }
+          }
+        }
+        
+        // PERBAIKAN: Validasi kategori yang diekstrak
+        if (category && category.trim() !== '' && category.length >= 2) {
+          const finalCategory = category.toUpperCase().trim();
+          console.log(`SUCCESS: Kode "${kode}" -> Category "${finalCategory}"`);
+          return finalCategory;
+        } else {
+          console.log(`INVALID CATEGORY: Kode "${kode}" menghasilkan kategori kosong/pendek, dikategorikan sebagai Lain-lain`);
+          return 'Lain-lain';
+        }
+        
+      } catch (error) {
+        console.error(`Error processing kode "${kode}":`, error);
+        return 'Lain-lain';
+      }
+    };
+
+    // TAMBAHAN: Fungsi untuk memvalidasi dan membersihkan kategori
+    const validateAndCleanCategory = (kategori) => {
+      if (!kategori || typeof kategori !== 'string') return 'Lain-lain';
+      
+      const cleaned = kategori.toString().trim().toUpperCase();
+      
+      // Jika kategori terlalu pendek atau hanya angka, masukkan ke Lain-lain
+      if (cleaned.length < 2 || /^\d+$/.test(cleaned)) {
+        return 'Lain-lain';
+      }
+      
+      return cleaned;
+    };
+
+    // Fungsi untuk mengambil data dari API (GET)
+    // Fungsi untuk mengambil data dari API (GET) - DIPERBAIKI
+const fetchData = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const response = await fetch(INSTRUMEN_API_URL);
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP error! Status: ${response.status} - ${response.statusText}`
+      );
     }
-    return 'Lain-lain';
-  };
 
+    const data = await response.json();
 
+    if (Array.isArray(data)) {
+      setInstrumenData(data);
+
+      // Debug: Log data untuk melihat struktur kode
+      console.log('Sample data for debugging:', data.slice(0, 3));
+
+      // PERBAIKAN: Buat kategori dengan logika yang sama seperti asli, tapi konsisten
+      const categories = new Set();
+      data.forEach(instrumen => {
+        const category = getFilterCategory(instrumen);
+        // PERBAIKAN: Tambahkan semua kategori, termasuk yang hanya 1 item
+        if (category) {
+          categories.add(category);
+          console.log(`Kode: ${instrumen.Kode} -> Kategori: ${category}`);
+        }
+      });
+      
+      const sortedCategories = Array.from(categories).sort();
+      console.log('Available categories:', sortedCategories);
+      setKodeCategoryOptions(sortedCategories);
+      
+    } else {
+      throw new Error(
+        "Invalid data format received from API. Expected an array."
+      );
+    }
+  } catch (err) {
+    console.error("Error fetching instrumen data:", err);
+    setError(
+      err.message ||
+        "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // ADD MODAL IMAGE FUNCTIONS
   const handleImageSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -121,6 +277,59 @@ const DaftarInstrumenPage = () => {
     }
   };
 
+  // EDIT IMAGE FUNCTIONS - NEW
+  const handleEditImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        Swal.fire('Error!', 'Harap pilih file gambar yang valid.', 'error');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        Swal.fire('Error!', 'Ukuran gambar tidak boleh lebih dari 5MB.', 'error');
+        return;
+      }
+
+      setEditSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setEditImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditImageRemove = () => {
+    setEditSelectedImage(null);
+    setEditImagePreview(null);
+    setIsEditingImage(false);
+    // Reset file input
+    const fileInput = document.getElementById('editImageUpload');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  const handleEditImageCancel = () => {
+    setEditSelectedImage(null);
+    setEditImagePreview(null);
+    setIsEditingImage(false);
+    // Reset file input
+    const fileInput = document.getElementById('editImageUpload');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  const handleStartEditImage = () => {
+    setIsEditingImage(true);
+  };
+
   // Convert image to base64 for API submission
   const convertImageToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -131,47 +340,6 @@ const DaftarInstrumenPage = () => {
     });
   };
 
-  // Fungsi untuk mengambil data dari API (GET)
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(INSTRUMEN_API_URL);
-
-      if (!response.ok) {
-        throw new Error(
-          `HTTP error! Status: ${response.status} - ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (Array.isArray(data)) {
-        setInstrumenData(data);
-
-        const categories = new Set();
-        data.forEach(instrumen => {
-          const category = getFilterCategory(instrumen);
-          if (category) {
-            categories.add(category);
-          }
-        });
-        setKodeCategoryOptions(Array.from(categories).sort());
-      } else {
-        throw new Error(
-          "Invalid data format received from API. Expected an array."
-        );
-      }
-    } catch (err) {
-      console.error("Error fetching instrumen data:", err);
-      setError(
-        err.message ||
-          "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (userRole === "admin" || userRole === "user") {
@@ -221,16 +389,59 @@ const DaftarInstrumenPage = () => {
     setEditData({});
     setIsDeleteMode(false);
     setSelectedForDelete(new Set());
+    // Reset edit image state
+    setEditSelectedImage(null);
+    setEditImagePreview(null);
+    setIsEditingImage(false);
   };
 
-  const filteredInstrumenData = useMemo(() => {
-    if (!selectedKodeCategory) {
-      return instrumenData;
+  // PERBAIKAN: Update fungsi untuk membuat kategori options
+const updateKodeCategoryOptions = (data) => {
+  const categoryCount = new Map();
+  
+  data.forEach(instrumen => {
+    const category = getFilterCategory(instrumen);
+    const validatedCategory = validateAndCleanCategory(category);
+    
+    if (categoryCount.has(validatedCategory)) {
+      categoryCount.set(validatedCategory, categoryCount.get(validatedCategory) + 1);
+    } else {
+      categoryCount.set(validatedCategory, 1);
     }
-    return instrumenData.filter(instrumen => 
-      getFilterCategory(instrumen) === selectedKodeCategory
-    );
-  }, [instrumenData, selectedKodeCategory]);
+  });
+  
+  // Hapus kategori yang hanya memiliki 1 item kecuali 'Lain-lain'
+  const filteredCategories = Array.from(categoryCount.entries())
+    .filter(([category, count]) => count > 1 || category === 'Lain-lain')
+    .map(([category]) => category)
+    .sort();
+  
+  console.log('Final categories with counts:', Array.from(categoryCount.entries()));
+  setKodeCategoryOptions(filteredCategories);
+};
+
+// PERBAIKAN: Update filteredInstrumenData dengan validasi tambahan
+const filteredInstrumenData = useMemo(() => {
+  if (!selectedKodeCategory) {
+    console.log('No category selected, showing all data:', instrumenData.length);
+    return instrumenData;
+  }
+  
+  const filtered = instrumenData.filter(instrumen => {
+    const category = getFilterCategory(instrumen);
+    const validatedCategory = validateAndCleanCategory(category);
+    const matches = validatedCategory === selectedKodeCategory;
+    
+    // Debug logging yang lebih detail
+    console.log(`Item: "${instrumen.Peralatan}" - Kode: "${instrumen.Kode}" -> Raw Category: "${category}" -> Validated: "${validatedCategory}" -> Selected: "${selectedKodeCategory}" -> Matches: ${matches}`);
+    
+    return matches;
+  });
+  
+  console.log(`Filtered results for "${selectedKodeCategory}":`, filtered.length, 'items');
+  console.log('Filtered items:', filtered.map(item => ({ kode: item.Kode, peralatan: item.Peralatan })));
+  return filtered;
+}, [instrumenData, selectedKodeCategory]);
 
   // Toggle sidebar untuk mobile
   const toggleSidebar = () => {
@@ -406,12 +617,18 @@ const DaftarInstrumenPage = () => {
         setIsSubmitting(true);
 
         // Payload untuk edit: kirim semua field yang relevan
-        // Gunakan Kode asli sebagai identifier
-        const payload = {
+        let payload = {
           action: "edit",
           originalKode: selectedInstrumen.Kode, // Kode asli untuk identifikasi baris
           ...editData // Semua data yang diedit
         };
+
+        // If image is selected for edit, convert to base64 and add to payload
+        if (editSelectedImage) {
+          const imageBase64 = await convertImageToBase64(editSelectedImage);
+          payload.FotoBase64 = imageBase64;
+          payload.FotoName = editSelectedImage.name;
+        }
 
         await sendApiRequest("edit", payload);
 
@@ -423,8 +640,18 @@ const DaftarInstrumenPage = () => {
         });
 
         setIsEditing(false);
+        setIsEditingImage(false);
+        setEditSelectedImage(null);
+        setEditImagePreview(null);
         fetchData(); // Muat ulang data setelah perubahan
-        setSelectedInstrumen(editData); // Update selectedInstrumen dengan data yang baru
+        
+        // Update selectedInstrumen with new data
+        const updatedInstrumen = { ...editData };
+        if (editSelectedImage) {
+          // If new image was uploaded, we should wait for the data to be fetched
+          // The image URL will be updated from the server response
+        }
+        setSelectedInstrumen(updatedInstrumen);
       } catch (error) {
         console.error('Error updating instrument:', error);
         await Swal.fire({
@@ -442,6 +669,9 @@ const DaftarInstrumenPage = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditData({});
+    setIsEditingImage(false);
+    setEditSelectedImage(null);
+    setEditImagePreview(null);
   };
 
   const handleSubmit = async (e) => {
@@ -621,18 +851,21 @@ const DaftarInstrumenPage = () => {
                 {/* Filter dan Button Container */}
                 <div className="flex flex-row items-center gap-3 sm:gap-4 w-full lg:flex-1">
                   {/* Select Dropdown */}
-                  <select
-                    className="flex-1 min-w-0 rounded-lg  border border-gray-300 p-2 sm:p-2.5 text-[10px] sm:text-[14px] focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-                    onChange={handleCategorySelectChange}
-                    value={selectedKodeCategory}
-                  >
-                    <option value="">-- Tampilkan Semua Kategori --</option>
-                    {kodeCategoryOptions.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                   <select
+                      className="flex-1 min-w-0 rounded-lg  border border-gray-300 p-2 sm:p-2.5 text-[10px] sm:text-[14px] focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                      onChange={handleCategorySelectChange}
+                      value={selectedKodeCategory}
+                    >
+                      <option value="">-- Tampilkan Semua Kategori ({instrumenData.length}) --</option>
+                      {kodeCategoryOptions.map((category) => {
+                        const count = instrumenData.filter(instrumen => getFilterCategory(instrumen) === category).length;
+                        return (
+                          <option key={category} value={category}>
+                            {category} ({count})
+                          </option>
+                        );
+                      })}
+                    </select>
                   
                   {/* Button Group */}
                   <div className="flex items-center gap-0 sm:gap-0 flex-shrink-0">
@@ -704,25 +937,91 @@ const DaftarInstrumenPage = () => {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 md:p-6 shadow-md mb-4 sm:mb-6 md:mb-8 w-full max-w-6xl mx-auto">
               <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                 {/* Bagian Foto */}
-                <div className="flex-1 lg:flex-none lg:w-88 xl:w-88 flex items-center justify-center rounded-lg p-3 lg:p-4">
-                  {selectedInstrumen.FotoURL ? (
-                    <img
-                      src={selectedInstrumen.FotoURL}
-                      alt={selectedInstrumen.Peralatan}
-                      className="max-w-full h-auto rounded-lg max-h-50 lg:max-h-50"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
-                      }}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-48 lg:h-66 bg-gray-300 rounded-lg">
-                      <svg className="w-12 h-12 lg:w-16 lg:h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19l3.5-4.5 2.5 3.01L14.5 12l4.5 7H5z"/>
-                      </svg>
+                <div className="flex-1 lg:flex-none lg:w-88 xl:w-88 flex flex-col items-center justify-center rounded-lg p-3 lg:p-4">
+                  {/* Image Display */}
+                  <div className="mb-3">
+                    {editImagePreview ? (
+                      // Show new image preview when editing
+                      <img
+                        src={editImagePreview}
+                        alt={selectedInstrumen.Peralatan}
+                        className="max-w-full h-auto rounded-lg max-h-50 lg:max-h-50"
+                      />
+                    ) : selectedInstrumen.FotoURL ? (
+                      // Show current image
+                      <img
+                        src={selectedInstrumen.FotoURL}
+                        alt={selectedInstrumen.Peralatan}
+                        className="max-w-full h-auto rounded-lg max-h-50 lg:max-h-50"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                        }}
+                      />
+                    ) : (
+                      // Show placeholder when no image
+                      <div className="flex items-center justify-center w-50 lg:w-80 h-48 lg:h-76 bg-gray-300 rounded-lg">
+                        <svg className="w-85 h-85 lg:w-80 lg:h-80 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19l3.5-4.5 2.5 3.01L14.5 12l4.5 7H5z"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Image Edit Controls - Only show when admin and editing */}
+                  {userRole === "admin" && isEditing && (
+                    <div className="w-full space-y-2">
+                      {!isEditingImage ? (
+                        // Edit Image Button
+                        <button
+                          onClick={handleStartEditImage}
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium min-h-[4px] sm:min-h-auto  border-0"
+                        >
+                          <FaCamera className="w-3 h-3 sm:w-6 sm:h-6 md:w-5 md:h-5 lg:w-8 lg:h-8" />
+                          Ubah Foto
+                        </button>
+                      ) : (
+                        // Image Upload Controls
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            id="editImageUpload"
+                            accept="image/*"
+                            onChange={handleEditImageSelect}
+                            className="hidden"
+                          />
+                          <div className="flex gap-1">
+                            <label
+                              htmlFor="editImageUpload"
+                              className="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-green-500 text-white rounded  text-sm sm:text-8 md:text-10 lg:text-20 hover:bg-green-600 cursor-pointer transition-colors"
+                            >
+                              <FaImage className="w-3 h-3 sm:w-6 sm:h-6 md:w-5 md:h-5 lg:w-8 lg:h-8" />
+                              Pilih
+                            </label>
+                            {editSelectedImage && (
+                              <button
+                                onClick={handleEditImageRemove}
+                                className="flex-1 px-2 py-2 bg-red-500 text-white rounded  text-sm sm:text-8 md:text-10 lg:text-20 hover:bg-red-600 transition-colors"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                            <button
+                              onClick={handleEditImageCancel}
+                              className="flex-1 px-2 py-2 bg-gray-500 text-white rounded text-sm sm:text-base md:text-lg lg:text-xl h hover:bg-gray-600 transition-colors"
+                            >
+                              Batal
+                            </button>
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-500 text-center">
+                            Max 5MB. Format: JPEG, PNG, GIF
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
+
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-3 sm:mb-4">
                     <h3 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-semibold text-black text-center break-words flex-1">
@@ -752,9 +1051,9 @@ const DaftarInstrumenPage = () => {
                         ) : (
                           <button
                             onClick={handleEdit}
-                            className="flex items-center gap-1 px-3 py-1 text-blue-600 rounded hover:bg-blue-700 transition-colors text-sm"
+                            className="flex items-center gap-1 px-3 py-1 text-blue-600 rounded hover:text-black transition-colors text-sm"
                           >
-                            <FiEdit2 className="w-4 h-4" />
+                            <FiEdit2 className="w-4 h-3 sm:w-5 sm:h-5" />
                           </button>
                         )}
                       </div>
@@ -833,14 +1132,14 @@ const DaftarInstrumenPage = () => {
                         </tr>
                       ) : filteredInstrumenData.length === 0 ? (
                         <tr>
-                          <td colSpan={isDeleteMode ? 5 : 4} className="px-6 py-8 text-center text-sm text-gray-500">
+                          {/* <td colSpan={isDeleteMode ? 5 : 4} className="px-6 py-8 text-center text-sm text-gray-500">
                             <div className="flex flex-col items-center">
                               <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                               </svg>
                               Data instrumen tidak tersedia
                             </div>
-                          </td>
+                          </td> */}
                         </tr>
                       ) : (
                         filteredInstrumenData.map((instrumen) => (
@@ -1445,19 +1744,17 @@ const DaftarInstrumenPage = () => {
                 <div className="block lg:hidden">
                   <div className="space-y-4">
                     
-                    {/* Mobile fields remain the same as original */}
                     <div className="space-y-1">
                       <label className="block text-sm font-medium text-gray-700">
-                        Kode <span className="text-red-500">*</span>
+                        No Peralatan
                       </label>
                       <input
                         type="text"
-                        name="Kode"
-                        value={formData.Kode}
+                        name="NoPeralatan"
+                        value={formData.NoPeralatan}
                         onChange={handleInputChange}
-                        placeholder="Masukkan kode instrumen"
+                        placeholder="Masukkan no peralatan"
                         className="w-full py-2 px-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
                       />
                     </div>
                     
@@ -1471,6 +1768,21 @@ const DaftarInstrumenPage = () => {
                         value={formData.Peralatan}
                         onChange={handleInputChange}
                         placeholder="Masukkan nama peralatan"
+                        className="w-full py-2 px-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Kode <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="Kode"
+                        value={formData.Kode}
+                        onChange={handleInputChange}
+                        placeholder="Masukkan kode instrumen"
                         className="w-full py-2 px-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
