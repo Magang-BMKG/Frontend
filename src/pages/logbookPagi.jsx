@@ -66,6 +66,19 @@ const LogbookPagiPage = () => {
     const [selectedYear, setSelectedYear] = useState('');
     const [showFilter, setShowFilter] = useState(false);
 
+    const [showAddNewPersonInput, setShowAddNewPersonInput] = useState(false);
+    const [newPersonName, setNewPersonName] = useState('');
+
+    const [penanggungJawabList, setPenanggungJawabList] = useState([
+        'Kurniawan Raharjo, S.T',
+        'Agusto Pramana Putera, S.Tr',
+        'Ahmad Fauzi, S.T',
+        'Nastiti Siwi Risantika, S.Tr.Inst',
+        'Badia Lumbanbatu, STr Inst',
+        'Mapasena Farid Wijaya, S.Tr Inst',
+        'Muhammad Rony Zakaria, STr Inst'
+    ]);
+
     // Daftar bulan
     const months = [
         { value: '01', label: 'Januari' },
@@ -1551,69 +1564,133 @@ const LogbookPagiPage = () => {
 
             {/* Modal Tambah Penanggung Jawab & Tanggal BARU */}
             {showAddPersonDateModal && (
-                <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4 border-b pb-3">
-                            <h3 className="text-lg md:text-xl font-semibold text-gray-800 flex-grow text-center">
-                                Tambah Penanggung Jawab & Tanggal Baru
-                            </h3>
-                            <button
-                                onClick={() => setShowAddPersonDateModal(false)}
-                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                            >
-                                <IoClose className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <div className="mb-4">
-                            <label
-                                htmlFor="newPersonDatePenanggungJawab"
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                                Penanggung Jawab <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="newPersonDatePenanggungJawab"
-                                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base"
-                                value={newPersonDatePenanggungJawab}
-                                onChange={(e) => setNewPersonDatePenanggungJawab(e.target.value)}
-                                placeholder="Misal: Kurniawan R."
-                            />
-                        </div>
-                        <div className="mb-6">
-                            <label
-                                htmlFor="newPersonDateTanggal"
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                                Tanggal <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="newPersonDateTanggal"
-                                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base"
-                                value={newPersonDateTanggal}
-                                onChange={(e) => setNewPersonDateTanggal(e.target.value)}
-                                placeholder="DD/MM/YYYY"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Format: DD/MM/YYYY (contoh: 01/01/2025)</p>
-                        </div>
-                        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                            <button
-                                onClick={() => setShowAddPersonDateModal(false)}
-                                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleAddPersonDate}
-                                className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded sm:rounded-md hover:bg-blue-700 transition-colors"
-                            >
-                                Tambah
-                            </button>
-                        </div>
+            <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-4 border-b pb-3">
+                        <h3 className="text-lg md:text-xl font-semibold text-gray-800 flex-grow text-center">
+                            Tambah Penanggung Jawab & Tanggal Baru
+                        </h3>
+                        <button
+                            onClick={() => setShowAddPersonDateModal(false)}
+                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                        >
+                            <IoClose className="w-6 h-6" />
+                        </button>
+                    </div>
+                    
+                    <div className="mb-4">
+                        <label
+                            htmlFor="newPersonDatePenanggungJawab"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                            Penanggung Jawab <span className="text-red-500">*</span>
+                        </label>
+                        
+                        {/* Dropdown untuk memilih penanggung jawab */}
+                        <select
+                            id="newPersonDatePenanggungJawab"
+                            className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base bg-white"
+                            value={newPersonDatePenanggungJawab}
+                            onChange={(e) => {
+                                if (e.target.value === 'add_new') {
+                                    setShowAddNewPersonInput(true);
+                                    setNewPersonDatePenanggungJawab('');
+                                } else {
+                                    setShowAddNewPersonInput(false);
+                                    setNewPersonDatePenanggungJawab(e.target.value);
+                                }
+                            }}
+                        >
+                            <option value="">-- Pilih Penanggung Jawab --</option>
+                            {/* Data dummy nama-nama penanggung jawab */}
+                            <option value="'Kurniawan Raharjo, S.T.">'Kurniawan Raharjo, S.T.</option>
+                            <option value="Agusto Pramana Putera, S.Tr">Agusto Pramana Putera, S.Tr</option>
+                            <option value="Ahmad Fauzi, S.T">Ahmad Fauzi, S.T</option>
+                            <option value="Nastiti Siwi Risantika, S.Tr.Inst">Nastiti Siwi Risantika, S.Tr.Inst</option>
+                            <option value="Badia Lumbanbatu, STr Inst">Badia Lumbanbatu, STr Inst</option>
+                            <option value="Mapasena Farid Wijaya, S.Tr Inst">Mapasena Farid Wijaya, S.Tr Inst</option>
+                            <option value="Muhammad Rony Zakaria, STr Inst">Muhammad Rony Zakaria, STr Inst</option>
+                            <option value="add_new" className="bg-blue-50 text-blue-600 font-medium">
+                                + Tambah Nama Baru
+                            </option>
+                        </select>
+                        {/* Input untuk nama baru jika memilih "Tambah Nama Baru" */}
+                        {showAddNewPersonInput && (
+                            <div className="mt-3">
+                                <input
+                                    type="text"
+                                    className="w-full p-2 md:p-3 border border-blue-300 rounded-md text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    value={newPersonName}
+                                    onChange={(e) => setNewPersonName(e.target.value)}
+                                    placeholder="Masukkan nama penanggung jawab baru"
+                                    autoFocus
+                                />
+                                <div className="flex justify-end space-x-2 mt-2">
+                                    <button
+                                        onClick={() => {
+                                            setShowAddNewPersonInput(false);
+                                            setNewPersonName('');
+                                            setNewPersonDatePenanggungJawab('');
+                                        }}
+                                        className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (newPersonName.trim()) {
+                                                setNewPersonDatePenanggungJawab(newPersonName.trim());
+                                                setShowAddNewPersonInput(false);
+                                                setNewPersonName('');
+                                                // Opsional: Tambahkan nama baru ke data dummy untuk penggunaan selanjutnya
+                                                // setPenanggungJawabList(prev => [...prev, newPersonName.trim()]);
+                                            }
+                                        }}
+                                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                        disabled={!newPersonName.trim()}
+                                    >
+                                        Simpan
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mb-6">
+                        <label
+                            htmlFor="newPersonDateTanggal"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                            Tanggal <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="newPersonDateTanggal"
+                            className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base"
+                            value={newPersonDateTanggal}
+                            onChange={(e) => setNewPersonDateTanggal(e.target.value)}
+                            placeholder="DD/MM/YYYY"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Format: DD/MM/YYYY (contoh: 01/01/2025)</p>
+                    </div>
+
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => setShowAddPersonDateModal(false)}
+                            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={handleAddPersonDate}
+                            className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded sm:rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                            Tambah
+                        </button>
                     </div>
                 </div>
-            )}
+            </div>
+        )}
 
             {/* Modal Edit Penanggung Jawab & Tanggal */}
             {showEditPersonDateModal && editingPersonDateCombo && (
