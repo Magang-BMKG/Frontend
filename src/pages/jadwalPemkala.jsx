@@ -404,6 +404,85 @@ const JadwalPemkala = ({ api_url, page_title, back_path }) => {
   const completedCount = Array.from(localChecklistState.values()).filter(state => state.isCompleted).length;
   const uncompletedCount = Array.from(localChecklistState.values()).filter(state => !state.isCompleted).length;
   const progressPercentage = jadwalData.length > 0 ? Math.round((completedCount / jadwalData.length) * 100) : 0;
+  // State tambahan yang perlu ditambahkan ke komponen JadwalPemkala
+const [filteredJadwalData, setFilteredJadwalData] = useState([]);
+const [filterDate, setFilterDate] = useState('');
+const [filterMonth, setFilterMonth] = useState('');
+const [filterYear, setFilterYear] = useState('');
+const [showFilter, setShowFilter] = useState(false);
+
+// useEffect untuk memfilter data ketika ada perubahan pada filter atau jadwalData
+useEffect(() => {
+  applyDateFilter();
+}, [jadwalData, filterDate, filterMonth, filterYear]);
+
+// Fungsi untuk menerapkan filter tanggal
+const applyDateFilter = () => {
+  if (!filterDate && !filterMonth && !filterYear) {
+    setFilteredJadwalData(jadwalData);
+    return;
+  }
+
+  const filtered = jadwalData.filter(item => {
+    const dateField = item['Tanggal Selesai'];
+    if (!dateField) return false;
+
+    const itemDate = new Date(dateField);
+    if (isNaN(itemDate.getTime())) return false;
+
+    let match = true;
+    if (filterDate) match = match && itemDate.getDate() === parseInt(filterDate);
+    if (filterMonth) match = match && (itemDate.getMonth() + 1) === parseInt(filterMonth);
+    if (filterYear) match = match && itemDate.getFullYear() === parseInt(filterYear);
+
+    return match;
+  });
+
+  setFilteredJadwalData(filtered);
+};
+
+
+// Fungsi untuk mereset filter
+const clearFilters = () => {
+  setFilterDate('');
+  setFilterMonth('');
+  setFilterYear('');
+};
+
+// Fungsi untuk generate opsi tanggal (1-31)
+const generateDateOptions = () => {
+  const days = [];
+  for (let i = 1; i <= 31; i++) {
+    days.push(
+      <option key={i} value={i}>{i}</option>
+    );
+  }
+  return days;
+};
+
+// Fungsi untuk generate opsi bulan
+const generateMonthOptions = () => {
+  const months = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  return months.map((month, index) => (
+    <option key={index + 1} value={index + 1}>{month}</option>
+  ));
+};
+
+// Fungsi untuk generate opsi tahun (5 tahun ke belakang sampai 5 tahun ke depan)
+const generateYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+    years.push(
+      <option key={i} value={i}>{i}</option>
+    );
+  }
+  return years;
+};
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -562,6 +641,101 @@ const JadwalPemkala = ({ api_url, page_title, back_path }) => {
               </div>
             )}
 
+  <div className="mb-4 sm:mb-6 mx-1 sm:mx-2 lg:mx-4 xl:mx-auto max-w-7xl">
+    <div className="bg-white rounded-lg shadow-md">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+            </svg>
+            <span>Filter Berdasarkan Tanggal</span>
+          </h3>
+          <button
+            onClick={() => setShowFilter(!showFilter)}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+          >
+            {showFilter ? 'Sembunyikan' : 'Tampilkan'} Filter
+          </button>
+        </div>
+      </div>
+      
+      {showFilter && (
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+              <label htmlFor="filter-date" className="block text-sm font-medium text-gray-700 mb-2">
+                Tanggal
+              </label>
+              <select
+                id="filter-date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Semua Tanggal</option>
+                {generateDateOptions()}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="filter-month" className="block text-sm font-medium text-gray-700 mb-2">
+                Bulan
+              </label>
+              <select
+                id="filter-month"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Semua Bulan</option>
+                {generateMonthOptions()}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="filter-year" className="block text-sm font-medium text-gray-700 mb-2">
+                Tahun
+              </label>
+              <select
+                id="filter-year"
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Semua Tahun</option>
+                {generateYearOptions()}
+              </select>
+            </div>
+            
+            <div>
+              <button
+                onClick={clearFilters}
+                className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md transition-colors"
+              >
+                Reset Filter
+              </button>
+            </div>
+          </div>
+          
+          {/* Tampilkan info filter aktif */}
+          {(filterDate || filterMonth || filterYear) && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Filter aktif:</strong> 
+                {filterDate && ` Tanggal ${filterDate}`}
+                {filterMonth && ` Bulan ${filterMonth}`}
+                {filterYear && ` Tahun ${filterYear}`}
+                {` - Menampilkan ${filteredJadwalData.length} dari ${jadwalData.length} jadwal`}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+
+
             {/* Main Table/Cards */}
             {/* ... (isi dari div main table/cards) ... */}
             <div className="flex justify-center px-2 sm:px-4 lg:px-6 xl:px-8">
@@ -612,7 +786,7 @@ const JadwalPemkala = ({ api_url, page_title, back_path }) => {
                           </td>
                         </tr>
                       ) : (
-                        jadwalData.map((jadwal) => {
+                        filteredJadwalData.map((jadwal) => {
                           const jadwalId = jadwal.id;
                           const isEditing = editingRows.has(jadwalId);
                           const currentEditData = editData[jadwalId] || jadwal;
@@ -749,7 +923,7 @@ const JadwalPemkala = ({ api_url, page_title, back_path }) => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {jadwalData.map((jadwal) => {
+                    {filteredJadwalData.map((jadwal) => {
                       const jadwalId = jadwal.id;
                       const isEditing = editingRows.has(jadwalId);
                       const currentEditData = editData[jadwalId] || jadwal;
