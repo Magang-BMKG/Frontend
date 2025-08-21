@@ -904,7 +904,7 @@ const LogbookPagiPage = () => {
                     </h2>
 
                     {userRole && (
-                        <div className="text-center mb-4 text-gray-600">
+                        <div className="text-center text-[15px] md:text-2xl xl:text-3xl mb-4 text-gray-600">
                             Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
                         </div>
                     )}
@@ -913,7 +913,7 @@ const LogbookPagiPage = () => {
                     {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && !selectedEquipment && (
                         <div className="mb-6">
                             {/* Tombol Sejajar - Filter di kiri, Grafik dan Tambah di kanan */}
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+                            <div className="flex flex-col sm:flex-row items-center justify-between grid-cols-3 sm:grid-cols-3 gap-3 mb-4">
                                 {/* Tombol Filter dan Reset */}
                                 <div className="flex items-center gap-2">
                                     <button
@@ -958,7 +958,8 @@ const LogbookPagiPage = () => {
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                                         </svg>
-                                        <span>Grafik per Peralatan</span>
+                                        <span className="hidden lg:inline xl:inline">Grafik per Peralatan</span>
+                                        <span className="lg:hidden">Grafik</span>
                                     </button>
 
                                     {/* Tombol Tambah Penanggung Jawab & Tanggal */}
@@ -969,7 +970,8 @@ const LogbookPagiPage = () => {
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                         </svg>
-                                        <span>Tambah Penanggung Jawab & Tanggal</span>
+                                        <span className="hidden lg:inline xl:inline">Tambah Penanggung Jawab & Tanggal</span>
+                                        <span className="lg:hidden">Tambah PJ</span>
                                     </button>
                                 </div>
                             </div>
@@ -1062,7 +1064,7 @@ const LogbookPagiPage = () => {
                                     <>
                                         {/* Statistics Cards - TETAP */}
                                         <div className="bg-white rounded-lg shadow-md p-6">
-                                            <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">
+                                            <h3 className="text-[15px] md:text-2xl xl:text-3xl font-bold text-gray-800 mb-4 text-center">
                                                 Analisis Peralatan: <span className="text-blue-600">{selectedEquipment}</span>
                                             </h3>
                                             
@@ -1115,7 +1117,7 @@ const LogbookPagiPage = () => {
 
                                         {/* HANYA LINE CHART - Hapus Pie Chart */}
                                         <div className="bg-white rounded-lg shadow-md p-6">
-                                            <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                            <h4 className="text-[15px] md:text-2xl xl:text-3xl font-semibold text-gray-800 mb-4 text-center">
                                                 Status Peralatan {selectedEquipment} Per Hari
                                             </h4>
                                             <div className="h-80">
@@ -1173,7 +1175,7 @@ const LogbookPagiPage = () => {
                     {showEquipmentCharts && !selectedEquipment && (
                         <div className="space-y-6 mb-8">
                             <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
+                                <h3 className="text-[15px] md:text-2xl xl:text-3xl font-bold text-gray-800 mb-6 text-center">
                                     Pilih Peralatan untuk Melihat Grafik Detail
                                 </h3>
                                 
