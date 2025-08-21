@@ -5,11 +5,11 @@ import Footer from "../component/Footer";
 import { AiTwotoneFileAdd } from "react-icons/ai";
 import { IoClose } from "react-icons/io5";
 import { FaCheck, FaCamera, FaImage } from "react-icons/fa";
-import { FiEdit2 } from "react-icons/fi";
-import { FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient'; // <-- Import Supabase client
 
 const DaftarInstrumenPage = () => {
   const [instrumenData, setInstrumenData] = useState([]);
@@ -21,6 +21,7 @@ const DaftarInstrumenPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // New state for upload status
 
   // Delete state
   const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -34,12 +35,12 @@ const DaftarInstrumenPage = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Edit image state - NEW
+  // Edit image state
   const [editSelectedImage, setEditSelectedImage] = useState(null);
   const [editImagePreview, setEditImagePreview] = useState(null);
   const [isEditingImage, setIsEditingImage] = useState(false);
 
-  // Form state untuk add modal - UPDATED STRUCTURE
+  // Form state for add modal
   const [formData, setFormData] = useState({
     NoPeralatan: '',
     Peralatan: '',
@@ -71,194 +72,196 @@ const DaftarInstrumenPage = () => {
     }
   }, [userRole, navigate]);
 
-  // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'INSTRUMEN' ANDA
-  const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbw3XaGa3vR9N9Av43tCEFxgV0d2Ca4WiRTY4Zoi5AVB7C0xz7a3UK16VjzxNoDx9u_8AA/exec";
+  const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbyfjV6xony2PDzEs3yZix6L0DH_Fv3pQB8ccBc8McKcwlpNIpVbp4fTFG-sF9KX32zJ2A/exec";
 
-  // Fungsi helper untuk mendapatkan kategori filter dari data instrumen
-    const getFilterCategory = (instrumen) => {
-      // Pastikan kode dikonversi ke string dan dibersihkan
-      let kode = '';
-      if (instrumen.Kode !== null && instrumen.Kode !== undefined) {
-        kode = instrumen.Kode.toString().trim();
-      }
+  const getFilterCategory = (instrumen) => {
+    let kode = '';
+    if (instrumen.Kode !== null && instrumen.Kode !== undefined) {
+      kode = instrumen.Kode.toString().trim();
+    }
       
-      const noPeralatan = instrumen.NoPeralatan?.toString().trim() || '';
+    const noPeralatan = instrumen.NoPeralatan?.toString().trim() || '';
 
-      // Debug log
-      console.log(`Processing: Kode="${kode}", NoPeralatan="${noPeralatan}"`);
+    if (noPeralatan) {
+      if (noPeralatan.toUpperCase().includes("AWOS")) return "AWOS";
+      if (noPeralatan.toUpperCase().includes("PC DISPLAY") || 
+          noPeralatan.toUpperCase().includes("PC OBS") || 
+          noPeralatan.toUpperCase().includes("PC AFTN") || 
+          noPeralatan.toUpperCase().includes("PC FCT") || 
+          noPeralatan.toUpperCase().includes("PC NATIONAL") || 
+          noPeralatan.toUpperCase().includes("PC MARITIM")) {
+        return "PC";
+      }
+    }
+      
+    if (!kode || kode === '' || kode === 'null' || kode === 'undefined') {
+      return 'Lain-lain';
+    }
 
-      // Prioritas untuk kategori khusus dari NoPeralatan
-      if (noPeralatan) {
-        if (noPeralatan.toUpperCase().includes("AWOS")) return "AWOS";
-        if (noPeralatan.toUpperCase().includes("PC DISPLAY") || 
-            noPeralatan.toUpperCase().includes("PC OBS") || 
-            noPeralatan.toUpperCase().includes("PC AFTN") || 
-            noPeralatan.toUpperCase().includes("PC FCT") || 
-            noPeralatan.toUpperCase().includes("PC NATIONAL") || 
-            noPeralatan.toUpperCase().includes("PC MARITIM")) {
-          return "PC";
+    let category = '';
+      
+    try {
+      if (kode.includes('_')) {
+        const parts = kode.split('_');
+        if (parts.length >= 2 && parts[0].trim() !== '') {
+          category = parts[0].trim();
         }
       }
-      
-      // Jika kode kosong atau null
-      if (!kode || kode === '' || kode === 'null' || kode === 'undefined') {
-        console.log('Empty/null kode, returning Lain-lain');
-        return 'Lain-lain';
+      else if (kode.includes('-')) {
+        const parts = kode.split('-');
+        if (parts.length >= 2 && parts[0].trim() !== '') {
+          category = parts[0].trim();
+        }
       }
-
-      let category = '';
-      
-      // PERBAIKAN: Buat logika ekstraksi kategori yang lebih ketat dan konsisten
-      try {
-        // Method 1: Split dengan underscore (prioritas utama)
-        if (kode.includes('_')) {
-          const parts = kode.split('_');
-          if (parts.length >= 2 && parts[0].trim() !== '') {
-            category = parts[0].trim();
-          }
+      else if (kode.includes('.')) {
+        const parts = kode.split('.');
+        if (parts.length >= 2 && parts[0].trim() !== '') {
+          category = parts[0].trim();
         }
-        // Method 2: Split dengan dash
-        else if (kode.includes('-')) {
-          const parts = kode.split('-');
-          if (parts.length >= 2 && parts[0].trim() !== '') {
-            category = parts[0].trim();
-          }
+      }
+      else if (kode.includes(' ')) {
+        const parts = kode.split(' ');
+        if (parts.length >= 2 && parts[0].trim() !== '') {
+          category = parts[0].trim();
         }
-        // Method 3: Split dengan dot
-        else if (kode.includes('.')) {
-          const parts = kode.split('.');
-          if (parts.length >= 2 && parts[0].trim() !== '') {
-            category = parts[0].trim();
-          }
-        }
-        // Method 4: Split dengan space
-        else if (kode.includes(' ')) {
-          const parts = kode.split(' ');
-          if (parts.length >= 2 && parts[0].trim() !== '') {
-            category = parts[0].trim();
-          }
-        }
-        // Method 5: Regex untuk memisahkan huruf dari angka - DIPERBAIKI
-        else {
-          // Cari pola huruf di awal yang diikuti angka
-          const letterMatch = kode.match(/^([A-Za-z]+)(?=\d)/);
-          if (letterMatch && letterMatch[1] && letterMatch[1].length >= 2) {
-            category = letterMatch[1];
-          } else {
-            // Jika tidak ada pola huruf-angka yang jelas, coba ambil semua huruf di awal
-            const allLettersMatch = kode.match(/^([A-Za-z]+)/);
-            if (allLettersMatch && allLettersMatch[1] && allLettersMatch[1].length >= 2) {
-              category = allLettersMatch[1];
-            } else {
-              // Fallback: jika kode pendek atau tidak mengikuti pola, masukkan ke Lain-lain
-              console.log(`Kode "${kode}" tidak mengikuti pola yang dikenali, dikategorikan sebagai Lain-lain`);
-              return 'Lain-lain';
-            }
-          }
-        }
-        
-        // PERBAIKAN: Validasi kategori yang diekstrak
-        if (category && category.trim() !== '' && category.length >= 2) {
-          const finalCategory = category.toUpperCase().trim();
-          console.log(`SUCCESS: Kode "${kode}" -> Category "${finalCategory}"`);
-          return finalCategory;
+      }
+      else {
+        const letterMatch = kode.match(/^([A-Za-z]+)(?=\d)/);
+        if (letterMatch && letterMatch[1] && letterMatch[1].length >= 2) {
+          category = letterMatch[1];
         } else {
-          console.log(`INVALID CATEGORY: Kode "${kode}" menghasilkan kategori kosong/pendek, dikategorikan sebagai Lain-lain`);
-          return 'Lain-lain';
+          const allLettersMatch = kode.match(/^([A-Za-z]+)/);
+          if (allLettersMatch && allLettersMatch[1] && allLettersMatch[1].length >= 2) {
+            category = allLettersMatch[1];
+          } else {
+            return 'Lain-lain';
+          }
         }
-        
-      } catch (error) {
-        console.error(`Error processing kode "${kode}":`, error);
+      }
+      if (category && category.trim() !== '' && category.length >= 2) {
+        return category.toUpperCase().trim();
+      } else {
         return 'Lain-lain';
       }
-    };
+    } catch (error) {
+      return 'Lain-lain';
+    }
+  };
 
-    // TAMBAHAN: Fungsi untuk memvalidasi dan membersihkan kategori
-    const validateAndCleanCategory = (kategori) => {
-      if (!kategori || typeof kategori !== 'string') return 'Lain-lain';
+  const validateAndCleanCategory = (kategori) => {
+    if (!kategori || typeof kategori !== 'string') return 'Lain-lain';
       
-      const cleaned = kategori.toString().trim().toUpperCase();
+    const cleaned = kategori.toString().trim().toUpperCase();
       
-      // Jika kategori terlalu pendek atau hanya angka, masukkan ke Lain-lain
-      if (cleaned.length < 2 || /^\d+$/.test(cleaned)) {
-        return 'Lain-lain';
+    if (cleaned.length < 2 || /^\d+$/.test(cleaned)) {
+      return 'Lain-lain';
+    }
+      
+    return cleaned;
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(INSTRUMEN_API_URL);
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error! Status: ${response.status} - ${response.statusText}`
+        );
       }
-      
-      return cleaned;
-    };
-
-    // Fungsi untuk mengambil data dari API (GET)
-    // Fungsi untuk mengambil data dari API (GET) - DIPERBAIKI
-const fetchData = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const response = await fetch(INSTRUMEN_API_URL);
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP error! Status: ${response.status} - ${response.statusText}`
+      const apiResponse = await response.json();
+      if (apiResponse.success && Array.isArray(apiResponse.data)) {
+        setInstrumenData(apiResponse.data);
+        const categories = new Set();
+        apiResponse.data.forEach(instrumen => {
+          const category = getFilterCategory(instrumen);
+          if (category) {
+            categories.add(category);
+          }
+        });
+        const sortedCategories = Array.from(categories).sort();
+        setKodeCategoryOptions(sortedCategories);
+      } else {
+        throw new Error(
+          apiResponse.message || "Invalid data format received from API. Expected an array."
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching instrumen data:", err);
+      setError(
+        err.message ||
+          "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
       );
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const data = await response.json();
+  // NEW: Function to upload file to Supabase Storage
+  const uploadFileToSupabase = async (file) => {
+    if (!file) return null;
 
-    if (Array.isArray(data)) {
-      setInstrumenData(data);
+    setIsUploading(true);
+    const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+    const bucketName = 'identitas'; // Use your Supabase bucket name
 
-      // Debug: Log data untuk melihat struktur kode
-      console.log('Sample data for debugging:', data.slice(0, 3));
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, file);
 
-      // PERBAIKAN: Buat kategori dengan logika yang sama seperti asli, tapi konsisten
-      const categories = new Set();
-      data.forEach(instrumen => {
-        const category = getFilterCategory(instrumen);
-        // PERBAIKAN: Tambahkan semua kategori, termasuk yang hanya 1 item
-        if (category) {
-          categories.add(category);
-          console.log(`Kode: ${instrumen.Kode} -> Kategori: ${category}`);
-        }
-      });
-      
-      const sortedCategories = Array.from(categories).sort();
-      console.log('Available categories:', sortedCategories);
-      setKodeCategoryOptions(sortedCategories);
-      
-    } else {
-      throw new Error(
-        "Invalid data format received from API. Expected an array."
-      );
+      if (error) {
+        throw error;
+      }
+
+      const publicUrl = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(fileName).data.publicUrl;
+
+      setIsUploading(false);
+      return publicUrl;
+    } catch (error) {
+      setIsUploading(false);
+      console.error('Error uploading file to Supabase:', error);
+      Swal.fire('Error Upload!', `Failed to upload photo: ${error.message}`, 'error');
+      return null;
     }
-  } catch (err) {
-    console.error("Error fetching instrumen data:", err);
-    setError(
-      err.message ||
-        "Gagal mengambil data instrumen. Silakan periksa koneksi atau API."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-  // ADD MODAL IMAGE FUNCTIONS
+  // NEW: Function to delete file from Supabase Storage
+  const deleteFileFromSupabase = async (fileUrl) => {
+    if (!fileUrl || !fileUrl.includes('supabase.co')) return;
+
+    const bucketName = 'identitas';
+    const fileName = fileUrl.split(`${bucketName}/`)[1];
+
+    try {
+      const { error } = await supabase.storage.from(bucketName).remove([fileName]);
+      if (error) {
+        throw error;
+      }
+      console.log('File deleted from Supabase:', fileName);
+    } catch (error) {
+      console.error('Error deleting file from Supabase:', error);
+      Swal.fire('Error Delete!', `Failed to delete old photo: ${error.message}`, 'error');
+    }
+  };
+
+  // Add Modal Image Functions
   const handleImageSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        Swal.fire('Error!', 'Harap pilih file gambar yang valid.', 'error');
+        Swal.fire('Error!', 'Please select a valid image file.', 'error');
         return;
       }
-      
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        Swal.fire('Error!', 'Ukuran gambar tidak boleh lebih dari 5MB.', 'error');
+        Swal.fire('Error!', 'Image size cannot be more than 5MB.', 'error');
         return;
       }
-
       setSelectedImage(file);
-      
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target.result);
@@ -270,32 +273,25 @@ const fetchData = async () => {
   const handleImageRemove = () => {
     setSelectedImage(null);
     setImagePreview(null);
-    // Reset file input
-    const fileInput = document.getElementById('imageUpload');
+    const fileInput = document.getElementById('image-upload');
     if (fileInput) {
       fileInput.value = '';
     }
   };
 
-  // EDIT IMAGE FUNCTIONS - NEW
+  // Edit Image Functions
   const handleEditImageSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        Swal.fire('Error!', 'Harap pilih file gambar yang valid.', 'error');
+        Swal.fire('Error!', 'Please select a valid image file.', 'error');
         return;
       }
-      
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        Swal.fire('Error!', 'Ukuran gambar tidak boleh lebih dari 5MB.', 'error');
+        Swal.fire('Error!', 'Image size cannot be more than 5MB.', 'error');
         return;
       }
-
       setEditSelectedImage(file);
-      
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setEditImagePreview(e.target.result);
@@ -308,7 +304,6 @@ const fetchData = async () => {
     setEditSelectedImage(null);
     setEditImagePreview(null);
     setIsEditingImage(false);
-    // Reset file input
     const fileInput = document.getElementById('editImageUpload');
     if (fileInput) {
       fileInput.value = '';
@@ -319,7 +314,6 @@ const fetchData = async () => {
     setEditSelectedImage(null);
     setEditImagePreview(null);
     setIsEditingImage(false);
-    // Reset file input
     const fileInput = document.getElementById('editImageUpload');
     if (fileInput) {
       fileInput.value = '';
@@ -330,24 +324,13 @@ const fetchData = async () => {
     setIsEditingImage(true);
   };
 
-  // Convert image to base64 for API submission
-  const convertImageToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-
   useEffect(() => {
     if (userRole === "admin" || userRole === "user") {
       fetchData();
     }
   }, [userRole]);
 
-  // Fungsi untuk mengirim permintaan POST ke Apps Script
+  // Function to send POST request to Apps Script
   const sendApiRequest = async (action, payload) => {
     try {
       const response = await fetch(INSTRUMEN_API_URL, {
@@ -355,7 +338,7 @@ const fetchData = async () => {
         method: "POST",
         body: JSON.stringify({ action, ...payload }),
         headers: {
-          "Content-Type": "text/plain;charset=utf-8", // Penting agar Apps Script dapat mengurai JSON
+          "Content-Type": "text/plain;charset=utf-8",
         },
       });
 
@@ -377,73 +360,55 @@ const fetchData = async () => {
   const handleCategorySelectChange = (event) => {
     setSelectedKodeCategory(event.target.value);
     setSelectedInstrumen(null);
-    // Reset delete mode when category changes
     setIsDeleteMode(false);
     setSelectedForDelete(new Set());
   };
 
   const handleBackToList = () => {
-    console.log('Tombol kembali diklik');
+    console.log('Back button clicked');
     setSelectedInstrumen(null);
     setIsEditing(false);
     setEditData({});
     setIsDeleteMode(false);
     setSelectedForDelete(new Set());
-    // Reset edit image state
     setEditSelectedImage(null);
     setEditImagePreview(null);
     setIsEditingImage(false);
   };
 
-  // PERBAIKAN: Update fungsi untuk membuat kategori options
-const updateKodeCategoryOptions = (data) => {
-  const categoryCount = new Map();
-  
-  data.forEach(instrumen => {
-    const category = getFilterCategory(instrumen);
-    const validatedCategory = validateAndCleanCategory(category);
-    
-    if (categoryCount.has(validatedCategory)) {
-      categoryCount.set(validatedCategory, categoryCount.get(validatedCategory) + 1);
-    } else {
-      categoryCount.set(validatedCategory, 1);
+  const updateKodeCategoryOptions = (data) => {
+    const categoryCount = new Map();
+      
+    data.forEach(instrumen => {
+      const category = getFilterCategory(instrumen);
+      const validatedCategory = validateAndCleanCategory(category);
+      if (categoryCount.has(validatedCategory)) {
+        categoryCount.set(validatedCategory, categoryCount.get(validatedCategory) + 1);
+      } else {
+        categoryCount.set(validatedCategory, 1);
+      }
+    });
+      
+    const filteredCategories = Array.from(categoryCount.entries())
+      .filter(([category, count]) => count > 1 || category === 'Lain-lain')
+      .map(([category]) => category)
+      .sort();
+      
+    setKodeCategoryOptions(filteredCategories);
+  };
+
+  const filteredInstrumenData = useMemo(() => {
+    if (!selectedKodeCategory) {
+      return instrumenData;
     }
-  });
-  
-  // Hapus kategori yang hanya memiliki 1 item kecuali 'Lain-lain'
-  const filteredCategories = Array.from(categoryCount.entries())
-    .filter(([category, count]) => count > 1 || category === 'Lain-lain')
-    .map(([category]) => category)
-    .sort();
-  
-  console.log('Final categories with counts:', Array.from(categoryCount.entries()));
-  setKodeCategoryOptions(filteredCategories);
-};
+    const filtered = instrumenData.filter(instrumen => {
+      const category = getFilterCategory(instrumen);
+      const validatedCategory = validateAndCleanCategory(category);
+      return validatedCategory === selectedKodeCategory;
+    });
+    return filtered;
+  }, [instrumenData, selectedKodeCategory]);
 
-// PERBAIKAN: Update filteredInstrumenData dengan validasi tambahan
-const filteredInstrumenData = useMemo(() => {
-  if (!selectedKodeCategory) {
-    console.log('No category selected, showing all data:', instrumenData.length);
-    return instrumenData;
-  }
-  
-  const filtered = instrumenData.filter(instrumen => {
-    const category = getFilterCategory(instrumen);
-    const validatedCategory = validateAndCleanCategory(category);
-    const matches = validatedCategory === selectedKodeCategory;
-    
-    // Debug logging yang lebih detail
-    console.log(`Item: "${instrumen.Peralatan}" - Kode: "${instrumen.Kode}" -> Raw Category: "${category}" -> Validated: "${validatedCategory}" -> Selected: "${selectedKodeCategory}" -> Matches: ${matches}`);
-    
-    return matches;
-  });
-  
-  console.log(`Filtered results for "${selectedKodeCategory}":`, filtered.length, 'items');
-  console.log('Filtered items:', filtered.map(item => ({ kode: item.Kode, peralatan: item.Peralatan })));
-  return filtered;
-}, [instrumenData, selectedKodeCategory]);
-
-  // Toggle sidebar untuk mobile
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -454,7 +419,6 @@ const filteredInstrumenData = useMemo(() => {
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    // Reset form data with updated structure
     setFormData({
       NoPeralatan: '',
       Peralatan: '',
@@ -476,7 +440,6 @@ const filteredInstrumenData = useMemo(() => {
       'Kalibrasi Terakhir': '',
       Keterangan: ''
     });
-    // Reset image state
     handleImageRemove();
   };
 
@@ -513,10 +476,8 @@ const filteredInstrumenData = useMemo(() => {
 
   const handleSelectAll = () => {
     if (selectedForDelete.size === filteredInstrumenData.length) {
-      // Unselect all
       setSelectedForDelete(new Set());
     } else {
-      // Select all
       const allKodes = new Set(filteredInstrumenData.map(instrumen => instrumen.Kode));
       setSelectedForDelete(allKodes);
     }
@@ -525,8 +486,8 @@ const filteredInstrumenData = useMemo(() => {
   const handleConfirmDelete = async () => {
     if (selectedForDelete.size === 0) {
       await Swal.fire({
-        title: 'Peringatan!',
-        text: 'Pilih minimal satu instrumen untuk dihapus.',
+        title: 'Warning!',
+        text: 'Select at least one instrument to delete.',
         icon: 'warning',
         confirmButtonText: 'OK'
       });
@@ -534,43 +495,49 @@ const filteredInstrumenData = useMemo(() => {
     }
 
     const result = await Swal.fire({
-      title: 'Konfirmasi Hapus',
-      text: `Apakah Anda yakin ingin menghapus ${selectedForDelete.size} instrumen yang dipilih?`,
+      title: 'Delete Confirmation',
+      text: `Are you sure you want to delete ${selectedForDelete.size} selected instrument(s)?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, Hapus',
-      cancelButtonText: 'Batal'
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel'
     });
 
     if (result.isConfirmed) {
       try {
         setIsSubmitting(true);
+        const instrumentsToDelete = instrumenData.filter(instrumen => selectedForDelete.has(instrumen.Kode));
         
-        // Kirim permintaan DELETE untuk setiap instrumen yang dipilih
+        // Delete images from Supabase first
+        const deleteImagePromises = instrumentsToDelete
+          .filter(instrumen => instrumen.FotoURL)
+          .map(instrumen => deleteFileFromSupabase(instrumen.FotoURL));
+        await Promise.all(deleteImagePromises);
+
+        // Then delete data from Google Sheets
         const deletePromises = Array.from(selectedForDelete).map(kode =>
           sendApiRequest("delete", { Kode: kode })
         );
         await Promise.all(deletePromises);
 
         await Swal.fire({
-          title: 'Berhasil!',
-          text: `${selectedForDelete.size} instrumen berhasil dihapus.`,
+          title: 'Success!',
+          text: `${selectedForDelete.size} instrument(s) successfully deleted.`,
           icon: 'success',
           confirmButtonText: 'OK'
         });
 
-        // Reset delete mode dan muat ulang data
         setIsDeleteMode(false);
         setSelectedForDelete(new Set());
         fetchData();
-        
+          
       } catch (error) {
         console.error('Error deleting instruments:', error);
         await Swal.fire({
           title: 'Error!',
-          text: `Gagal menghapus instrumen: ${error.message}. Silakan coba lagi.`,
+          text: `Failed to delete instruments: ${error.message}. Please try again.`,
           icon: 'error',
           confirmButtonText: 'OK'
         });
@@ -595,46 +562,57 @@ const filteredInstrumenData = useMemo(() => {
   };
 
   const handleSaveEdit = async () => {
-    // Validasi dasar
     if (!editData.Kode || !editData.Peralatan) {
-      await Swal.fire('Peringatan!', 'Kode dan Peralatan tidak boleh kosong.', 'warning');
+      await Swal.fire('Warning!', 'Kode and Peralatan cannot be empty.', 'warning');
+      return;
+    }
+    if (isUploading) {
+      await Swal.fire('Please Wait', 'Photo upload is in progress...', 'info');
       return;
     }
 
     const result = await Swal.fire({
-      title: 'Konfirmasi Edit',
-      text: 'Apakah Anda yakin ingin menyimpan perubahan?',
+      title: 'Edit Confirmation',
+      text: 'Are you sure you want to save the changes?',
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Ya, Simpan',
-      cancelButtonText: 'Batal'
+      confirmButtonText: 'Yes, Save',
+      cancelButtonText: 'Cancel'
     });
 
     if (result.isConfirmed) {
       try {
         setIsSubmitting(true);
+        let fotoUrl = selectedInstrumen.FotoURL || '';
 
-        // Payload untuk edit: kirim semua field yang relevan
-        let payload = {
-          action: "edit",
-          originalKode: selectedInstrumen.Kode, // Kode asli untuk identifikasi baris
-          ...editData // Semua data yang diedit
-        };
-
-        // If image is selected for edit, convert to base64 and add to payload
+        // If a new image is selected for edit
         if (editSelectedImage) {
-          const imageBase64 = await convertImageToBase64(editSelectedImage);
-          payload.FotoBase64 = imageBase64;
-          payload.FotoName = editSelectedImage.name;
+          // Delete old image from Supabase
+          if (selectedInstrumen.FotoURL) {
+            await deleteFileFromSupabase(selectedInstrumen.FotoURL);
+          }
+          // Upload new image
+          fotoUrl = await uploadFileToSupabase(editSelectedImage);
+          if (!fotoUrl) {
+            setIsSubmitting(false);
+            return;
+          }
         }
 
+        let payload = {
+          action: "edit",
+          originalKode: selectedInstrumen.Kode,
+          ...editData,
+          FotoURL: fotoUrl // Add the new or existing photo URL to the payload
+        };
+        
         await sendApiRequest("edit", payload);
 
         await Swal.fire({
-          title: 'Berhasil!',
-          text: 'Data instrumen berhasil diperbarui.',
+          title: 'Success!',
+          text: 'Instrument data successfully updated.',
           icon: 'success',
           confirmButtonText: 'OK'
         });
@@ -643,20 +621,13 @@ const filteredInstrumenData = useMemo(() => {
         setIsEditingImage(false);
         setEditSelectedImage(null);
         setEditImagePreview(null);
-        fetchData(); // Muat ulang data setelah perubahan
-        
-        // Update selectedInstrumen with new data
-        const updatedInstrumen = { ...editData };
-        if (editSelectedImage) {
-          // If new image was uploaded, we should wait for the data to be fetched
-          // The image URL will be updated from the server response
-        }
-        setSelectedInstrumen(updatedInstrumen);
+        fetchData();
+        setSelectedInstrumen({ ...editData, FotoURL: fotoUrl });
       } catch (error) {
         console.error('Error updating instrument:', error);
         await Swal.fire({
           title: 'Error!',
-          text: `Gagal memperbarui data instrumen: ${error.message}. Silakan coba lagi.`,
+          text: `Failed to update instrument data: ${error.message}. Please try again.`,
           icon: 'error',
           confirmButtonText: 'OK'
         });
@@ -677,58 +648,62 @@ const filteredInstrumenData = useMemo(() => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validasi dasar - update validation for new field order
     if (!formData.Peralatan || !formData.Kode) {
-      await Swal.fire('Peringatan!', 'Peralatan dan Kode harus diisi.', 'warning');
+      await Swal.fire('Warning!', 'Peralatan and Kode must be filled.', 'warning');
       return;
     }
-    
-    // Show confirmation dialog before adding
+    if (isUploading) {
+      await Swal.fire('Please Wait', 'Photo upload is in progress...', 'info');
+      return;
+    }
+
     const result = await Swal.fire({
-      title: 'Konfirmasi Tambah Instrumen',
-      text: 'Apakah data instrumen yang akan ditambahkan sudah sesuai?',
+      title: 'Add Instrument Confirmation',
+      text: 'Is the instrument data you are about to add correct?',
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Ya, Tambahkan',
-      cancelButtonText: 'Batal'
+      confirmButtonText: 'Yes, Add',
+      cancelButtonText: 'Cancel'
     });
 
     if (result.isConfirmed) {
       setIsSubmitting(true);
       
       try {
-        // Prepare payload for add: send all formData
+        let fotoUrl = '';
+        if (selectedImage) {
+          fotoUrl = await uploadFileToSupabase(selectedImage);
+          if (!fotoUrl) {
+            setIsSubmitting(false);
+            return;
+          }
+        }
+        
         let payload = {
           action: "add",
-          ...formData
+          ...formData,
+          FotoURL: fotoUrl // Add the photo URL to the payload
         };
-
-        // If image is selected, convert to base64 and add to payload
-        if (selectedImage) {
-          const imageBase64 = await convertImageToBase64(selectedImage);
-          payload.FotoBase64 = imageBase64;
-          payload.FotoName = selectedImage.name;
-        }
 
         await sendApiRequest("add", payload);
 
         await Swal.fire({
-          title: 'Berhasil!',
-          text: 'Data instrumen berhasil ditambahkan.',
+          title: 'Success!',
+          text: 'Instrument data successfully added.',
           icon: 'success',
           confirmButtonText: 'OK'
         });
 
         handleCloseAddModal();
-        fetchData(); // Muat ulang data setelah penambahan
-        
+        fetchData();
+          
       } catch (error) {
         console.error('Error adding instrument:', error);
         await Swal.fire({
           title: 'Error!',
-          text: `Gagal menambahkan data instrumen: ${error.message}. Silakan coba lagi.`,
+          text: `Failed to add instrument data: ${error.message}. Please try again.`,
           icon: 'error',
           confirmButtonText: 'OK'
         });
@@ -741,7 +716,7 @@ const filteredInstrumenData = useMemo(() => {
   const renderEditableField = (label, fieldName, value, type = 'text') => {
     const isCurrentlyEditing = isEditing;
     const currentValue = isCurrentlyEditing ? editData[fieldName] || '' : value || '';
-    
+      
     return (
       <div className="bg-white p-2 sm:p-3 rounded border-l-4 border-blue-500">
         <span className="font-medium text-black block sm:inline">{label}:</span>
@@ -805,7 +780,7 @@ const filteredInstrumenData = useMemo(() => {
           <Sidebar />
         </div>
 
-        {/* Overlay untuk mobile ketika sidebar terbuka */}
+        {/* Overlay for mobile when sidebar is open */}
         {isSidebarOpen && (
           <div 
             className="lg:hidden fixed inset-0 bg-black/50 bg-opacity-50 z-40"
@@ -815,7 +790,6 @@ const filteredInstrumenData = useMemo(() => {
 
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          {/* Tombol Kembali hanya ditampilkan ketika TIDAK sedang editing */}
           {selectedInstrumen && !isEditing && !isDeleteMode && (
             <button
               onClick={handleBackToList}
@@ -838,7 +812,7 @@ const filteredInstrumenData = useMemo(() => {
             </div>
           )}
 
-          {/* Dropdown untuk memilih kategori instrumen */}
+          {/* Dropdown for selecting instrument category */}
           <div className="mb-4 sm:mb-6 md:mb-2 mx-1 sm:mx-2 lg:mx-4 xl:mx-auto max-w-7xl">
             <div className="w-full">
               
@@ -848,7 +822,7 @@ const filteredInstrumenData = useMemo(() => {
                   Filter Berdasarkan Kategori Kode:
                 </label>
                 
-                {/* Filter dan Button Container */}
+                {/* Filter and Button Container */}
                 <div className="flex flex-row items-center gap-3 sm:gap-4 w-full lg:flex-1">
                   {/* Select Dropdown */}
                    <select
@@ -869,7 +843,7 @@ const filteredInstrumenData = useMemo(() => {
                   
                   {/* Button Group */}
                   <div className="flex items-center gap-0 sm:gap-0 flex-shrink-0">
-                    {/* Add Button - Hanya tampil di halaman utama */}
+                    {/* Add Button - Only show on the main page */}
                     {!selectedInstrumen && userRole === "admin" && (
                       <button 
                         className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 rounded-lg transition-colors group"
@@ -933,22 +907,20 @@ const filteredInstrumenData = useMemo(() => {
           )}
 
           {selectedInstrumen ? (
-            // Detail instrumen yang dipilih
+            // Selected instrument details
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 md:p-6 shadow-md mb-4 sm:mb-6 md:mb-8 w-full max-w-6xl mx-auto">
               <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-                {/* Bagian Foto */}
+                {/* Photo Section */}
                 <div className="flex-1 lg:flex-none lg:w-88 xl:w-88 flex flex-col items-center justify-center rounded-lg p-3 lg:p-4">
                   {/* Image Display */}
                   <div className="mb-3">
                     {editImagePreview ? (
-                      // Show new image preview when editing
                       <img
                         src={editImagePreview}
                         alt={selectedInstrumen.Peralatan}
                         className="max-w-full h-auto rounded-lg max-h-50 lg:max-h-50"
                       />
                     ) : selectedInstrumen.FotoURL ? (
-                      // Show current image
                       <img
                         src={selectedInstrumen.FotoURL}
                         alt={selectedInstrumen.Peralatan}
@@ -959,7 +931,6 @@ const filteredInstrumenData = useMemo(() => {
                         }}
                       />
                     ) : (
-                      // Show placeholder when no image
                       <div className="flex items-center justify-center w-50 lg:w-80 h-48 lg:h-76 bg-gray-300 rounded-lg">
                         <svg className="w-85 h-85 lg:w-80 lg:h-80 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19l3.5-4.5 2.5 3.01L14.5 12l4.5 7H5z"/>
@@ -972,7 +943,6 @@ const filteredInstrumenData = useMemo(() => {
                   {userRole === "admin" && isEditing && (
                     <div className="w-full space-y-2">
                       {!isEditingImage ? (
-                        // Edit Image Button
                         <button
                           onClick={handleStartEditImage}
                           className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium min-h-[4px] sm:min-h-auto  border-0"
@@ -981,7 +951,6 @@ const filteredInstrumenData = useMemo(() => {
                           Ubah Foto
                         </button>
                       ) : (
-                        // Image Upload Controls
                         <div className="space-y-2">
                           <input
                             type="file"
@@ -1027,22 +996,21 @@ const filteredInstrumenData = useMemo(() => {
                     <h3 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-semibold text-black text-center break-words flex-1">
                       {selectedInstrumen.Peralatan}
                     </h3>
-                    {/* Edit Button */}
                     {userRole === "admin" && (
                       <div className="flex items-center gap-2 -ml-9">
                         {isEditing ? (
                           <>
                             <button
                               onClick={handleSaveEdit}
-                              disabled={isSubmitting}
+                              disabled={isSubmitting || isUploading}
                               className="flex items-center gap-1 text-blue-500 rounded hover:bg-green-200 transition-colors disabled:opacity-50 text-sm"
                             >
                               <FaCheck className="w-4 h-3 sm:w-4 sm:h-4" />
-                              {isSubmitting ? 'Menyimpan...' : ''}
+                              {isSubmitting || isUploading ? 'Menyimpan...' : ''}
                             </button>
                             <button
                               onClick={handleCancelEdit}
-                              disabled={isSubmitting}
+                              disabled={isSubmitting || isUploading}
                               className="flex items-center gap-1 text-red-500 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
                             >
                               <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -1085,8 +1053,6 @@ const filteredInstrumenData = useMemo(() => {
               </div>
             </div>
           ) : (
-            
-            // Tabel/Card daftar semua instrumen (atau yang difilter)
             <div className="flex justify-center px-2 sm:px-4 lg:px-6 xl:px-8">
               {/* Desktop Table View (lg and above) */}
               <div className="hidden lg:block bg-white  rounded-lg shadow-md overflow-hidden max-w-8xl">
@@ -1132,14 +1098,14 @@ const filteredInstrumenData = useMemo(() => {
                         </tr>
                       ) : filteredInstrumenData.length === 0 ? (
                         <tr>
-                          {/* <td colSpan={isDeleteMode ? 5 : 4} className="px-6 py-8 text-center text-sm text-gray-500">
-                            <div className="flex flex-col items-center">
-                              <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                              </svg>
-                              Data instrumen tidak tersedia
-                            </div>
-                          </td> */}
+                          <td colSpan={isDeleteMode ? 5 : 4} className="px-6 py-8 text-center text-sm text-gray-500">
+                             <div className="flex flex-col items-center">
+                                <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                Data instrumen tidak tersedia
+                             </div>
+                           </td>
                         </tr>
                       ) : (
                         filteredInstrumenData.map((instrumen) => (
@@ -1367,240 +1333,241 @@ const filteredInstrumenData = useMemo(() => {
                 )}
               </div>
             </div> 
-        )}
+          )}
 
-      </main>
-    </div>
-    
-    {/* Add Instrument Modal */}
-    {isAddModalOpen && (
-      <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[55vh] sm:max-h-[90vh] overflow-y-auto">
-          {/* Modal Header */}
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-            <h3 className="text-sm sm:text-lg md:text-base font-semibold text-black w-full text-center">
-              Masukkan Data Instrumen
-            </h3>
-            <button
-              onClick={handleCloseAddModal}
-              className="text-gray-400 hover:text-gray-600 transition-colors ml-3 flex-shrink-0"
-            >
-              <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-          </div>
+        </main>
+      </div>
+      
+      {/* Add Instrument Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[55vh] sm:max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <h3 className="text-sm sm:text-lg md:text-base font-semibold text-black w-full text-center">
+                Masukkan Data Instrumen
+              </h3>
+              <button
+                onClick={handleCloseAddModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors ml-3 flex-shrink-0"
+              >
+                <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            </div>
 
-          {/* Modal Body */}
-          <div className="p-4 sm:p-6">
-            <form onSubmit={handleSubmit}>
-              {/* Image Upload Section - Full width at top */}
-              <div className="mb-4 sm:mb-4 p-3 sm:p-4 bg-gray-50 rounded-md sm:rounded-lg border border-gray-200 sm:border-gray-300">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-3">
-                  <div className="flex items-center gap-2">
-                    <FaImage className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Upload Foto Instrumen
-                  </div>
-                </label>
-                
-                {/* Image Upload Area */}
-                <div className="space-y-4">
-                  {/* File Input */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                    <input
-                      type="file"
-                      id="image-upload"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="image-upload"
-                      className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-blue-500 text-white rounded-md sm:rounded-lg hover:bg-blue-600 cursor-pointer transition-colors text-sm font-medium min-h-[44px] sm:min-h-auto border-0"
-                    >
-                      <FaCamera className="w-4 h-4 sm:w-5 sm:h-5" />
-                      Pilih Gambar
-                    </label>
-                    
-                    {selectedImage && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="px-4 py-3 sm:py-2 bg-red-500 text-white rounded-md sm:rounded-lg hover:bg-red-600 transition-colors text-sm font-medium min-h-[44px] sm:min-h-auto border-0"
-                      >
-                        Hapus
-                      </button>
-                    )}
-                  </div>
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6">
+              <form onSubmit={handleSubmit}>
+                {/* Image Upload Section - Full width at top */}
+                <div className="mb-4 sm:mb-4 p-3 sm:p-4 bg-gray-50 rounded-md sm:rounded-lg border border-gray-200 sm:border-gray-300">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-3">
+                    <div className="flex items-center gap-2">
+                      <FaImage className="w-4 h-4 sm:w-5 sm:h-5" />
+                      Upload Foto Instrumen
+                    </div>
+                  </label>
                   
-                  {/* Image Preview */}
-                  {imagePreview && (
-                    <div className="flex justify-center">
-                      <div className="relative w-full max-w-sm">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full h-48 sm:h-64 object-cover rounded-md sm:rounded-lg border border-gray-200 sm:border-gray-300 shadow-sm"
-                        />
+                  {/* Image Upload Area */}
+                  <div className="space-y-4">
+                    {/* File Input */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                      <input
+                        type="file"
+                        id="image-upload"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="image-upload"
+                        className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-blue-500 text-white rounded-md sm:rounded-lg hover:bg-blue-600 cursor-pointer transition-colors text-sm font-medium min-h-[44px] sm:min-h-auto border-0"
+                      >
+                        <FaCamera className="w-4 h-4 sm:w-5 sm:h-5" />
+                        Pilih Gambar
+                      </label>
+                      
+                      {selectedImage && (
                         <button
                           type="button"
-                          onClick={handleRemoveImage}
-                          className="absolute -top-2 -right-2 w-8 h-8 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors touch-manipulation"
-                          aria-label="Hapus gambar"
+                          onClick={handleImageRemove}
+                          className="px-4 py-3 sm:py-2 bg-red-500 text-white rounded-md sm:rounded-lg hover:bg-red-600 transition-colors text-sm font-medium min-h-[44px] sm:min-h-auto border-0"
                         >
-                          <IoClose className="w-5 h-5 sm:w-4 sm:h-4" />
+                          Hapus
                         </button>
+                      )}
+                    </div>
+                    
+                    {/* Image Preview */}
+                    {imagePreview && (
+                      <div className="flex justify-center">
+                        <div className="relative w-full max-w-sm">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-48 sm:h-64 object-cover rounded-md sm:rounded-lg border border-gray-200 sm:border-gray-300 shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleImageRemove}
+                            className="absolute -top-2 -right-2 w-8 h-8 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors touch-manipulation"
+                            aria-label="Hapus gambar"
+                          >
+                            <IoClose className="w-5 h-5 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Upload info */}
+                    <p className="text-xs sm:text-sm text-gray-500 text-center leading-relaxed">
+                      Format yang didukung: JPEG, JPG, PNG, GIF.<br className="sm:hidden" />
+                      <span className="hidden sm:inline"> </span>Maksimal 5MB.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Desktop: Two-column layout with proper alignment */}
+                <div className="hidden lg:block">
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-6">
+                      {/* Row 1 - No Peralatan */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-blue-50 py-3 px-4 rounded-md">
+                          No Peralatan
+                        </label>
+                        <input
+                          type="text"
+                          name="NoPeralatan"
+                          value={formData.NoPeralatan}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan no peralatan"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      {/* Row 2 - Peralatan */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
+                          Peralatan <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="Peralatan"
+                          value={formData.Peralatan}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan nama peralatan"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        />
+                      </div>
+                      
+                      {/* Row 3 - Kode */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-blue-50 py-3 px-4 rounded-md">
+                          Kode <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="Kode"
+                          value={formData.Kode}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan kode instrumen"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        />
+                      </div>
+                      
+                      {/* Row 4 - Tahun Pengadaan */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
+                          Tahun Pengadaan
+                        </label>
+                        <input
+                          type="text"
+                          name="Tahun Pengadaan"
+                          value={formData["Tahun Pengadaan"]}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan tahun pengadaan"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      {/* Row 5 - Nama Pemilik Alat */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
+                          Nama Pemilik Alat
+                        </label>
+                        <input
+                          type="text"
+                          name="Nama Pemilik Alat"
+                          value={formData["Nama Pemilik Alat"]}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan nama pemilik alat"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      {/* Row 6 - Lokasi */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
+                          Lokasi
+                        </label>
+                        <input
+                          type="text"
+                          name="Lokasi"
+                          value={formData.Lokasi}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan lokasi"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      {/* Row 7 - Jenis Alat */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
+                          Jenis Alat
+                        </label>
+                        <input
+                          type="text"
+                          name="Jenis Alat"
+                          value={formData["Jenis Alat"]}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan jenis alat"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      {/* Row 8 - Type */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
+                          Type
+                        </label>
+                        <input
+                          type="text"
+                          name="Type"
+                          value={formData.Type}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan type"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      {/* Row 9 - Produsen */}
+                      <div className="grid grid-cols-5 gap-4 items-center">
+                        <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
+                          Produsen
+                        </label>
+                        <input
+                          type="text"
+                          name="Produsen"
+                          value={formData.Produsen}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan produsen"
+                          className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Upload info */}
-                  <p className="text-xs sm:text-sm text-gray-500 text-center leading-relaxed">
-                    Format yang didukung: JPEG, JPG, PNG, GIF.<br className="sm:hidden" />
-                    <span className="hidden sm:inline"> </span>Maksimal 5MB.
-                  </p>
-                </div>
-              </div>
-              {/* Desktop: Two-column layout with proper alignment */}
-              <div className="hidden lg:block">
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Left Column */}
-                  <div className="space-y-6">
-                    {/* Row 1 - No Peralatan */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-blue-50 py-3 px-4 rounded-md">
-                        No Peralatan
-                      </label>
-                      <input
-                        type="text"
-                        name="NoPeralatan"
-                        value={formData.NoPeralatan}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan no peralatan"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    {/* Row 2 - Peralatan */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
-                        Peralatan <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="Peralatan"
-                        value={formData.Peralatan}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan nama peralatan"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    {/* Row 3 - Kode */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-blue-50 py-3 px-4 rounded-md">
-                        Kode <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="Kode"
-                        value={formData.Kode}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan kode instrumen"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    {/* Row 4 - Tahun Pengadaan */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
-                        Tahun Pengadaan
-                      </label>
-                      <input
-                        type="text"
-                        name="Tahun Pengadaan"
-                        value={formData["Tahun Pengadaan"]}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan tahun pengadaan"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    {/* Row 5 - Nama Pemilik Alat */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
-                        Nama Pemilik Alat
-                      </label>
-                      <input
-                        type="text"
-                        name="Nama Pemilik Alat"
-                        value={formData["Nama Pemilik Alat"]}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan nama pemilik alat"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    {/* Row 6 - Lokasi */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
-                        Lokasi
-                      </label>
-                      <input
-                        type="text"
-                        name="Lokasi"
-                        value={formData.Lokasi}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan lokasi"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    {/* Row 7 - Jenis Alat */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
-                        Jenis Alat
-                      </label>
-                      <input
-                        type="text"
-                        name="Jenis Alat"
-                        value={formData["Jenis Alat"]}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan jenis alat"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    {/* Row 8 - Type */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
-                        Type
-                      </label>
-                      <input
-                        type="text"
-                        name="Type"
-                        value={formData.Type}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan type"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    {/* Row 9 - Produsen */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <label className="col-span-2 text-sm font-medium text-gray-700 bg-gray-50 py-3 px-4 rounded-md">
-                        Produsen
-                      </label>
-                      <input
-                        type="text"
-                        name="Produsen"
-                        value={formData.Produsen}
-                        onChange={handleInputChange}
-                        placeholder="Masukkan produsen"
-                        className="col-span-3 py-3 px-4 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
 
                     {/* Right Column */}
                     <div className="space-y-6">
@@ -2024,8 +1991,9 @@ const filteredInstrumenData = useMemo(() => {
                 <button
                   type="submit"
                   className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-green-600 text-white rounded sm:rounded-md hover:bg-green-700 transition-colors"
+                  disabled={isSubmitting || isUploading}
                 >
-                  Tambah
+                  {isSubmitting || isUploading ? 'Menambahkan...' : 'Tambah'}
                 </button>
               </div>
               </form>
