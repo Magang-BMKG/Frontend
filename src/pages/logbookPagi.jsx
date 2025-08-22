@@ -917,13 +917,13 @@ const LogbookPagiPage = () => {
                             </div>
                         </div>
 
-                        <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-bold mb-6 md:mb-8">
+                        <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-bold mb-2 md:mb-8">
                             Log Book Pagi
                         </h2>
 
                         {userRole && (
-                            <div className="text-center text-[15px] md:text-2xl xl:text-3xl mb-4 text-gray-600">
-                                Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+                            <div className="text-center text-[11px] md:text-2xl xl:text-3xl mb-12 text-gray-600">
+                                Anda login sebagai: <span className="font-bold uppercase text-[10px] sm:text-base lg:text-lg">{userRole}</span>
                             </div>
                         )}
 
@@ -933,10 +933,10 @@ const LogbookPagiPage = () => {
                                 {/* Tombol Sejajar - Filter di kiri, Grafik dan Tambah di kanan */}
                                 <div className="flex flex-col sm:flex-row items-center justify-between grid-cols-3 sm:grid-cols-3 gap-3 mb-4">
                                     {/* Tombol Filter dan Reset */}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 mb-2">
                                         <button
                                             onClick={() => setShowFilter(!showFilter)}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all${
+                                            className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition-all${
                                                 hasActiveFilters 
                                                     ? 'bg-blue-500 text-white border-blue-500' 
                                                     : 'bg-white text-black border-blue-600 hover:border-blue-300'

@@ -581,7 +581,7 @@ const DaftarTeknisiPage = () => {
           ></div>
         )}
 
-        <main className="flex-1 p-4 sm:p-6 overflow-x-auto">
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
           {selectedPegawai && !isEditMode && (
             <button
               onClick={() => {
@@ -589,21 +589,21 @@ const DaftarTeknisiPage = () => {
                 setIsEditMode(false);
                 setEditData({});
               }}
-              className="mb-6 text-[9px] sm:text-[15px] flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
+              className="mb-6 text-[11px] sm:text-[15px] flex items-center text-blue-600 hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg px-2 py-1"
             >
-              <svg className="w-3 h-3 sm:w-5 sm:h-5 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Kembali ke Daftar Teknisi
             </button>
           )}
-          <h2 className="text-center text-[18px] sm:text-2xl font-bold mb-6 sm:mb-8">
+          <h2 className="text-center text-[18px] sm:text-2xl font-bold mb-2 sm:mb-8">
             Daftar Teknisi
           </h2>
 
           {userRole && (
-            <div className="text-center mb-4 text-gray-600">
-              Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+            <div className="text-center text-[10px] sm:text-base lg:text-lg mb-4 text-gray-600">
+              Anda login sebagai: <span className="font-bold uppercase text-[10px] sm:text-base lg:text-lg">{userRole}</span>
             </div>
           )}
 

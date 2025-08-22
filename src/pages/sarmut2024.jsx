@@ -306,99 +306,100 @@ const Sarmut2024 = () => {
           ></div>
         )}
         
-        <div className="flex-1 p-6">
-          {/* Dashboard Header */}
-          <div className="mb-8 text-[17px] sm:text-[35px]">
-            <h2 className=" text-center text-[20px] sm:text-2xl font-bold mb-2 sm:mb-8">Dashboard SARMUT 2024</h2>
-            <p className="text-black text-center text-[10px] sm:text-[20px]">Monitoring Sistem Peralatan Operasional</p>
+        <div className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto static lg:absolute lg:left-48">
+            {/* Dashboard Header */}
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-center text-[18px] sm:text-[28px] font-bold mb-2 sm:mb-2">Dashboard SARMUT 2024</h2>
+              <p className="text-black text-center text-[11px] sm:text-[17px]">Monitoring Sistem Peralatan Operasional</p>
+            </div>
+
+            {/* Loading and Error States */}
+            {loading && (
+              <div className="flex items-center justify-center py-40">
+                <p className="text-[12px] sm:text-[20px] text-gray-700">Memuat data dari Google Sheet...</p>
+              </div>
+            )}
+            {error && (
+              <div className="flex flex-col items-center justify-center bg-red-100 text-red-800 p-4 rounded-lg shadow-md mb-4">
+                <p className="text-[9px] sm:text-[15px] font-bold mb-2">Terjadi Kesalahan Saat Memuat Data:</p>
+                <p className="text-[9px] sm:text-[15px]">{error}</p>
+                <p className="text-[9px] sm:text-[15px] mt-4">Pastikan URL Google Apps Script Anda benar, script telah di-deploy dengan benar, dan sheet 'SARMUT' ada di spreadsheet.</p>
+              </div>
+            )}
+
+            {!loading && !error && processedMetricsData.length === 0 && (
+              <p className="text-center text-gray-600 text-[9px] sm:text-[15px] py-8">Tidak ada data SARMUT yang tersedia untuk ditampilkan.</p>
+            )}
+
+            {/* Metrics Grid */}
+            {!loading && !error && processedMetricsData.length > 0 && (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8 justify-items-center">
+                  {processedMetricsData.map((metric, index) => {
+                    const IconComponent = metric.icon;
+                    return (
+                      <div
+                        key={metric.id}
+                        className="bg-white rounded-lg shadow-md p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-lg w-full max-w-sm"
+                        onClick={() => handleMetricClick(metric)}
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`p-2 rounded-full ${metric.color}`}>
+                            <IconComponent className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                          </div>
+                          <div className={`px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium ${
+                            metric.status === 'success' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-orange-100 text-orange-800'
+                          }`}>
+                            {metric.status === 'success' ? 'Tercapai' : 'Perhatian'}
+                          </div>
+                        </div>
+                        
+                        <h3 className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2 leading-tight">
+                          {metric.title}
+                        </h3>
+                        
+                        <div className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
+                          {metric.value}%
+                        </div>
+                        
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${metric.color}`}
+                            style={{ width: `${metric.value}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 justify-items-center">
+                  <div className="bg-white rounded-lg shadow-md p-6 text-center w-full max-w-xs">
+                    <div className="text-[15px] sm:text-[17px] font-bold text-blue-600 mb-2">{summaryStats.totalIndicators}</div>
+                    <div className="text-gray-600 text-[12px] sm:text-[16px]">Total Indikator</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-md p-6 text-center w-full max-w-xs">
+                    <div className="text-[15px] sm:text-[17px] font-bold text-green-600 mb-2">{summaryStats.targetAchieved}</div>
+                    <div className="text-gray-600 text-[12px] sm:text-[16px]">Target Tercapai</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-md p-6 text-center w-full max-w-xs">
+                    <div className="text-[15px] sm:text-[17px] font-bold text-orange-600 mb-2">{summaryStats.needsAttention}</div>
+                    <div className="text-gray-600 text-[12px] sm:text-[16px]">Perlu Perhatian</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-md p-6 text-center w-full max-w-xs">
+                    <div className="text-[15px] sm:text-[17px] font-bold text-purple-600 mb-2">{summaryStats.averagePerformance}%</div>
+                    <div className="text-gray-600 text-[12px] sm:text-[16px]">Rata-rata Kinerja</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-
-          {/* Loading and Error States */}
-          {loading && (
-            <div className="flex items-center justify-center py-8">
-              <p className="text-[12px] sm:text-[20px] text-gray-700">Memuat data dari Google Sheet...</p>
-            </div>
-          )}
-          {error && (
-            <div className="flex flex-col items-center justify-center bg-red-100 text-red-800 p-4 rounded-lg shadow-md mb-4">
-              <p className="text-[9px] sm:text-[15px] font-bold mb-2">Terjadi Kesalahan Saat Memuat Data:</p>
-              <p className="text-[9px] sm:text-[15px]">{error}</p>
-              <p className="text-[9px] sm:text-[15px] mt-4">Pastikan URL Google Apps Script Anda benar, script telah di-deploy dengan benar, dan sheet 'SARMUT' ada di spreadsheet.</p>
-            </div>
-          )}
-
-          {!loading && !error && processedMetricsData.length === 0 && (
-            <p className="text-center text-gray-600 text-[9px] sm:text-[15px] py-8">Tidak ada data SARMUT yang tersedia untuk ditampilkan.</p>
-          )}
-
-          {/* Metrics Grid */}
-          {!loading && !error && processedMetricsData.length > 0 && (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                {processedMetricsData.map((metric, index) => {
-                  const IconComponent = metric.icon;
-                  return (
-                    <div
-                      key={metric.id}
-                      className="bg-white rounded-lg shadow-md p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                      onClick={() => handleMetricClick(metric)}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className={`p-2 rounded-full ${metric.color}`}>
-                          <IconComponent className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-                        </div>
-                        <div className={`px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium ${
-                          metric.status === 'success' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {metric.status === 'success' ? 'Tercapai' : 'Perhatian'}
-                        </div>
-                      </div>
-                      
-                      <h3 className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2 leading-tight">
-                        {metric.title}
-                      </h3>
-                      
-                      <div className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                        {metric.value}%
-                      </div>
-                      
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${metric.color}`}
-                          style={{ width: `${metric.value}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Summary Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-[15px] sm:text-[17px] font-bold text-blue-600 mb-2">{summaryStats.totalIndicators}</div>
-                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Total Indikator</div>
-                </div>
-                <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-[15px] sm:text-[17px] font-bold text-green-600 mb-2">{summaryStats.targetAchieved}</div>
-                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Target Tercapai</div>
-                </div>
-                <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-[15px] sm:text-[17px] font-bold text-orange-600 mb-2">{summaryStats.needsAttention}</div>
-                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Perlu Perhatian</div>
-                </div>
-                <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="text-[15px] sm:text-[17px] font-bold text-purple-600 mb-2">{summaryStats.averagePerformance}%</div>
-                  <div className="text-gray-600 text-[12px] sm:text-[16px]">Rata-rata Kinerja</div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
-      </div>
+        
 
       {/* Modal for Charts and Table */}
       {isModalOpen && selectedMetric && (

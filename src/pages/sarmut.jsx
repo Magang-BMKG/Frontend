@@ -159,12 +159,12 @@ const SarmutPage = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-center text-[14px] sm:text-3xl font-bold text-gray-800 mb-2">
+            <h1 className="text-center text-[14px] sm:text-[28px] font-bold text-gray-800 mb-2">
               Sasaran Mutu (SARMUT)
             </h1>
-            <p className="text-center text-[10px] sm:text-3xl text-gray-600 mb-8 sm:mb-12">
+            <p className="text-center text-[10px] sm:text-[15px] text-gray-600 mb-8 sm:mb-12">
               Pilih tahun untuk mengakses data Sasaran Mutu
             </p>
 
@@ -187,7 +187,7 @@ const SarmutPage = () => {
                     </div>
                     
                     {/* Title */}
-                    <h3 className={`text-[12px] sm:text-2xl font-semibold transition-colors ${
+                    <h3 className={`text-[12px] sm:text-[20px] font-semibold transition-colors ${
                       activeCard === year 
                         ? "text-blue-600" 
                         : "text-gray-800 group-hover:text-blue-600"
@@ -196,13 +196,13 @@ const SarmutPage = () => {
                     </h3>
                     
                     {/* Year Badge */}
-                    <div className="mt-2 px-4 py-2 text-[11px] sm:text-2xl bg-gradient-to-r from-blue-500 to-black text-white text-sm rounded-full font-medium">
+                    <div className="mt-2 px-4 py-2 text-[11px] sm:text-[15px] bg-gradient-to-r from-blue-500 to-black text-white text-sm rounded-full font-medium">
                       Tahun {year}
                     </div>
                     
                     {/* Coming Soon Badge */}
                     {path === "#" && (
-                      <span className="mt-2 px-3 py-1 text-[10px] sm:text-2xl bg-gray-200 text-gray-600 text-sm rounded-full">
+                      <span className="mt-2 px-3 py-1 text-[10px] sm:text-[15px] bg-gray-200 text-gray-600 text-sm rounded-full">
                         Coming Soon
                       </span>
                     )}
