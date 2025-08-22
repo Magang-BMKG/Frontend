@@ -828,12 +828,12 @@ const LogbookPagiPage = () => {
         );
     }
 
-    return (
+    return (    
         <div className="flex flex-col min-h-screen">
             <Header />
 
-            {/* Mobile Menu Button */}
-            <div className="xl:hidden bg-white border-b border-gray-200 px-4 py-3">
+            {/* Mobile Menu Button - hanya muncul di mobile ketika sidebar tertutup */}
+            <div className={`xl:hidden bg-white border-b border-gray-200 px-4 py-3 ${isSidebarOpen ? 'hidden' : 'block'}`}>
                 <button
                     onClick={toggleSidebar}
                     className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -864,835 +864,853 @@ const LogbookPagiPage = () => {
                     w-64 flex-shrink-0
                 `}
                 >
-                    <Sidebar />
+                    <button
+                    onClick={toggleSidebar}
+                    className="xl:hidden absolute top-0 right-32 z-10 flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 transition-colors bg-white shadow-sm"
+                >
+                    <svg
+                        className="w-5 h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                        />
+                    </svg>
+                </button>
+                    <Sidebar toggleSidebar={toggleSidebar} />
                 </div>
 
-                {/* Overlay untuk mobile/tablet ketika sidebar terbuka */}
-                {isSidebarOpen && (
-                    <div
-                        className="xl:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-                        onClick={toggleSidebar}
-                    ></div>
-                )}
-
-                {/* Main Content */}
-                <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto bg-gray-50">
-                    {/* Header dengan Tombol Kembali */}
-                    <div className="mb-6">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            {/* Tombol Kembali */}
-                            <button
-                                onClick={
-                                    selectedEquipment ? handleBackToEquipmentList :
-                                    selectedPersonDateEntry || showCharts || showEquipmentCharts ? handleBackToSummary : 
-                                    handleBackToLogbook
-                                }
-                                className="flex items-center text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md text-[10px] sm:text-sm md:text-base"
-                            >
-                                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                {selectedEquipment ? "Kembali ke Daftar Peralatan" :
-                                 selectedPersonDateEntry || showCharts || showEquipmentCharts ? "Kembali ke Ringkasan Log Book" : 
-                                 "Kembali ke Halaman Log Book"}
-                            </button>
-                        </div>
-                    </div>
-
-                    <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-semibold mb-6 md:mb-8">
-                        Log Book Pagi
-                    </h2>
-
-                    {userRole && (
-                        <div className="text-center text-[15px] md:text-2xl xl:text-3xl mb-4 text-gray-600">
-                            Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
-                        </div>
+                    {/* Overlay untuk mobile/tablet ketika sidebar terbuka */}
+                    {isSidebarOpen && (
+                        <div
+                            className="xl:hidden fixed inset-0 bg-black/50 bg-opacity-50 z-40"
+                            onClick={toggleSidebar}
+                        ></div>
                     )}
 
-                    {/* Action Buttons - Dipindahkan ke bawah "Anda login sebagai" */}
-                    {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && !selectedEquipment && (
+                    {/* Main Content */}
+                    <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
+                        {/* Header dengan Tombol Kembali */}
                         <div className="mb-6">
-                            {/* Tombol Sejajar - Filter di kiri, Grafik dan Tambah di kanan */}
-                            <div className="flex flex-col sm:flex-row items-center justify-between grid-cols-3 sm:grid-cols-3 gap-3 mb-4">
-                                {/* Tombol Filter dan Reset */}
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setShowFilter(!showFilter)}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all${
-                                            hasActiveFilters 
-                                                ? 'bg-blue-500 text-white border-blue-500' 
-                                                : 'bg-white text-black border-blue-600 hover:border-blue-300'
-                                        }`}
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                        </svg>
-                                        Filter
-                                        {hasActiveFilters && (
-                                            <span className="bg-white text-blue-500 rounded-full px-2 py-0.5 text-xs font-medium">
-                                                {uniquePersonDateCombinations.length}
-                                            </span>
-                                        )}
-                                    </button>
-                                    
-                                    {hasActiveFilters && (
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                {/* Tombol Kembali */}
+                                <button
+                                    onClick={
+                                        selectedEquipment ? handleBackToEquipmentList :
+                                        selectedPersonDateEntry || showCharts || showEquipmentCharts ? handleBackToSummary : 
+                                        handleBackToLogbook
+                                    }
+                                    className="flex items-center text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md text-[10px] sm:text-sm md:text-base"
+                                >
+                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    {selectedEquipment ? "Kembali ke Daftar Peralatan" :
+                                    selectedPersonDateEntry || showCharts || showEquipmentCharts ? "Kembali ke Ringkasan Log Book" : 
+                                    "Kembali ke Halaman Log Book"}
+                                </button>
+                            </div>
+                        </div>
+
+                        <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-bold mb-6 md:mb-8">
+                            Log Book Pagi
+                        </h2>
+
+                        {userRole && (
+                            <div className="text-center text-[15px] md:text-2xl xl:text-3xl mb-4 text-gray-600">
+                                Anda login sebagai: <span className="font-bold uppercase">{userRole}</span>
+                            </div>
+                        )}
+
+                        {/* Action Buttons - Dipindahkan ke bawah "Anda login sebagai" */}
+                        {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && !selectedEquipment && (
+                            <div className="mb-6">
+                                {/* Tombol Sejajar - Filter di kiri, Grafik dan Tambah di kanan */}
+                                <div className="flex flex-col sm:flex-row items-center justify-between grid-cols-3 sm:grid-cols-3 gap-3 mb-4">
+                                    {/* Tombol Filter dan Reset */}
+                                    <div className="flex items-center gap-2">
                                         <button
-                                            onClick={clearFilters}
-                                            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                                            onClick={() => setShowFilter(!showFilter)}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all${
+                                                hasActiveFilters 
+                                                    ? 'bg-blue-500 text-white border-blue-500' 
+                                                    : 'bg-white text-black border-blue-600 hover:border-blue-300'
+                                            }`}
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                             </svg>
-                                            Reset
+                                            Filter
+                                            {hasActiveFilters && (
+                                                <span className="bg-white text-blue-500 rounded-full px-2 py-0.5 text-xs font-medium">
+                                                    {uniquePersonDateCombinations.length}
+                                                </span>
+                                            )}
                                         </button>
-                                    )}
-                                </div>
-
-                                {/* Tombol Grafik dan Tambah - Kanan */}
-                                <div className="flex items-center gap-3">
-                                    {/* Tombol Grafik per Peralatan */}
-                                    <button
-                                        onClick={() => setShowEquipmentCharts(true)}
-                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                        </svg>
-                                        <span className="hidden lg:inline xl:inline">Grafik per Peralatan</span>
-                                        <span className="lg:hidden">Grafik</span>
-                                    </button>
-
-                                    {/* Tombol Tambah Penanggung Jawab & Tanggal */}
-                                    <button
-                                        onClick={() => setShowAddPersonDateModal(true)}
-                                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        <span className="hidden lg:inline xl:inline">Tambah Penanggung Jawab & Tanggal</span>
-                                        <span className="lg:hidden">Tambah PJ</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Filter Controls */}
-                            {showFilter && (
-                                <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {/* Filter Bulan */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Bulan
-                                            </label>
-                                            <select
-                                                value={selectedMonth}
-                                                onChange={(e) => setSelectedMonth(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            >
-                                                <option value="">Semua Bulan</option>
-                                                {months.map(month => (
-                                                    <option key={month.value} value={month.value}>
-                                                        {month.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Filter Tahun */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Tahun
-                                            </label>
-                                            <select
-                                                value={selectedYear}
-                                                onChange={(e) => setSelectedYear(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            >
-                                                <option value="">Semua Tahun</option>
-                                                {availableYears.map(year => (
-                                                    <option key={year} value={year}>
-                                                        {year}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Info Filter Aktif */}
-                            {hasActiveFilters && (
-                                <div className="mt-3 flex flex-wrap justify-center gap-2">
-                                    {selectedMonth && (
-                                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                                            {months.find(m => m.value === selectedMonth)?.label}
+                                        
+                                        {hasActiveFilters && (
                                             <button
-                                                onClick={() => setSelectedMonth('')}
-                                                className="ml-1 hover:text-blue-600"
+                                                onClick={clearFilters}
+                                                className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
                                             >
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
+                                                Reset
                                             </button>
-                                        </span>
-                                    )}
-                                    {selectedYear && (
-                                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                                            {selectedYear}
-                                            <button
-                                                onClick={() => setSelectedYear('')}
-                                                className="ml-1 hover:text-blue-600"
-                                            >
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
-                    {selectedEquipment && (
-                        <div className="space-y-6 mb-8">
-                            {(() => {
-                                const equipmentData = getEquipmentChartData(selectedEquipment);
-                                return (
-                                    <>
-                                        {/* Statistics Cards - TETAP */}
-                                        <div className="bg-white rounded-lg shadow-md p-6">
-                                            <h3 className="text-[15px] md:text-2xl xl:text-3xl font-bold text-gray-800 mb-4 text-center">
-                                                Analisis Peralatan: <span className="text-blue-600">{selectedEquipment}</span>
-                                            </h3>
-                                            
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                                                <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-                                                    <div className="flex items-center">
-                                                        <div className="flex-1">
-                                                            <p className="text-sm font-medium text-gray-600">Total Entri</p>
-                                                            <p className="text-2xl font-bold text-blue-600">{equipmentData.totalEntries}</p>
-                                                        </div>
-                                                        <div className="p-3 bg-blue-100 rounded-full">
-                                                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
-                                                    <div className="flex items-center">
-                                                        <div className="flex-1">
-                                                            <p className="text-sm font-medium text-gray-600">Hari Tercatat</p>
-                                                            <p className="text-2xl font-bold text-green-600">{equipmentData.uniqueDates}</p>
-                                                        </div>
-                                                        <div className="p-3 bg-green-100 rounded-full">
-                                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
-                                                    <div className="flex items-center">
-                                                        <div className="flex-1">
-                                                            <p className="text-sm font-medium text-gray-600">Status OK</p>
-                                                            <p className="text-2xl font-bold text-orange-600">
-                                                                {equipmentData.lineChartData.reduce((sum, item) => sum + (item.OK || 0), 0)}
-                                                            </p>
-                                                        </div>
-                                                        <div className="p-3 bg-orange-100 rounded-full">
-                                                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* HANYA LINE CHART - Hapus Pie Chart */}
-                                        <div className="bg-white rounded-lg shadow-md p-6">
-                                            <h4 className="text-[15px] md:text-2xl xl:text-3xl font-semibold text-gray-800 mb-4 text-center">
-                                                Status Peralatan {selectedEquipment} Per Hari
-                                            </h4>
-                                            <div className="h-80">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <LineChart data={equipmentData.lineChartData}>
-                                                        <CartesianGrid strokeDasharray="3 3" />
-                                                        <XAxis 
-                                                            dataKey="date" 
-                                                            angle={-45}
-                                                            textAnchor="end"
-                                                            height={80}
-                                                            fontSize={12}
-                                                        />
-                                                        <YAxis 
-                                                            domain={[0, 3]}
-                                                            type="number"
-                                                            tickCount={4}
-                                                            tickFormatter={(value) => getStatusLabelFromScore(value)}
-                                                            allowDecimals={false}
-                                                            tick={{ fontSize: 11, fill: '#666' }}
-                                                            width={120}
-                                                        />
-                                                        <Tooltip 
-                                                            formatter={(value, name) => {
-                                                                if (value === null) return ['Tidak Ada Data', name];
-                                                                return [getStatusLabelFromScore(value), name];
-                                                            }}
-                                                            labelFormatter={(label) => `Tanggal: ${label}`}
-                                                        />
-                                                        <Legend />
-                                                        {statusOptions.map((status) => (
-                                                            <Line 
-                                                                key={status}
-                                                                type="stepAfter"
-                                                                dataKey={status} 
-                                                                stroke={getStatusColor(status)}
-                                                                strokeWidth={3}
-                                                                connectNulls={false}
-                                                                dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
-                                                                activeDot={{ r: 7, fill: getStatusColor(status) }}
-                                                            />
-                                                        ))}
-                                                    </LineChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </div>
-
-                                    </>
-                                );
-                            })()}
-                        </div>
-                    )}
-
-                    {/* Tampilan Daftar Peralatan untuk Grafik */}
-                    {showEquipmentCharts && !selectedEquipment && (
-                        <div className="space-y-6 mb-8">
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-[15px] md:text-2xl xl:text-3xl font-bold text-gray-800 mb-6 text-center">
-                                    Pilih Peralatan untuk Melihat Grafik Detail
-                                </h3>
-                                
-                                {uniqueEquipmentList.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-600">Tidak ada data peralatan yang tersedia.</p>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {uniqueEquipmentList.map((equipment, index) => {
-                                            const equipmentData = getEquipmentChartData(equipment);
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    onClick={() => setSelectedEquipment(equipment)}
-                                                    className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 border border-blue-200 cursor-pointer hover:shadow-lg hover:border-blue-400 transition-all duration-200 transform hover:-translate-y-1"
+
+                                    {/* Tombol Grafik dan Tambah - Kanan */}
+                                    <div className="flex items-center gap-3">
+                                        {/* Tombol Grafik per Peralatan */}
+                                        <button
+                                            onClick={() => setShowEquipmentCharts(true)}
+                                            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                            </svg>
+                                            <span className="hidden lg:inline xl:inline">Grafik per Peralatan</span>
+                                            <span className="lg:hidden">Grafik</span>
+                                        </button>
+
+                                        {/* Tombol Tambah Penanggung Jawab & Tanggal */}
+                                        <button
+                                            onClick={() => setShowAddPersonDateModal(true)}
+                                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 whitespace-nowrap"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            <span className="hidden lg:inline xl:inline">Tambah Penanggung Jawab & Tanggal</span>
+                                            <span className="lg:hidden">Tambah PJ</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Filter Controls */}
+                                {showFilter && (
+                                    <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {/* Filter Bulan */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Bulan
+                                                </label>
+                                                <select
+                                                    value={selectedMonth}
+                                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 >
-                                                    <div className="flex flex-col items-center text-center">
-                                                        <div className="mb-3 p-3 bg-blue-100 rounded-full">
-                                                            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                                            </svg>
-                                                        </div>
-                                                        <h4 className="font-semibold text-gray-800 mb-2 text-sm break-words">
-                                                            {equipment}
-                                                        </h4>
-                                                        <div className="text-xs text-gray-600 space-y-1">
-                                                            <p>Entri: <span className="font-semibold text-blue-600">{equipmentData.totalEntries}</span></p>
-                                                            <p>Hari: <span className="font-semibold text-green-600">{equipmentData.uniqueDates}</span></p>
-                                                        </div>
-                                                        <div className="mt-2 flex items-center text-xs text-blue-600">
-                                                            <span>Lihat Detail</span>
-                                                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                    <option value="">Semua Bulan</option>
+                                                    {months.map(month => (
+                                                        <option key={month.value} value={month.value}>
+                                                            {month.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Filter Tahun */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Tahun
+                                                </label>
+                                                <select
+                                                    value={selectedYear}
+                                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    <option value="">Semua Tahun</option>
+                                                    {availableYears.map(year => (
+                                                        <option key={year} value={year}>
+                                                            {year}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Info Filter Aktif */}
+                                {hasActiveFilters && (
+                                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                                        {selectedMonth && (
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                                                {months.find(m => m.value === selectedMonth)?.label}
+                                                <button
+                                                    onClick={() => setSelectedMonth('')}
+                                                    className="ml-1 hover:text-blue-600"
+                                                >
+                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        )}
+                                        {selectedYear && (
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                                                {selectedYear}
+                                                <button
+                                                    onClick={() => setSelectedYear('')}
+                                                    className="ml-1 hover:text-blue-600"
+                                                >
+                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Tampilan Grafik Keseluruhan */}
-                    {showCharts && (
-                         <div className="space-y-6 mb-8">
-                            {/* Statistics Cards - TETAP */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
-                                    <div className="flex items-center">
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-600">Total Peralatan</p>
-                                            <p className="text-2xl font-bold text-gray-900">{chartData.totalEquipment}</p>
-                                        </div>
-                                        <div className="p-3 bg-green-100 rounded-full">
-                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+                        {/* Tampilan Grafik per Peralatan - Individual Equipment Chart */}
+                        {selectedEquipment && (
+                            <div className="space-y-6 mb-8">
+                                {(() => {
+                                    const equipmentData = getEquipmentChartData(selectedEquipment);
+                                    return (
+                                        <>
+                                            {/* Statistics Cards - TETAP */}
+                                            <div className="bg-white rounded-lg shadow-md p-6">
+                                                <h3 className="text-[15px] md:text-2xl xl:text-3xl font-bold text-gray-800 mb-4 text-center">
+                                                    Analisis Peralatan: <span className="text-blue-600">{selectedEquipment}</span>
+                                                </h3>
+                                                
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                                                    <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                                                        <div className="flex items-center">
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-medium text-gray-600">Total Entri</p>
+                                                                <p className="text-2xl font-bold text-blue-600">{equipmentData.totalEntries}</p>
+                                                            </div>
+                                                            <div className="p-3 bg-blue-100 rounded-full">
+                                                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
-                                    <div className="flex items-center">
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-600">Status OK</p>
-                                            <p className="text-2xl font-bold text-green-600">
-                                                {chartData.lineData.reduce((sum, item) => sum + (item.OK || 0), 0)}
-                                            </p>
-                                        </div>
-                                        <div className="p-3 bg-green-100 rounded-full">
-                                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+                                                    <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                                                        <div className="flex items-center">
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-medium text-gray-600">Hari Tercatat</p>
+                                                                <p className="text-2xl font-bold text-green-600">{equipmentData.uniqueDates}</p>
+                                                            </div>
+                                                            <div className="p-3 bg-green-100 rounded-full">
+                                                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
-                                    <div className="flex items-center">
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-600">Rusak/Tidak Beroperasi</p>
-                                            <p className="text-2xl font-bold text-red-600">
-                                                {chartData.lineData.reduce((sum, item) => sum + (item.Rusak || 0) + (item["Tidak Beroperasi"] || 0), 0)}
-                                            </p>
-                                        </div>
-                                        <div className="p-3 bg-red-100 rounded-full">
-                                            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+                                                    <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+                                                        <div className="flex items-center">
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-medium text-gray-600">Status OK</p>
+                                                                <p className="text-2xl font-bold text-orange-600">
+                                                                    {equipmentData.lineChartData.reduce((sum, item) => sum + (item.OK || 0), 0)}
+                                                                </p>
+                                                            </div>
+                                                            <div className="p-3 bg-orange-100 rounded-full">
+                                                                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
-                                    <div className="flex items-center">
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-600">Dalam Perbaikan</p>
-                                            <p className="text-2xl font-bold text-orange-600">
-                                                {chartData.lineData.reduce((sum, item) => sum + (item.Perbaikan || 0), 0)}
-                                            </p>
+                                            {/* HANYA LINE CHART - Hapus Pie Chart */}
+                                            <div className="bg-white rounded-lg shadow-md p-6">
+                                                <h4 className="text-[15px] md:text-2xl xl:text-3xl font-semibold text-gray-800 mb-4 text-center">
+                                                    Status Peralatan {selectedEquipment} Per Hari
+                                                </h4>
+                                                <div className="h-80">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <LineChart data={equipmentData.lineChartData}>
+                                                            <CartesianGrid strokeDasharray="3 3" />
+                                                            <XAxis 
+                                                                dataKey="date" 
+                                                                angle={-45}
+                                                                textAnchor="end"
+                                                                height={80}
+                                                                fontSize={12}
+                                                            />
+                                                            <YAxis 
+                                                                domain={[0, 3]}
+                                                                type="number"
+                                                                tickCount={4}
+                                                                tickFormatter={(value) => getStatusLabelFromScore(value)}
+                                                                allowDecimals={false}
+                                                                tick={{ fontSize: 11, fill: '#666' }}
+                                                                width={120}
+                                                            />
+                                                            <Tooltip 
+                                                                formatter={(value, name) => {
+                                                                    if (value === null) return ['Tidak Ada Data', name];
+                                                                    return [getStatusLabelFromScore(value), name];
+                                                                }}
+                                                                labelFormatter={(label) => `Tanggal: ${label}`}
+                                                            />
+                                                            <Legend />
+                                                            {statusOptions.map((status) => (
+                                                                <Line 
+                                                                    key={status}
+                                                                    type="stepAfter"
+                                                                    dataKey={status} 
+                                                                    stroke={getStatusColor(status)}
+                                                                    strokeWidth={3}
+                                                                    connectNulls={false}
+                                                                    dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
+                                                                    activeDot={{ r: 7, fill: getStatusColor(status) }}
+                                                                />
+                                                            ))}
+                                                        </LineChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        )}
+
+                        {/* Tampilan Daftar Peralatan untuk Grafik */}
+                        {showEquipmentCharts && !selectedEquipment && (
+                            <div className="space-y-6 mb-8">
+                                <div className="bg-white rounded-lg shadow-md p-6">
+                                    <h3 className="text-[15px] md:text-2xl xl:text-3xl font-bold text-gray-800 mb-6 text-center">
+                                        Pilih Peralatan untuk Melihat Grafik Detail
+                                    </h3>
+                                    
+                                    {uniqueEquipmentList.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <p className="text-gray-600">Tidak ada data peralatan yang tersedia.</p>
                                         </div>
-                                        <div className="p-3 bg-orange-100 rounded-full">
-                                            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {uniqueEquipmentList.map((equipment, index) => {
+                                                const equipmentData = getEquipmentChartData(equipment);
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        onClick={() => setSelectedEquipment(equipment)}
+                                                        className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 border border-blue-200 cursor-pointer hover:shadow-lg hover:border-blue-400 transition-all duration-200 transform hover:-translate-y-1"
+                                                    >
+                                                        <div className="flex flex-col items-center text-center">
+                                                            <div className="mb-3 p-3 bg-blue-100 rounded-full">
+                                                                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                                                </svg>
+                                                            </div>
+                                                            <h4 className="font-semibold text-gray-800 mb-2 text-sm break-words">
+                                                                {equipment}
+                                                            </h4>
+                                                            <div className="text-xs text-gray-600 space-y-1">
+                                                                <p>Entri: <span className="font-semibold text-blue-600">{equipmentData.totalEntries}</span></p>
+                                                                <p>Hari: <span className="font-semibold text-green-600">{equipmentData.uniqueDates}</span></p>
+                                                            </div>
+                                                            <div className="mt-2 flex items-center text-xs text-blue-600">
+                                                                <span>Lihat Detail</span>
+                                                                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
+                        )}
 
-                            {/* LINE CHART  */}
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                                    Tren Status Peralatan Seiring Waktu
-                                </h3>
-                                <div className="h-96">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={chartData.lineData}>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis 
-                                                dataKey="date" 
-                                                angle={-45}
-                                                textAnchor="end"
-                                                height={80}
-                                                fontSize={12}
-                                            />
-                                            <YAxis 
-                                                domain={[0, 3]}
-                                                type="number"
-                                                tickCount={4}
-                                                tickFormatter={formatYAxisTick}
-                                                allowDecimals={false}
-                                                tick={{ fontSize: 11, fill: '#666' }}
-                                                width={120}
-                                            />
-                                            <Tooltip 
-                                                formatter={(value, name) => {
-                                                    if (value === null) return ['Tidak Ada Data', name];
-                                                    return [getStatusLabelFromScore(value), name];
-                                                }}
-                                                labelFormatter={(label) => `Tanggal: ${label}`}
-                                            />
-                                            <Legend />
-                                            {statusOptions.map((status) => (
-                                                <Line 
-                                                    key={status}
-                                                    type="stepAfter"
-                                                    dataKey={status}
-                                                    stroke={getStatusColor(status)}
-                                                    strokeWidth={3}
-                                                    connectNulls={false}
-                                                    dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
-                                                    activeDot={{ r: 7, fill: getStatusColor(status) }}
-                                                />
-                                            ))}
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* Status Legend - TETAP */}
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Keterangan Status Peralatan</h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    {statusOptions.map((status, index) => (
-                                        <div key={status} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                                            <div 
-                                                className="w-4 h-4 rounded-full"
-                                                style={{ backgroundColor: getStatusColor(status) }}
-                                            ></div>
+                        {/* Tampilan Grafik Keseluruhan */}
+                        {showCharts && (
+                            <div className="space-y-6 mb-8">
+                                {/* Statistics Cards - TETAP */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                    <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                                        <div className="flex items-center">
                                             <div className="flex-1">
-                                                <p className="font-medium text-gray-800">{status}</p>
-                                                <p className="text-sm text-gray-600">Level: {getStatusScore(status)}</p>
+                                                <p className="text-sm font-medium text-gray-600">Total Peralatan</p>
+                                                <p className="text-2xl font-bold text-gray-900">{chartData.totalEquipment}</p>
+                                            </div>
+                                            <div className="p-3 bg-green-100 rounded-full">
+                                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
                                             </div>
                                         </div>
-                                    ))}
+                                    </div>
+
+                                    <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                                        <div className="flex items-center">
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-gray-600">Status OK</p>
+                                                <p className="text-2xl font-bold text-green-600">
+                                                    {chartData.lineData.reduce((sum, item) => sum + (item.OK || 0), 0)}
+                                                </p>
+                                            </div>
+                                            <div className="p-3 bg-green-100 rounded-full">
+                                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
+                                        <div className="flex items-center">
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-gray-600">Rusak/Tidak Beroperasi</p>
+                                                <p className="text-2xl font-bold text-red-600">
+                                                    {chartData.lineData.reduce((sum, item) => sum + (item.Rusak || 0) + (item["Tidak Beroperasi"] || 0), 0)}
+                                                </p>
+                                            </div>
+                                            <div className="p-3 bg-red-100 rounded-full">
+                                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
+                                        <div className="flex items-center">
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-gray-600">Dalam Perbaikan</p>
+                                                <p className="text-2xl font-bold text-orange-600">
+                                                    {chartData.lineData.reduce((sum, item) => sum + (item.Perbaikan || 0), 0)}
+                                                </p>
+                                            </div>
+                                            <div className="p-3 bg-orange-100 rounded-full">
+                                                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                                    <p className="text-sm text-blue-800">
-                                        <strong>Level Status:</strong> OK (0) = Normal, Rusak (1) = Bermasalah, Perbaikan (2) = Dalam Perbaikan, Tidak Beroperasi (3) = Tidak Berfungsi
-                                    </p>
+
+                                {/* LINE CHART  */}
+                                <div className="bg-white rounded-lg shadow-md p-6">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                        Tren Status Peralatan Seiring Waktu
+                                    </h3>
+                                    <div className="h-96">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={chartData.lineData}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis 
+                                                    dataKey="date" 
+                                                    angle={-45}
+                                                    textAnchor="end"
+                                                    height={80}
+                                                    fontSize={12}
+                                                />
+                                                <YAxis 
+                                                    domain={[0, 3]}
+                                                    type="number"
+                                                    tickCount={4}
+                                                    tickFormatter={formatYAxisTick}
+                                                    allowDecimals={false}
+                                                    tick={{ fontSize: 11, fill: '#666' }}
+                                                    width={120}
+                                                />
+                                                <Tooltip 
+                                                    formatter={(value, name) => {
+                                                        if (value === null) return ['Tidak Ada Data', name];
+                                                        return [getStatusLabelFromScore(value), name];
+                                                    }}
+                                                    labelFormatter={(label) => `Tanggal: ${label}`}
+                                                />
+                                                <Legend />
+                                                {statusOptions.map((status) => (
+                                                    <Line 
+                                                        key={status}
+                                                        type="stepAfter"
+                                                        dataKey={status}
+                                                        stroke={getStatusColor(status)}
+                                                        strokeWidth={3}
+                                                        connectNulls={false}
+                                                        dot={{ fill: getStatusColor(status), strokeWidth: 2, r: 5 }}
+                                                        activeDot={{ r: 7, fill: getStatusColor(status) }}
+                                                    />
+                                                ))}
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Status Legend - TETAP */}
+                                <div className="bg-white rounded-lg shadow-md p-6">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Keterangan Status Peralatan</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {statusOptions.map((status, index) => (
+                                            <div key={status} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                                <div 
+                                                    className="w-4 h-4 rounded-full"
+                                                    style={{ backgroundColor: getStatusColor(status) }}
+                                                ></div>
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-gray-800">{status}</p>
+                                                    <p className="text-sm text-gray-600">Level: {getStatusScore(status)}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                                        <p className="text-sm text-blue-800">
+                                            <strong>Level Status:</strong> OK (0) = Normal, Rusak (1) = Bermasalah, Perbaikan (2) = Dalam Perbaikan, Tidak Beroperasi (3) = Tidak Berfungsi
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                    {logbookData.length === 0 && !loading && !error ? (
-                        <div className="text-center py-8">
-                            <p className="text-gray-600 text-sm md:text-base">
-                                Tidak ada data yang ditemukan.
-                            </p>
-                            {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && (
-                                <button
-                                    onClick={() => setShowAddPersonDateModal(true)}
-                                    className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 mx-auto"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    <span>Tambahkan Entri Pertama</span>
-                                </button>
-                            )}
-                        </div>
-                    ) : selectedPersonDateEntry ? (
-                        // Tampilan Tabel Detail
-                        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
-                            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-                                <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 text-center sm:text-left flex-grow">
-                                    Detail Log Book untuk <span className="text-blue-700">{selectedPersonDateEntry.person}</span> pada <span className="text-blue-700">{selectedPersonDateEntry.date}</span>
-                                </h3>
+                        )}
+                        {logbookData.length === 0 && !loading && !error ? (
+                            <div className="text-center py-8">
+                                <p className="text-gray-600 text-sm md:text-base">
+                                    Tidak ada data yang ditemukan.
+                                </p>
+                                {!selectedPersonDateEntry && !showCharts && !showEquipmentCharts && (
                                     <button
-                                        onClick={() => setShowAddEntryModal(true)}
-                                        className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap flex items-center space-x-2"
+                                        onClick={() => setShowAddPersonDateModal(true)}
+                                        className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center space-x-2 mx-auto"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                         </svg>
-                                        <span>Tambah Peralatan</span>
+                                        <span>Tambahkan Entri Pertama</span>
                                     </button>
+                                )}
                             </div>
+                        ) : selectedPersonDateEntry ? (
+                            // Tampilan Tabel Detail
+                            <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
+                                <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+                                    <h3 className="text-[13px] md:text-xl font-semibold text-gray-800 text-center sm:text-left flex-grow">
+                                        Detail Log Book untuk <span className="text-blue-700">{selectedPersonDateEntry.person}</span> pada <span className="text-blue-700">{selectedPersonDateEntry.date}</span>
+                                    </h3>
+                                        <button
+                                            onClick={() => setShowAddEntryModal(true)}
+                                            className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base whitespace-nowrap flex items-center space-x-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            <span>Tambah Peralatan</span>
+                                        </button>
+                                </div>
 
-                            {/* Input pencarian */}
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Cari peralatan..."
-                                    className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
-                                    value={filterPeralatanDetail}
-                                    onChange={(e) => setFilterPeralatanDetail(e.target.value)}
-                                />
-                            </div>
+                                {/* Input pencarian */}
+                                <div className="mb-4">
+                                    <input
+                                        type="text"
+                                        placeholder="Cari peralatan..."
+                                        className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                                        value={filterPeralatanDetail}
+                                        onChange={(e) => setFilterPeralatanDetail(e.target.value)}
+                                    />
+                                </div>
 
-                            {/* Tabel dengan scroll horizontal */}
-                            <div className="overflow-x-auto -mx-4 md:-mx-6 lg:mx-0">
-                                <div className="inline-block min-w-full px-4 md:px-6 lg:px-0">
-                                    <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Peralatan
-                                                    </th>
-                                                    <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Keterangan
-                                                    </th>
-                                                    <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Bukti Foto
-                                                    </th>
-                                                        <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Aksi
-                                                        </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {detailTableData.length === 0 ? (
+                                {/* Tabel dengan scroll horizontal */}
+                                <div className="overflow-x-auto -mx-4 md:-mx-6 lg:mx-0">
+                                    <div className="inline-block min-w-full px-4 md:px-6 lg:px-0">
+                                        <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
+                                            <table className="min-w-full divide-y divide-gray-200">
+                                                <thead className="bg-gray-50">
                                                     <tr>
-                                                        <td colSpan="3" className="px-3 py-4 text-center text-sm text-gray-500">
-                                                            Tidak ada Peralatan yang cocok dengan pencarian atau belum ada entri.
-                                                        </td>
+                                                        <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Peralatan
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Keterangan
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Bukti Foto
+                                                        </th>
+                                                            <th className="px-3 py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Aksi
+                                                            </th>
                                                     </tr>
-                                                ) : (
-                                                    detailTableData.map((item, index) => (
-                                                        <tr key={index} className="hover:bg-gray-50">
-                                                            <td className="px-3 py-4 text-[10px] sm:text-sm font-medium text-gray-900">
-                                                                <div className="break-words max-w-xs md:max-w-sm">
-                                                                    {item.Peralatan}
-                                                                </div>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {detailTableData.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan="3" className="px-3 py-4 text-center text-sm text-gray-500">
+                                                                Tidak ada Peralatan yang cocok dengan pencarian atau belum ada entri.
                                                             </td>
-                                                            <td className="px-3 py-4 text-[10px] sm:text-sm text-gray-500">
-                                                                <div className="break-words max-w-xs md:max-w-sm">
-                                                                    {item.Keterangan}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-3 py-4">
-                                                                {item["Bukti Foto"] ? (
-                                                                    <a href={item["Bukti Foto"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs sm:text-sm">
-                                                                        Lihat Foto
-                                                                    </a>
-                                                                ) : (
-                                                                    <span className="text-gray-500 text-xs sm:text-sm">Tidak Ada</span>
-                                                                )}
-                                                            </td>
-                                                                <td className="px-3 py-4 text-center">
-                                                                    <div className="flex justify-center items-center space-x-2">
-                                                                        <button
-                                                                            onClick={() => handleEditClick(item)}
-                                                                            className="text-blue-600 hover:text-blue-900 p-1"
-                                                                            title="Edit Entri"
-                                                                        >
-                                                                            <FiEdit2 className="w-4 h-4 md:w-5 md:h-5" />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleDeleteClick(item)}
-                                                                            className="text-red-600 hover:text-red-900 p-1"
-                                                                            title="Hapus Entri"
-                                                                        >
-                                                                            <FiTrash2 className="w-4 h-4 md:w-5 md:h-5" />
-                                                                        </button>
+                                                        </tr>
+                                                    ) : (
+                                                        detailTableData.map((item, index) => (
+                                                            <tr key={index} className="hover:bg-gray-50">
+                                                                <td className="px-3 py-4 text-[10px] sm:text-sm font-medium text-gray-900">
+                                                                    <div className="break-words max-w-xs md:max-w-sm">
+                                                                        {item.Peralatan}
                                                                     </div>
                                                                 </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                                <td className="px-3 py-4 text-[10px] sm:text-sm text-gray-500">
+                                                                    <div className="break-words max-w-xs md:max-w-sm">
+                                                                        {item.Keterangan}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-4">
+                                                                    {item["Bukti Foto"] ? (
+                                                                        <a href={item["Bukti Foto"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs sm:text-sm">
+                                                                            Lihat Foto
+                                                                        </a>
+                                                                    ) : (
+                                                                        <span className="text-gray-500 text-xs sm:text-sm">Tidak Ada</span>
+                                                                    )}
+                                                                </td>
+                                                                    <td className="px-3 py-4 text-center">
+                                                                        <div className="flex justify-center items-center space-x-2">
+                                                                            <button
+                                                                                onClick={() => handleEditClick(item)}
+                                                                                className="text-blue-600 hover:text-blue-900 p-1"
+                                                                                title="Edit Entri"
+                                                                            >
+                                                                                <FiEdit2 className="w-4 h-4 md:w-5 md:h-5" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDeleteClick(item)}
+                                                                                className="text-red-600 hover:text-red-900 p-1"
+                                                                                title="Hapus Entri"
+                                                                            >
+                                                                                <FiTrash2 className="w-4 h-4 md:w-5 md:h-5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                    ) : !showCharts && !showEquipmentCharts ? (
-                        // Tampilan Grid Kotak Ringkasan (mirip PerkaCanggih)
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
-                            {uniquePersonDateCombinations.map((combo, index) => {
-                                const comboId = `${combo.person}-${combo.date}`;
-                                return (
-                                    <div
-                                        key={comboId}
-                                        className="bg-white rounded-lg shadow-md p-4 md:p-6 border border-gray-200 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between items-start relative"
-                                        onClick={() => setSelectedPersonDateEntry(combo)}
-                                    >
-                                        <div className="flex justify-between items-center w-full mb-2">
-                                            <p className="text-sm md:text-base font-semibold text-gray-800 break-words flex-grow">
-                                                {combo.person}
-                                            </p>
-                                            <svg
-                                                className="w-4 h-4 md:w-5 md:h-5 text-gray-400 flex-shrink-0 ml-2"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                            </svg>
-                                        </div>
-                                        <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
-
-                                        {userRole === "admin" && (
-                                            <button
-                                                className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleOpenKebabMenu(comboId);
-                                                }}
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                        ) : !showCharts && !showEquipmentCharts ? (
+                            // Tampilan Grid Kotak Ringkasan (mirip PerkaCanggih)
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
+                                {uniquePersonDateCombinations.map((combo, index) => {
+                                    const comboId = `${combo.person}-${combo.date}`;
+                                    return (
+                                        <div
+                                            key={comboId}
+                                            className="bg-white rounded-lg shadow-md p-4 md:p-6 border border-gray-200 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between items-start relative"
+                                            onClick={() => setSelectedPersonDateEntry(combo)}
+                                        >
+                                            <div className="flex justify-between items-center w-full mb-2">
+                                                <p className="text-sm md:text-base font-semibold text-gray-800 break-words flex-grow">
+                                                    {combo.person}
+                                                </p>
+                                                <svg
+                                                    className="w-4 h-4 md:w-5 md:h-5 text-gray-400 flex-shrink-0 ml-2"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
                                                 </svg>
-                                            </button>
-                                        )}
-
-                                        {openKebabMenuId === comboId && userRole === "admin" && (
-                                            <div
-                                                className="absolute top-10 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
-                                                onMouseLeave={handleCloseKebabMenu}
-                                            >
-                                                <button
-                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleEditPersonDateClick(combo);
-                                                    }}
-                                                >
-                                                    <FiEdit2 className="w-4 h-4" />
-                                                    <span>Edit</span>
-                                                </button>
-                                                <button
-                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeletePersonDate(combo);
-                                                    }}
-                                                >
-                                                    <FiTrash2 className="w-4 h-4" />
-                                                    <span>Hapus</span>
-                                                </button>
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : null}
-                </main>
-            </div>
+                                            <p className="text-xs md:text-sm text-gray-600">{combo.date}</p>
 
-            {/* Modal Tambah Penanggung Jawab & Tanggal BARU */}
-            {showAddPersonDateModal && (
-            <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-center mb-4 border-b pb-3">
-                        <h3 className="text-lg md:text-xl font-semibold text-gray-800 flex-grow text-center">
-                            Tambah Penanggung Jawab & Tanggal Baru
-                        </h3>
-                        <button
-                            onClick={() => setShowAddPersonDateModal(false)}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                        >
-                            <IoClose className="w-6 h-6" />
-                        </button>
-                    </div>
-                    
-                    <div className="mb-4">
-                        <label
-                            htmlFor="newPersonDatePenanggungJawab"
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Penanggung Jawab <span className="text-red-500">*</span>
-                        </label>
+                                            {userRole === "admin" && (
+                                                <button
+                                                    className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenKebabMenu(comboId);
+                                                    }}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-500">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                                    </svg>
+                                                </button>
+                                            )}
+
+                                            {openKebabMenuId === comboId && userRole === "admin" && (
+                                                <div
+                                                    className="absolute top-10 right-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
+                                                    onMouseLeave={handleCloseKebabMenu}
+                                                >
+                                                    <button
+                                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEditPersonDateClick(combo);
+                                                        }}
+                                                    >
+                                                        <FiEdit2 className="w-4 h-4" />
+                                                        <span>Edit</span>
+                                                    </button>
+                                                    <button
+                                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeletePersonDate(combo);
+                                                        }}
+                                                    >
+                                                        <FiTrash2 className="w-4 h-4" />
+                                                        <span>Hapus</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : null}
+                    </main>
+                </div>
+
+                {/* Modal Tambah Penanggung Jawab & Tanggal BARU */}
+                {showAddPersonDateModal && (
+                <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4 border-b pb-3">
+                            <h3 className="text-lg md:text-xl font-semibold text-gray-800 flex-grow text-center">
+                                Tambah Penanggung Jawab & Tanggal Baru
+                            </h3>
+                            <button
+                                onClick={() => setShowAddPersonDateModal(false)}
+                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            >
+                                <IoClose className="w-6 h-6" />
+                            </button>
+                        </div>
                         
-                        {/* Dropdown untuk memilih penanggung jawab */}
-                        <select
-                            id="newPersonDatePenanggungJawab"
-                            className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base bg-white"
-                            value={newPersonDatePenanggungJawab}
-                            onChange={(e) => {
-                                if (e.target.value === 'add_new') {
-                                    setShowAddNewPersonInput(true);
-                                    setNewPersonDatePenanggungJawab('');
-                                } else {
-                                    setShowAddNewPersonInput(false);
-                                    setNewPersonDatePenanggungJawab(e.target.value);
-                                }
-                            }}
-                        >
-                            <option value="">-- Pilih Penanggung Jawab --</option>
-                            {/* Data dummy nama-nama penanggung jawab */}
-                            <option value="'Kurniawan Raharjo, S.T.">'Kurniawan Raharjo, S.T.</option>
-                            <option value="Agusto Pramana Putera, S.Tr">Agusto Pramana Putera, S.Tr</option>
-                            <option value="Ahmad Fauzi, S.T">Ahmad Fauzi, S.T</option>
-                            <option value="Nastiti Siwi Risantika, S.Tr.Inst">Nastiti Siwi Risantika, S.Tr.Inst</option>
-                            <option value="Badia Lumbanbatu, STr Inst">Badia Lumbanbatu, STr Inst</option>
-                            <option value="Mapasena Farid Wijaya, S.Tr Inst">Mapasena Farid Wijaya, S.Tr Inst</option>
-                            <option value="Muhammad Rony Zakaria, STr Inst">Muhammad Rony Zakaria, STr Inst</option>
-                            <option value="add_new" className="bg-blue-50 text-blue-600 font-medium">
-                                + Tambah Nama Baru
-                            </option>
-                        </select>
-                        {/* Input untuk nama baru jika memilih "Tambah Nama Baru" */}
-                        {showAddNewPersonInput && (
-                            <div className="mt-3">
-                                <input
-                                    type="text"
-                                    className="w-full p-2 md:p-3 border border-blue-300 rounded-md text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    value={newPersonName}
-                                    onChange={(e) => setNewPersonName(e.target.value)}
-                                    placeholder="Masukkan nama penanggung jawab baru"
-                                    autoFocus
-                                />
-                                <div className="flex justify-end space-x-2 mt-2">
-                                    <button
-                                        onClick={() => {
-                                            setShowAddNewPersonInput(false);
-                                            setNewPersonName('');
-                                            setNewPersonDatePenanggungJawab('');
-                                        }}
-                                        className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (newPersonName.trim()) {
-                                                setNewPersonDatePenanggungJawab(newPersonName.trim());
+                        <div className="mb-4">
+                            <label
+                                htmlFor="newPersonDatePenanggungJawab"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                Penanggung Jawab <span className="text-red-500">*</span>
+                            </label>
+                            
+                            {/* Dropdown untuk memilih penanggung jawab */}
+                            <select
+                                id="newPersonDatePenanggungJawab"
+                                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base bg-white"
+                                value={newPersonDatePenanggungJawab}
+                                onChange={(e) => {
+                                    if (e.target.value === 'add_new') {
+                                        setShowAddNewPersonInput(true);
+                                        setNewPersonDatePenanggungJawab('');
+                                    } else {
+                                        setShowAddNewPersonInput(false);
+                                        setNewPersonDatePenanggungJawab(e.target.value);
+                                    }
+                                }}
+                            >
+                                <option value="">-- Pilih Penanggung Jawab --</option>
+                                {/* Data dummy nama-nama penanggung jawab */}
+                                <option value="'Kurniawan Raharjo, S.T.">'Kurniawan Raharjo, S.T.</option>
+                                <option value="Agusto Pramana Putera, S.Tr">Agusto Pramana Putera, S.Tr</option>
+                                <option value="Ahmad Fauzi, S.T">Ahmad Fauzi, S.T</option>
+                                <option value="Nastiti Siwi Risantika, S.Tr.Inst">Nastiti Siwi Risantika, S.Tr.Inst</option>
+                                <option value="Badia Lumbanbatu, STr Inst">Badia Lumbanbatu, STr Inst</option>
+                                <option value="Mapasena Farid Wijaya, S.Tr Inst">Mapasena Farid Wijaya, S.Tr Inst</option>
+                                <option value="Muhammad Rony Zakaria, STr Inst">Muhammad Rony Zakaria, STr Inst</option>
+                                <option value="add_new" className="bg-blue-50 text-blue-600 font-medium">
+                                    + Tambah Nama Baru
+                                </option>
+                            </select>
+                            {/* Input untuk nama baru jika memilih "Tambah Nama Baru" */}
+                            {showAddNewPersonInput && (
+                                <div className="mt-3">
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 md:p-3 border border-blue-300 rounded-md text-sm md:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        value={newPersonName}
+                                        onChange={(e) => setNewPersonName(e.target.value)}
+                                        placeholder="Masukkan nama penanggung jawab baru"
+                                        autoFocus
+                                    />
+                                    <div className="flex justify-end space-x-2 mt-2">
+                                        <button
+                                            onClick={() => {
                                                 setShowAddNewPersonInput(false);
                                                 setNewPersonName('');
-                                                // Opsional: Tambahkan nama baru ke data dummy untuk penggunaan selanjutnya
-                                                // setPenanggungJawabList(prev => [...prev, newPersonName.trim()]);
-                                            }
-                                        }}
-                                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                                        disabled={!newPersonName.trim()}
-                                    >
-                                        Simpan
-                                    </button>
+                                                setNewPersonDatePenanggungJawab('');
+                                            }}
+                                            className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                                        >
+                                            Batal
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (newPersonName.trim()) {
+                                                    setNewPersonDatePenanggungJawab(newPersonName.trim());
+                                                    setShowAddNewPersonInput(false);
+                                                    setNewPersonName('');
+                                                    // Opsional: Tambahkan nama baru ke data dummy untuk penggunaan selanjutnya
+                                                    // setPenanggungJawabList(prev => [...prev, newPersonName.trim()]);
+                                                }
+                                            }}
+                                            className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                            disabled={!newPersonName.trim()}
+                                        >
+                                            Simpan
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
 
-                    <div className="mb-6">
-                        <label
-                            htmlFor="newPersonDateTanggal"
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Tanggal <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="newPersonDateTanggal"
-                            className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base"
-                            value={newPersonDateTanggal}
-                            onChange={(e) => setNewPersonDateTanggal(e.target.value)}
-                            placeholder="DD/MM/YYYY"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Format: DD/MM/YYYY (contoh: 01/01/2025)</p>
-                    </div>
+                        <div className="mb-6">
+                            <label
+                                htmlFor="newPersonDateTanggal"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                Tanggal <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="newPersonDateTanggal"
+                                className="w-full p-2 md:p-3 border border-gray-300 rounded-md text-sm md:text-base"
+                                value={newPersonDateTanggal}
+                                onChange={(e) => setNewPersonDateTanggal(e.target.value)}
+                                placeholder="DD/MM/YYYY"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Format: DD/MM/YYYY (contoh: 01/01/2025)</p>
+                        </div>
 
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                        <button
-                            onClick={() => setShowAddPersonDateModal(false)}
-                            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            onClick={handleAddPersonDate}
-                            className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded sm:rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                            Tambah
-                        </button>
+                        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                            <button
+                                onClick={() => setShowAddPersonDateModal(false)}
+                                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-black bg-red-400 rounded sm:rounded-md hover:bg-red-600 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleAddPersonDate}
+                                className="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded sm:rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                                Tambah
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        )}
+            )}
 
             {/* Modal Edit Penanggung Jawab & Tanggal */}
             {showEditPersonDateModal && editingPersonDateCombo && (
