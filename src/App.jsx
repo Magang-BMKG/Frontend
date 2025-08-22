@@ -6,15 +6,17 @@ import DaftarTeknisiPage from './pages/destopteknisi';
 import DaftarInstrumenPage from './pages/instrumen';
 import LogbookPage from './pages/logbook';
 import LogbookPagiPage from "./pages/logbookPagi";
+import LogbookSiangPage from "./pages/logbookSiang";
+import LogbookMalamPage from "./pages/logbookMalam";
 import Perka from './pages/perka';
 import PerkaMekanik from './pages/perkaMekanik';
 import PerkaCanggih from './pages/perkaCanggih';
 import PerkaSederhana from './pages/perkaSederhana';
 import Jadwal from './pages/jadwal';
-// import JadwalSenin from './pages/jadwalSenin';
 import JadwalPemkala from './pages/jadwalPemkala';
 import SarmutPage from './pages/sarmut';
 import Sarmut2024 from './pages/sarmut2024';
+import Sarmut2025 from './pages/sarmut2025';
 import JadwalSeninPage from './pages/jadwalSeninPage';
 import Senin1 from './pages/Senin1';
 import Senin2 from './pages/Senin2';
@@ -36,8 +38,7 @@ import Kamis3 from './pages/Kamis3';
 import Kamis4 from './pages/Kamis4';
 import JadwalInsidentalPage from './pages/jadwalInsidentalPage';
 import Insidental1 from './pages/Insidental1';
-
-// import Login from './component/login';
+import Insidental2 from './pages/Insidental2';
 
 function App() {
   return (
@@ -49,15 +50,17 @@ function App() {
           <Route path="/instrumen" element={<DaftarInstrumenPage />} />
           <Route path="/logbook" element={<LogbookPage />} />
           <Route path="/logbookPagi" element={<LogbookPagiPage />} />
+          <Route path="/logbookSiang" element={<LogbookSiangPage />} />
+          <Route path="/logbookMalam" element={<LogbookMalamPage />} />
           <Route path="/perka" element={<Perka />} />
           <Route path="/perkaMekanik" element={<PerkaMekanik />} />
           <Route path="/perkaCanggih" element={<PerkaCanggih />} />
           <Route path="/perkaSederhana" element={<PerkaSederhana />} />
           <Route path="/jadwal" element={<Jadwal/>} />
-          {/* <Route path="/jadwalSenin" element={<JadwalSenin />} /> */}
           <Route path="/jadwalPemkala" element={<JadwalPemkala />} />
           <Route path="/sarmut" element={<SarmutPage />} />
           <Route path="/sarmut2024" element={<Sarmut2024 />} />
+          <Route path="/sarmut2025" element={<Sarmut2025 />} />
           <Route path="/jadwal/senin" element={<JadwalSeninPage />} />
           <Route path="/jadwal/senin1" element={<Senin1 />} />
           <Route path="/jadwal/senin2" element={<Senin2 />} />
@@ -79,7 +82,7 @@ function App() {
           <Route path="/jadwal/kamis4" element={<Kamis4 />} />
           <Route path="/jadwal/insidental" element={<JadwalInsidentalPage />} />
           <Route path="/jadwal/insidental1" element={<Insidental1 />} />
-          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/jadwal/insidental2" element={<Insidental2 />} />
           <Route path="*" element={<div>404 - Halaman tidak ditemukan</div>} />
         </Routes>
       </AuthProvider>

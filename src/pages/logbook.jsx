@@ -57,13 +57,13 @@ const LogbookPage = () => {
       icon: <WiDaySunny className="text-4xl sm:text-5xl lg:text-6xl text-orange-500" />, 
       title: "Log Book Siang", 
       time: "Siang", 
-      path: "#" 
+      path: "/logbookSiang" 
     },
     { 
       icon: <WiNightClear className="text-4xl sm:text-5xl lg:text-6xl text-blue-500" />, 
       title: "Log Book Malam", 
       time: "Malam", 
-      path: "#" 
+      path: "/logbookMalam" 
     },
   ];
 

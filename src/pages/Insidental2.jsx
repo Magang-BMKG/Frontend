@@ -1,9 +1,9 @@
 import React from 'react';
 import JadwalPemkala from './jadwalPemkala';
 
-const Insidental1 = () => {
-  const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbyJAnEJgb96z5VuFsaDBHEoxvsrXb6zzWGthLZq5gF_zgy884GLDkyEZ00JAUUkUj39/exec";
-  const PAGE_TITLE = "Jadwal Insidental 1";
+const Insidental2 = () => {
+  const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbyzXzYRO1Zdidt60P_WyIcSF7QKLXT2jYrFJblPUqipqYeoT-cF7KEuREMtMjaD7r1v/exec";
+  const PAGE_TITLE = "Jadwal Insidental 2";
   const BACK_PATH = "/jadwal/insidental";
 
   return (
@@ -15,4 +15,4 @@ const Insidental1 = () => {
   );
 };
 
-export default Insidental1;
+export default Insidental2;

@@ -11,7 +11,7 @@ import { FiTrash2 } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const LogbookPagiPage = () => {
+const LogbookMalamPage = () => {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const toggleSidebar = () => {
@@ -102,7 +102,7 @@ const LogbookPagiPage = () => {
 
     // URL API Logbook
     const LOGBOOK_API_URL =
-        "https://script.google.com/macros/s/AKfycby-IJcc6CcoAx7xeb0NDZgFlz2iJOg0kOz3s3-8ICB24r_kVFnre1SsC_uuhdWd92vr/exec";
+        "https://script.google.com/macros/s/AKfycbxrGyj-pgO20NOpYJKKroMDpKkOesdQTyeVbD42t-LQV_punVKnKLiw8kqinnmggS8i/exec";
 
     // === Fungsi parsing tanggal ===
     const parseDateToStandard = (dateStr) => {
@@ -810,7 +810,7 @@ const LogbookPagiPage = () => {
                     <p className="text-red-600 mb-4 text-sm md:text-base">{error}</p>
                     <p className="text-red-500 text-xs md:text-sm">
                         Pastikan URL Google Apps Script untuk logbook benar, sudah
-                        di-deploy, dan sheet 'LOGBOOK_PAGI_NORMALISASI' ada serta berisi
+                        di-deploy, dan sheet 'LOGBOOK_MALAM' ada serta berisi
                         data.
                     </p>
                 </div>
@@ -917,7 +917,7 @@ const LogbookPagiPage = () => {
                         </div>
 
                         <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-bold mb-2 md:mb-8">
-                            Log Book Pagi
+                            Log Book Malam
                         </h2>
 
                         {userRole && (
@@ -2038,4 +2038,4 @@ const LogbookPagiPage = () => {
     );
 };
 
-export default LogbookPagiPage;
+export default LogbookMalamPage;

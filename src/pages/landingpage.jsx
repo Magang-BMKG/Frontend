@@ -32,7 +32,7 @@ export default function BMKGLandingPage() {
     setLoginError('');
     setIsLoading(true);
 
-    const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbzKwGynlTg52pAFh8FkaLfo09cZILM4rY-8s-qdJwGvJe_H7TfqJrUnd6IQFA9UbLQF_w/exec';
+    const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbzIXSXJlmDVxS5Q1g0eUzobCkY6hxPE2J-PI6QJKaDk--JF9SKnQWnB1vWARSNqb4Az/exec';
 
     try {
       const response = await fetch(appsScriptUrl, {

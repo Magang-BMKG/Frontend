@@ -54,10 +54,8 @@ const DaftarTeknisiPage = () => {
     }
   }, [userRole, navigate]);
 
-  // const GOOGLE_SHEETS_API_URL =
-  //   "https://script.google.com/macros/s/AKfycbxQyvGtri0z1XUNFaSlgJbOfaQncCDa-x3gWaapBIys5bW050m155F8ECVjvSyvDQ3NLQ/exec"; // Ganti dengan URL Anda
   const GOOGLE_SHEETS_API_URL =
-    "https://script.google.com/macros/s/AKfycbySKqncYDSRnSpxF0mUWrYQ69stq_e4e_yPeXg6vluR_F4hUlQi8fPpwKjlnVsxE6O9aQ/exec"; // Ganti dengan URL Anda
+    "https://script.google.com/macros/s/AKfycbwbhO4nUKm-fqlCgFaldjh3s1o0nEk9P79WojBJuO-wOf5nCwEr3CHgQdGKiUrWwJpP/exec";
   
   const fetchData = async () => {
     setLoading(true);

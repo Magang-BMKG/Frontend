@@ -83,7 +83,7 @@ const SarmutPage = () => {
       icon: <FaFileAlt className="text-4xl sm:text-5xl lg:text-6xl text-black" />, 
       title: "Sarmut 2025", 
       year: "2025", 
-      path: "#"
+      path: "/sarmut2025"
     },
     { 
       icon: <FaCalendarAlt className="text-4xl sm:text-5xl lg:text-6xl text-black" />, 

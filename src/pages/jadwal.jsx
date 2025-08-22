@@ -174,8 +174,8 @@ const JadwalPage = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
+          <div className="max-w-6xl mx-auto">
             <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
               Jadwal
             </h1>
