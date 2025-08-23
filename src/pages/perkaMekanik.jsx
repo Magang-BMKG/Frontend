@@ -6,6 +6,7 @@ import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
 import Swal from "sweetalert2";
 import { useAuth } from '../context/AuthContext';
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 
 const PerkaMekanik = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -62,7 +63,7 @@ const PerkaMekanik = () => {
   }, [userRole, navigate]);
 
   // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'PERKA' ANDA
-  const PERKA_API_URL = "https://script.google.com/macros/s/AKfycbwVMXcJwMKNmIGQRmsnlgA0vwSTQTZqNZ2_lPal9LQIQRsODtJiwMyRYV-4TJoEM_5w1g/exec";
+  const PERKA_API_URL = "https://script.google.com/macros/s/AKfycbxJxk668us1oKXBVDzaHrNtLBkMBOdkKXq6CbIipgYuvnCz0ykbkvKqHscqfMpuUXBj/exec";
 
   // Fungsi untuk mengambil daftar unik Nama Alat (GET request)
   const fetchNamaAlatList = async () => {
@@ -583,6 +584,15 @@ const PerkaMekanik = () => {
                         <thead className="bg-gray-50">
                           <tr>
                             <th scope="col" className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-base lg:text-[18px] font-medium text-gray-500 uppercase tracking-wider">
+                              Komponen Alat
+                            </th>
+                            <th scope="col" className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-base lg:text-[18px] font-medium text-gray-500 uppercase tracking-wider">
+                              Penggantian Komponen Berkala
+                            </th>
+                            <th scope="col" className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-base lg:text-[18px] font-medium text-gray-500 uppercase tracking-wider">
+                              Pemeliharaan Berkala
+                            </th>
+                            <th scope="col" className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-base lg:text-[18px] font-medium text-gray-500 uppercase tracking-wider">
                               Waktu
                             </th>
                             <th scope="col" className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[9px] sm:text-base lg:text-[18px] font-medium text-gray-500 uppercase tracking-wider">
@@ -621,18 +631,14 @@ const PerkaMekanik = () => {
                                       className="text-blue-600 hover:text-blue-900 p-1"
                                       title="Edit Detail"
                                     >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14.25v4.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18.75v-10.5A2.25 2.25 0 015.25 6H10.5" />
-                                      </svg>
+                                      <FiEdit2 className="w-4 h-4 sm:w-5 sm:h-5" />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteDetail(detail)}
                                       className="text-red-600 hover:text-red-900 p-1"
                                       title="Hapus Detail"
                                     >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.925a2.25 2.25 0 01-2.244-2.077L4.74 5.79m14.46-3.21a1.125 1.125 0 00-1.231-1.231h-2.182a1.125 1.125 0 00-1.231 1.231m-1.588 0H14.74M12 2.25h.007v.008H12V2.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                      </svg>
+                                      <FiTrash2 className="w-4 h-3 sm:w-5 sm:h-5" />
                                     </button>
                                   </div>
                                 </td>

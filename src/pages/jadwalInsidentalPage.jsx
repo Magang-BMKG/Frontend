@@ -148,8 +148,8 @@ const JadwalInsidentalPage = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
+          <div className="max-w-6xl mx-auto">
             <button
               onClick={handleBack}
               className="mb-6 text-[11px] sm:text-base lg:text-lg flex items-center text-blue-600 hover:text-blue-800 transition-colors"
@@ -165,7 +165,7 @@ const JadwalInsidentalPage = () => {
             </h1>
 
             {/* Cards Container - Responsive grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
               {dayCards.map((day) => (
                 <div
                   key={day.id}

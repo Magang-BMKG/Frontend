@@ -13,7 +13,7 @@ const getMonthName = (monthNumber) => {
   return monthNames[monthNumber - 1] || '';
 };
 
-const Sarmut2024 = () => {
+const Sarmut2025 = () => {
   const navigate = useNavigate();
   const [selectedMetric, setSelectedMetric] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,7 +33,7 @@ const Sarmut2024 = () => {
   const [isRowSaving, setIsRowSaving] = useState(false);
 
   // Ganti dengan URL Aplikasi Web Google Apps Script Anda yang sudah di-deploy!
-  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbws6CWPtBKsj6Ur710jmFgch_weRNluDvphTXS5lMEgEMxj8glVBicTyzWOyptcCLSN/exec'; 
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwut02e4kiilx4MsdCAtj_h3OxqSrD_xvTEHkoW903jLhiyV1DFLs9bt9y171wIMp2N/exec'; 
 
   // Fungsi untuk mengambil data dari Google Sheet
   const fetchData = async () => {
@@ -324,7 +324,7 @@ const Sarmut2024 = () => {
                 </svg>
                 Kembali ke Sarmut
               </button>
-              <h2 className="text-center text-[18px] sm:text-[28px] font-bold mb-2 sm:mb-2">Dashboard SARMUT 2024</h2>
+              <h2 className="text-center text-[18px] sm:text-[28px] font-bold mb-2 sm:mb-2">Dashboard SARMUT 2025</h2>
               <p className="text-black text-center text-[11px] sm:text-[17px]">Monitoring Sistem Peralatan Operasional</p>
             </div>
 
@@ -523,4 +523,4 @@ const Sarmut2024 = () => {
   );
 };
 
-export default Sarmut2024;
+export default Sarmut2025;
