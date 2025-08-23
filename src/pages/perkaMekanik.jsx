@@ -471,8 +471,8 @@ const PerkaMekanik = () => {
         >
           <button
             onClick={toggleSidebar}
-            className="xl:hidden absolute top-0 right-4 z-10 flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-md hover:bg-gray-100 transition-colors bg-white shadow-sm"
-          >
+            className="xl:hidden absolute top-0 right-24 z-10 flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 transition-colors bg-white shadow-sm"
+            >
             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
