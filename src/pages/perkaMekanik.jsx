@@ -63,7 +63,7 @@ const PerkaMekanik = () => {
   }, [userRole, navigate]);
 
   // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'PERKA' ANDA
-  const PERKA_API_URL = "https://script.google.com/macros/s/AKfycbxJxk668us1oKXBVDzaHrNtLBkMBOdkKXq6CbIipgYuvnCz0ykbkvKqHscqfMpuUXBj/exec";
+  const PERKA_API_URL = "https://script.google.com/macros/s/AKfycbzeT0sL-a1TqL1xCiH82RZOK5cvuBnnWMacof9cNs2kQ5Rc4ltlhuJm4qWWlWOJ9xJenQ/exec";
 
   // Fungsi untuk mengambil daftar unik Nama Alat (GET request)
   const fetchNamaAlatList = async () => {

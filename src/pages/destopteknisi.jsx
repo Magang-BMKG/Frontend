@@ -55,7 +55,7 @@ const DaftarTeknisiPage = () => {
   }, [userRole, navigate]);
 
   const GOOGLE_SHEETS_API_URL =
-    "https://script.google.com/macros/s/AKfycbwbhO4nUKm-fqlCgFaldjh3s1o0nEk9P79WojBJuO-wOf5nCwEr3CHgQdGKiUrWwJpP/exec";
+    "https://script.google.com/macros/s/AKfycbx3DMq2mDFsc8qQl4MeH5f5XPpq76K_jbBvP1mujFpzIbGpp48MYf3CYzEEo_joFq4Z5w/exec";
   
   const fetchData = async () => {
     setLoading(true);

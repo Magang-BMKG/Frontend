@@ -62,7 +62,7 @@ const PerkaCanggih = () => {
   }, [userRole, navigate]);
 
   // URL GOOGLE APPS SCRIPT API UNTUK SHEET 'PERKA' ANDA
-  const PERKA_API_URL = "https://script.google.com/macros/s/AKfycbzXtdqIqcnCK9HT5hR64uSSVYHnpv5HCWCgfit0f1tfBpuCwWOaO1z0x1ryt8FcUynu/exec";
+  const PERKA_API_URL = "https://script.google.com/macros/s/AKfycbxtyvXs4Fuc7DChWFU4pO19RzBqKdoZGwK8oOUbgZRsABuQo9ub8_qdOOvGbrVEBYfxvg/exec";
 
   // Fungsi untuk mengambil daftar unik Nama Alat (GET request)
   const fetchNamaAlatList = async () => {

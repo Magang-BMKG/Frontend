@@ -33,7 +33,7 @@ const Sarmut2024 = () => {
   const [isRowSaving, setIsRowSaving] = useState(false);
 
   // Ganti dengan URL Aplikasi Web Google Apps Script Anda yang sudah di-deploy!
-  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbws6CWPtBKsj6Ur710jmFgch_weRNluDvphTXS5lMEgEMxj8glVBicTyzWOyptcCLSN/exec'; 
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJXfHcCPPeMghVAb7Aqj9WpqeLkNB9x6cvnKlfNU8T-Bur9EHlHZtx9JeLNIuMoDqOCA/exec'; 
 
   // Fungsi untuk mengambil data dari Google Sheet
   const fetchData = async () => {

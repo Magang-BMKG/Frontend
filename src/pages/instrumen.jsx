@@ -72,7 +72,7 @@ const DaftarInstrumenPage = () => {
     }
   }, [userRole, navigate]);
 
-  const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycbzkYn61QnYV-pRKd96t6UVkdBX9PCH04TmIalL3AswrWFWAFvt26FQQid6HWlm3n53j/exec";
+  const INSTRUMEN_API_URL = "https://script.google.com/macros/s/AKfycby2u4FUrA99YTiMN82erbKkYgk5-AN8PxkpSemcscA8ZNLgyJckQVkyGLLkE0FknGSF/exec";
 
   const getFilterCategory = (instrumen) => {
     let kode = '';

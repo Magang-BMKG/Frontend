@@ -102,7 +102,7 @@ const LogbookSiangPage = () => {
 
     // URL API Logbook
     const LOGBOOK_API_URL =
-        "https://script.google.com/macros/s/AKfycbyXaUU5xlBYUTjHiU2xKiDITh8AbODgHUxh7RPIsmz7ZoWGBG1dKdY3g62zk3I8XjSB/exec";
+        "https://script.google.com/macros/s/AKfycbz5_ALm9-T3phPO-i-7zSX1RhTbeHz_fBy4IA0Azuk0DRG9ZRqfZiIZuc_MXbKMl1Sv4A/exec";
 
     // === Fungsi parsing tanggal ===
     const parseDateToStandard = (dateStr) => {

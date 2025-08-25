@@ -2,7 +2,7 @@ import React from 'react';
 import JadwalPemkala from './jadwalPemkala';
 
 const Senin1 = () => {
-  const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbxmVrBhS2AqtLS6PwqNpwP4vGtxEPqNmt5v6r1F_LsN8ZXIr8ZtLmiPbEBK1ngWlmGW/exec";
+  const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbwcN9UJ6_3fYCVXKC9G1bSsbIHQSGzzC_MFqp8QRf-5GwZ-ViK17bYSicXKjMcScesMnw/exec";
   const PAGE_TITLE = "Jadwal Senin 1";
   const BACK_PATH = "/jadwal/senin";
 
