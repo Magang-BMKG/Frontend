@@ -48,19 +48,19 @@ const LogbookPage = () => {
 
   const cards = [
     { 
-      icon: <WiSunrise className="text-4xl sm:text-5xl lg:text-6xl text-yellow-500" />, 
+      icon: <WiSunrise className="text-4xl sm:text-5xl lg:text-6xl" />, 
       title: "Log Book Pagi", 
       time: "Pagi", 
       path: "/logbookPagi" 
     },
     { 
-      icon: <WiDaySunny className="text-4xl sm:text-5xl lg:text-6xl text-orange-500" />, 
+      icon: <WiDaySunny className="text-4xl sm:text-5xl lg:text-6xl" />, 
       title: "Log Book Siang", 
       time: "Siang", 
       path: "/logbookSiang" 
     },
     { 
-      icon: <WiNightClear className="text-4xl sm:text-5xl lg:text-6xl text-blue-500" />, 
+      icon: <WiNightClear className="text-4xl sm:text-5xl lg:text-6xl" />, 
       title: "Log Book Malam", 
       time: "Malam", 
       path: "/logbookMalam" 
@@ -133,14 +133,14 @@ const LogbookPage = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-20  max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-center text-[20px] sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
               Log Book
             </h1>
 
             {/* Cards Container */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-12 p-12">
               {cards.map(({ icon, title, time, path }) => (
                 <div
                   key={time}
@@ -166,12 +166,6 @@ const LogbookPage = () => {
                       {title}
                     </h3>
                     
-                    {/* Coming Soon Badge */}
-                    {path === "#" && (
-                      <span className="mt-2 px-3 py-1 bg-gray-200 text-gray-600 text-sm rounded-full">
-                        Coming Soon
-                      </span>
-                    )}
                   </div>
                 </div>
               ))}

@@ -916,13 +916,13 @@ const LogbookPagiPage = () => {
                             </div>
                         </div>
 
-                        <h2 className="text-center text-[15px] md:text-2xl xl:text-3xl font-bold mb-2 md:mb-8">
+                        <h2 className="text-center text-[15px] md:text-2xl xl:text-[28px] font-bold mb-2 md:mb-2">
                             Log Book Pagi
                         </h2>
 
                         {userRole && (
-                            <div className="text-center text-[11px] md:text-2xl xl:text-3xl mb-12 text-gray-600">
-                                Anda login sebagai: <span className="font-bold uppercase text-[10px] sm:text-base lg:text-lg">{userRole}</span>
+                            <div className="text-center text-[11px] md:text-2xl xl:text-[20px] mb-6 sm:mb-8 md:mb-12 lg:mb-16 xl:mb-20 text-gray-600">
+                                 Anda login sebagai: <span className="font-bold uppercase text-[10px] sm:text-base lg:text-lg">{userRole}</span>
                             </div>
                         )}
 

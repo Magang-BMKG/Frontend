@@ -229,10 +229,10 @@ const Sarmut2024 = () => {
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" /> {/* 'name' adalah nama bulan */}
+          <XAxis dataKey="name" /> 
           <YAxis domain={[0, 100]} />
           <Tooltip formatter={(value) => [`${value}%`, 'Persentase']} />
-          <Bar dataKey="Persentase" fill="#8884d8" /> {/* 'Persentase' adalah key dari data */}
+          <Bar dataKey="Persentase" fill="#8884d8" />
         </BarChart>
       </ResponsiveContainer>
     );
@@ -312,9 +312,9 @@ const Sarmut2024 = () => {
           ></div>
         )}
         
-        <div className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto static lg:absolute lg:left-48">
+        <div className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
             {/* Dashboard Header */}
-            <div className="mb-4 sm:mb-6">
+            <div className="max-w-7xl mx-auto">
               <button
                 onClick={handleBack}
                 className="mb-4 sm:mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors text-xs sm:text-sm md:text-base"
@@ -325,7 +325,7 @@ const Sarmut2024 = () => {
                 Kembali ke Sarmut
               </button>
               <h2 className="text-center text-[18px] sm:text-[28px] font-bold mb-2 sm:mb-2">Dashboard SARMUT 2024</h2>
-              <p className="text-black text-center text-[11px] sm:text-[17px]">Monitoring Sistem Peralatan Operasional</p>
+              <p className="text-black text-center text-[11px] sm:text-[17px] mb-8 sm:mb-14">Monitoring Sistem Peralatan Operasional</p>
             </div>
 
             {/* Loading and Error States */}

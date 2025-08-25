@@ -55,41 +55,31 @@ const JadwalPage = () => {
       id: 'senin',
       title: 'Senin',
       route: '/jadwal/senin',
-      bgColor: 'bg-blue-50',
-      hoverBgColor: 'group-hover:bg-blue-100',
       textColor: 'group-hover:text-blue-600'
     },
     {
       id: 'selasa',
       title: 'Selasa',
       route: '/jadwal/selasa', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-green-50',
-      hoverBgColor: 'group-hover:bg-green-100',
-      textColor: 'group-hover:text-green-600'
+      textColor: 'group-hover:text-blue-600'
     },
     {
       id: 'rabu',
       title: 'Rabu',
       route: '/jadwal/rabu', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-yellow-50',
-      hoverBgColor: 'group-hover:bg-yellow-100',
-      textColor: 'group-hover:text-yellow-600'
+      textColor: 'group-hover:text-blue-600'
     },
     {
       id: 'kamis',
       title: 'Kamis',
       route: '/jadwal/kamis', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-purple-50',
-      hoverBgColor: 'group-hover:bg-purple-100',
-      textColor: 'group-hover:text-purple-600'
+      textColor: 'group-hover:text-blue-600'
     },
     {
       id: 'insidental',
       title: 'Insidental',
       route: '/jadwal/insidental', // Ubah ke '#' jika belum ready
-      bgColor: 'bg-red-50',
-      hoverBgColor: 'group-hover:bg-red-100',
-      textColor: 'group-hover:text-red-600'
+      textColor: 'group-hover:text-blue-600'
     }
   ];
 
@@ -174,9 +164,9 @@ const JadwalPage = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-20 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
+            <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-20">
               Jadwal
             </h1>
 

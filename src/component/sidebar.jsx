@@ -118,14 +118,14 @@ const Sidebar = ({
       route: '/jadwal',
       keywords: ['jadwal', 'schedule', 'calendar', 'kalender']
     },
-    { 
-      id: 'laporan', 
-      icon: ReportIcon, 
-      label: 'Laporan', 
-      shortLabel: 'Laporan', 
-      route: '/laporan',
-      keywords: ['laporan', 'report', 'reporting']
-    },
+    // { 
+      // id: 'laporan', 
+      // icon: ReportIcon, 
+      // label: 'Laporan', 
+      // shortLabel: 'Laporan', 
+      // route: '/laporan',
+      // keywords: ['laporan', 'report', 'reporting']
+    // },
     { 
       id: 'sarmut', 
       icon: ShieldIcon, 
@@ -192,7 +192,7 @@ const Sidebar = ({
         'meta': '/instrumen',
         'logbook': '/logbook',
         'jadwal': '/jadwal',
-        'laporan': '/laporan',
+        // 'laporan': '/laporan',
         'sarmut': '/sarmut',
         'perka': '/perka'
       };
@@ -323,7 +323,7 @@ const DemoApp = () => {
     else if (route.includes('instrumen')) setCurrentPage('meta');
     else if (route.includes('logbook')) setCurrentPage('logbook');
     else if (route.includes('jadwal')) setCurrentPage('jadwal');
-    else if (route.includes('laporan')) setCurrentPage('laporan');
+    // else if (route.includes('laporan')) setCurrentPage('laporan');
     else if (route.includes('sarmut')) setCurrentPage('sarmut');
     else if (route.includes('perka')) setCurrentPage('perka');
   };
@@ -355,7 +355,7 @@ const DemoApp = () => {
               <li>• <strong>Meta Data</strong> - Data instrumen dan peralatan</li>
               <li>• <strong>Log Book</strong> - Catatan aktivitas</li>
               <li>• <strong>Jadwal</strong> - Kalender dan penjadwalan</li>
-              <li>• <strong>Laporan</strong> - Generate dan kelola laporan (Baru!)</li>
+              {/* <li>• <strong>Laporan</strong> - Generate dan kelola laporan (Baru!)</li> */}
               <li>• <strong>Sarmut</strong> - Keamanan dan keselamatan sistem (Baru!)</li>
               <li>• <strong>Perka</strong> - Pengaturan sistem</li>
             </ul>
@@ -371,12 +371,12 @@ const DemoApp = () => {
               Menu baru yang ditambahkan:
             </p>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              {/* <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <h3 className="font-semibold text-blue-800 mb-2">📊 Laporan</h3>
                 <p className="text-blue-700 text-sm">
                   Menu untuk membuat, melihat, dan mengelola berbagai jenis laporan sistem.
                 </p>
-              </div>
+              </div> */}
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <h3 className="font-semibold text-green-800 mb-2">🛡️ Sarmut</h3>
                 <p className="text-green-700 text-sm">

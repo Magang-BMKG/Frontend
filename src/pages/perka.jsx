@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BsWrenchAdjustable } from "react-icons/bs";
+import { GiAutoRepair } from "react-icons/gi";
+import { MdOutlineElectricalServices } from "react-icons/md";
 import Header from "../component/Header";
 import Sidebar from "../component/sidebar";
 import Footer from "../component/Footer";
@@ -82,9 +85,9 @@ const PerkaPage = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
+        <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-20 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-12">
+            <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-20">
               Perka
             </h1>
 
@@ -96,10 +99,9 @@ const PerkaPage = () => {
                 className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
               >
                 <div className="flex flex-col items-center text-center">
-                  {/* Placeholder untuk SVG Icon Mekanik */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                    {/* Tempat untuk SVG dari Figma - Mekanik */}
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-300 rounded"></div>
+                  {/* Icon Mekanik dengan BsWrenchAdjustable */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                    <BsWrenchAdjustable className="w-12 h-12 sm:w-16 sm:h-16 text-gray-600 " />
                   </div>
                   <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
                     Mekanik
@@ -109,14 +111,13 @@ const PerkaPage = () => {
 
               {/* Card Canggih */}
               <div
-                onClick={() => handleNavigate("/perkaCanggih")}
+                onClick={() => handleNavigate("/perkaMekanik")}
                 className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
               >
                 <div className="flex flex-col items-center text-center">
-                  {/* Placeholder untuk SVG Icon Canggih */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                    {/* Tempat untuk SVG dari Figma - Canggih */}
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-300 rounded"></div>
+                  {/* Icon Mekanik dengan BsWrenchAdjustable */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center ">
+                    <GiAutoRepair className="w-12 h-12 sm:w-16 sm:h-16 text-gray-600 " />
                   </div>
                   <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
                     Canggih
@@ -126,14 +127,13 @@ const PerkaPage = () => {
 
               {/* Card Sederhana Elektronik */}
               <div
-                onClick={() => handleNavigate("/perkaSederhana")}
+                onClick={() => handleNavigate("/perkaMekanik")}
                 className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
               >
                 <div className="flex flex-col items-center text-center">
-                  {/* Placeholder untuk SVG Icon Sederhana Elektronik */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                    {/* Tempat untuk SVG dari Figma - Sederhana Elektronik */}
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-300 rounded"></div>
+                  {/* Icon Mekanik dengan BsWrenchAdjustable */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                    <MdOutlineElectricalServices className="w-12 h-12 sm:w-16 sm:h-16 text-gray-600 " />
                   </div>
                   <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
                     Sederhana Elektronik
