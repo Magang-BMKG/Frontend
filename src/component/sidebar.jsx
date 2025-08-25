@@ -121,7 +121,7 @@ const Sidebar = ({
     // { 
       // id: 'laporan', 
       // icon: ReportIcon, 
-      // label: 'Laporan', 
+      // label: 'Laporan',  
       // shortLabel: 'Laporan', 
       // route: '/laporan',
       // keywords: ['laporan', 'report', 'reporting']
