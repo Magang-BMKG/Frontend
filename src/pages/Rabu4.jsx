@@ -3,7 +3,7 @@ import JadwalPemkala from './jadwalPemkala';
 
 const Rabu4 = () => {
   const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbzE0hrhD-SlsmJ2YLg3yjtMEi36rlPhZcrfrNZaBuxcbEopcaTvOvMJA91RkniADjcnHw/exec";
-  const PAGE_TITLE = "Jadwal Rabu 4";
+  const PAGE_TITLE = "Pemeliharaan Berkala Rabu 4";
   const BACK_PATH = "/jadwal/rabu";
 
   return (

@@ -162,7 +162,7 @@ const SarmutPage = () => {
         <main className="flex-1 w-full min-w-0 p-4 md:p-6 xl:p-8 max-w-7xl mx-auto lg:mx-40 lg:ml-18 xl:ml-2 bg-grey-300">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-center text-[14px] sm:text-[28px] font-bold text-gray-800 mb-2">
-              Sasaran Mutu (SARMUT)
+              Sasaran Mutu
             </h1>
             <p className="text-center text-[10px] sm:text-[15px] text-gray-600 mb-8 sm:mb-12">
               Pilih tahun untuk mengakses data Sasaran Mutu

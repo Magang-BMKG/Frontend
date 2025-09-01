@@ -3,7 +3,7 @@ import JadwalPemkala from './jadwalPemkala';
 
 const Insidental2 = () => {
   const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbxMBwO1tvdGS2BIKR_bQMNi6Cmux0fYgRsmaJoD3VRQKzLcG3Tzlfm3QFskwrfThDopiw/exec";
-  const PAGE_TITLE = "Jadwal Insidental 2";
+  const PAGE_TITLE = "Pemeliharaan Berkala Insidental 2";
   const BACK_PATH = "/jadwal/insidental";
 
   return (

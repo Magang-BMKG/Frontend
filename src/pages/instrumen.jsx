@@ -829,12 +829,12 @@ const DaftarInstrumenPage = () => {
               <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 mr-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Kembali ke Daftar Instrumen
+              Kembali ke Daftar Identitas
             </button>
           )}
           
           <h2 className="text-center text-[18px] sm:text-2xl font-bold mb-2 sm:mb-8">
-            Daftar Peralatan Instrumen
+            Daftar Identitas
           </h2>
 
           {userRole && (

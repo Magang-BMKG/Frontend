@@ -499,12 +499,12 @@ const PerkaCanggih = () => {
               <svg className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Kembali ke Perka
+              Kembali ke Peraturan Kepala
             </button>
             
             {/* Title */}
             <h1 className="text-center text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-800 mb-2 sm:mb-4 md:mb-6 lg:mb-8">
-              Perka Canggih
+              Peraturan Kepala Canggih
             </h1>
 
             {/* User Role Display */}

@@ -97,8 +97,8 @@ const Sidebar = ({
     { 
       id: 'meta', 
       icon: DatabaseIcon, 
-      label: 'Meta Data', 
-      shortLabel: 'Meta Data', 
+      label: 'Identitas', 
+      shortLabel: 'Identitas', 
       route: '/instrumen',
       keywords: ['meta', 'data', 'instrumen', 'daftar', 'peralatan']
     },
@@ -113,8 +113,8 @@ const Sidebar = ({
     { 
       id: 'jadwal', 
       icon: CalendarIcon, 
-      label: 'Jadwal', 
-      shortLabel: 'Jadwal', 
+      label: 'Pemkala', 
+      shortLabel: 'Pemkala', 
       route: '/jadwal',
       keywords: ['jadwal', 'schedule', 'calendar', 'kalender']
     },

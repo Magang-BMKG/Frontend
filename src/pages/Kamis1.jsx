@@ -3,7 +3,7 @@ import JadwalPemkala from './jadwalPemkala';
 
 const Kamis1 = () => {
   const JADWAL_API_URL = "https://script.google.com/macros/s/AKfycbyKP5MWZ88uQZ6VkDtl0-HuTVVBi8OrtpOoo0qgaRZVva5TVZXFTGhZoRTQ6cDPsPRnjA/exec";
-  const PAGE_TITLE = "Jadwal Kamis 1";
+  const PAGE_TITLE = "Pemeliharaan Berkala Kamis 1";
   const BACK_PATH = "/jadwal/kamis";
 
   return (

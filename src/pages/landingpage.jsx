@@ -9,6 +9,10 @@ import { CiCalendar } from "react-icons/ci";
 import { CiLock } from "react-icons/ci";
 import { FaEyeSlash, FaRegEye } from 'react-icons/fa';
 import { AiOutlineClose } from 'react-icons/ai';
+import { FiDatabase } from "react-icons/fi";
+import { LuBook } from "react-icons/lu";
+import { GoShieldCheck } from "react-icons/go";
+import { GoGear } from "react-icons/go";
 import Logo from '../../assets/logo-bmkg.svg';
 import { useAuth } from '../context/AuthContext'; // <-- Impor hook useAuth
 
@@ -176,12 +180,7 @@ export default function BMKGLandingPage() {
                 <div>
                   <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Profil Teknisi</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                    Teknisi BMKG merupakan profil sumber daya manusia dengan keahlian spesifik
-                    di bidang teknologi instrumentasi, elektronika, dan jaringan. Tugas utama
-                    mereka mencakup pemeliharaan preventif, analisis kerusakan, hingga kalibrasi
-                    instrumen canggih. Melalui tangan terampil merekalah, data mentah dari alam
-                    dapat terekam secara konsisten dan berkualitas, menjadi fondasi bagi setiap
-                    informasi yang disajikan BMKG
+                    Teknisi BMKG adalah profesional yang ahli dalam instrumentasi, elektronika, dan jaringan. Tugas mereka adalah memelihara, memperbaiki, dan mengkalibrasi instrumen untuk memastikan data cuaca dan geofisika terekam secara akurat dan konsisten, menjadi dasar informasi BMKG.
                   </p>
                 </div>
               </div>
@@ -191,59 +190,72 @@ export default function BMKGLandingPage() {
             <div className="bg-white rounded-lg border border-gray-20 p-4 md:p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
               <div className="flex items-center space-x-3 md:space-x-4">
                 <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center flex-shrink-0 bg-gray-50 rounded-lg">
-                  <BsBook className="w-50 h-50 md:w-80 md:h-80 text-gray-600" />
+                  <LuBook className="w-50 h-50 md:w-80 md:h-80 text-gray-600" />
                 </div>
                 <div>
                   <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Log Book</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                   Log Book adalah cerminan digital dari komitmen setiap karyawan.
-                   Setiap kehadiran dicatat dan disandingkan langsung dengan jadwal
-                   yang telah ditetapkan. Dari sinilah lahir kalkulasi Sasaran
-                   Mutu—sebuah persentase yang merefleksikan tingkat kedisiplinan
-                   dan kepatuhan terhadap jadwal. Ini adalah cara kami menjaga
-                   akuntabilitas secara transparan dan menjadi tolok ukur
-                   bersama dalam upaya memberikan pelayanan publik yang selalu
-                   tepat waktu.
+                   Log Book adalah sistem digital yang mencatat kehadiran karyawan. Catatan ini kemudian digunakan untuk menghitung Sasaran Mutu, yaitu persentase yang mengukur kedisiplinan dan kepatuhan terhadap jadwal. Ini adalah alat untuk menjaga akuntabilitas dan memastikan pelayanan publik yang tepat waktu.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Meta Data */}
+            {/* Identitas */}
             <div className="bg-white rounded-lg border border-gray-20 p-4 md:p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
               <div className="flex items-center space-x-3 md:space-x-4">
                 <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center flex-shrink-0 bg-gray-50 rounded-lg">
-                  <HiOutlineWrenchScrewdriver className="w-50 h-50 md:w-80 md:h-80 text-gray-600" />
+                  <FiDatabase className="w-50 h-50 md:w-80 md:h-80 text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Meta Data</h3>
+                  <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Identitas</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                    Setiap data BMKG berawal dari instrumen yang terjamin kualitasnya.
-                    Kami mendokumentasikan metadata instrumen secara detail, mencakup
-                    riwayat kalibrasi, posisi penempatan, keterangan kondisi, hingga
-                    spesifikasi teknis seperti merk dan type. Ini adalah bentuk
-                    transparansi dan komitmen kami untuk memastikan setiap informasi
-                    yang Anda terima berasal dari sumber yang valid dan terawat baik.
+                    Data BMKG berasal dari identitas berkualitas yang terdokumentasi dengan baik. Kami mencatat identitas secara rinci, termasuk riwayat kalibrasi, lokasi, kondisi, serta spesifikasi teknis, untuk memastikan informasi yang disajikan valid dan akurat.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Jadwal */}
+            {/* Pemeliharaan Berkala */}
             <div className="bg-white rounded-lg border border-gray-20 p-4 md:p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
                <div className="flex items-center space-x-3 md:space-x-4">
                 <div className="w-13 h-13 md:w-20 md:h-20 flex items-center justify-center flex-shrink-0 bg-gray-50 rounded-lg">
                   <CiCalendar className="w-50 h-50 md:w-80 md:h-80 text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Jadwal</h3>
+                  <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Pemeliharaan Berkala</h3>
                   <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
-                    Kesiapsiagaan kami berawal dari jadwal yang terorganisir.
-                    Jadwal Karyawan kami adalah Peta Jalan Operasional yang
-                    mengatur ritme kerja tim untuk memberikan layanan tanpa jeda.
-                    Ini memastikan setiap posisi penting selalu terisi oleh tenaga ahli,
-                    baik di hiruk pikuk Shift Pagi maupun di keheningan Shift Malam,
-                    sebagai wujud komitmen kami pada layanan publik.
+                    Pemeliharaan berkala adalah komitmen kami untuk memastikan setiap alat beroperasi prima setiap hari. Melalui pencatatan rutin termasuk status, lokasi, dan tindakan yang diambil kami menjaga akuntabilitas dan transparansi. Setiap detail, dari kerusakan hingga kalibrasi, didokumentasikan untuk memastikan seluruh instrumen kami selalu siap memberikan data yang valid dan akurat.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sasaran Mutu */}
+            <div className="bg-white rounded-lg border border-gray-20 p-4 md:p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+               <div className="flex items-center space-x-3 md:space-x-4">
+                <div className="w-13 h-13 md:w-20 md:h-20 flex items-center justify-center flex-shrink-0 bg-gray-50 rounded-lg">
+                  <GoShieldCheck className="w-50 h-50 md:w-80 md:h-80 text-gray-600" />
+                </div>
+                <div>
+                  <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Sasaran Mutu</h3>
+                  <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
+                    Tabel Sasaran Mutu adalah tolok ukur komitmen kami. Persentase ini merefleksikan kedisiplinan dan kepatuhan terhadap standar yang ditetapkan, menjadi acuan bersama untuk memastikan kualitas pelayanan yang konsisten.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Peraturan Kepala */}
+            <div className="bg-white rounded-lg border border-gray-20 p-4 md:p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+               <div className="flex items-center space-x-3 md:space-x-4">
+                <div className="w-13 h-13 md:w-20 md:h-20 flex items-center justify-center flex-shrink-0 bg-gray-50 rounded-lg">
+                  <GoGear className="w-50 h-50 md:w-80 md:h-80 text-gray-600" />
+                </div>
+                <div>
+                  <h3 className="text-[10px] md:text-xl text-justify font-bold text-gray-800 mb-2 md:mb-4">Peraturan Kepala</h3>
+                  <p className="text-black text-justify text-[9px] md:text-sm leading-relaxed">
+                    Peraturan ini mengatur pemeliharaan alat secara komprehensif, dengan pendekatan berbeda untuk alat mekanik, elektronik canggih, dan sederhana. Fokusnya pada penggantian komponen dan pemeliharaan rutin sesuai jadwal, serta ketersediaan suku cadang untuk memastikan data yang dihasilkan selalu valid dan andal.
                   </p>
                 </div>
               </div>
