@@ -504,7 +504,7 @@ const PerkaSederhana = () => {
             
             {/* Title */}
             <h1 className="text-center text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-800 mb-2 sm:mb-4 md:mb-6 lg:mb-8">
-              Peraturan Kepala Sederhana
+              Peraturan Kepala Sederhana Elektronik
             </h1>
 
             {/* User Role Display */}

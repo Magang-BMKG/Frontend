@@ -111,7 +111,7 @@ const PerkaPage = () => {
 
               {/* Card Canggih */}
               <div
-                onClick={() => handleNavigate("/perkaMekanik")}
+                onClick={() => handleNavigate("/perkaCanggih")}
                 className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
               >
                 <div className="flex flex-col items-center text-center">
@@ -127,7 +127,7 @@ const PerkaPage = () => {
 
               {/* Card Sederhana Elektronik */}
               <div
-                onClick={() => handleNavigate("/perkaMekanik")}
+                onClick={() => handleNavigate("/perkaSederhana")}
                 className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
               >
                 <div className="flex flex-col items-center text-center">
