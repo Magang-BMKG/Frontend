@@ -39,6 +39,7 @@ import Kamis4 from './pages/Kamis4';
 import JadwalInsidentalPage from './pages/jadwalInsidentalPage';
 import Insidental1 from './pages/Insidental1';
 import Insidental2 from './pages/Insidental2';
+import Laporan from './pages/laporan';
 
 function App() {
   return (
@@ -83,6 +84,7 @@ function App() {
           <Route path="/jadwal/insidental" element={<JadwalInsidentalPage />} />
           <Route path="/jadwal/insidental1" element={<Insidental1 />} />
           <Route path="/jadwal/insidental2" element={<Insidental2 />} />
+          <Route path="/laporan" element={<Laporan />} />
           <Route path="*" element={<div>404 - Halaman tidak ditemukan</div>} />
         </Routes>
       </AuthProvider>
